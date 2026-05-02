@@ -16,7 +16,7 @@ st.markdown("""
     .stDownloadButton>button { background-color: #28a745; color: white; border-radius: 8px; width: 100%; }
     [data-testid="stMetricValue"] { font-size: 20px; }
     </style>
-    """, unsafe_allow_state_headers=True)
+    """, unsafe_allow_html=True)
 
 # --- 1. SISTEMA DE LOGIN ---
 if "auth" not in st.session_state:
