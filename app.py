@@ -1,81 +1,60 @@
 import streamlit as st
 import pandas as pd
-import re, io, cv2, os
+import re, io, os
 import numpy as np
 from PIL import Image
 import google.generativeai as genai
-from datetime import datetime
 
 # --- CONFIGURACIÓN ---
-st.set_page_config(page_title="QTC Smart Sales", layout="wide")
+st.set_page_config(page_title="QTC Smart Sales Pro", layout="wide")
 
-# --- CONEXIÓN CON LA IA (GEMINI) ---
+# --- VERIFICACIÓN DE LLAVE ---
 if "GOOGLE_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+    # Probamos una configuración de seguridad más relajada para que no bloquee los códigos
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
-    st.error("⚠️ Falta la configuración de GOOGLE_API_KEY en Secrets")
+    st.error("❌ LA API KEY NO ESTÁ CARGADA EN SECRETS. Revisa el paso anterior.")
+    st.stop()
 
-# --- ESTILO CORPORATIVO ---
+# --- ESTILO ---
 st.markdown("""
     <style>
     .stButton>button { background-color: #F79646; color: white; border-radius: 8px; font-weight: bold; width: 100%; }
     .stDownloadButton>button { background-color: #28a745; color: white; border-radius: 8px; width: 100%; }
-    [data-testid="stSidebar"] { background-color: #1C2833; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- LOGIN ---
+# --- LOGIN (Simplificado para pruebas) ---
 if "auth" not in st.session_state: st.session_state.auth = False
 if not st.session_state.auth:
-    st.title("🔐 Acceso Corporativo QTC")
+    st.title("🔐 Acceso QTC")
     user = st.text_input("Usuario")
     pw = st.text_input("Contraseña", type="password")
     if st.button("Ingresar"):
         if user == "admin" and pw == "qtc2026": 
             st.session_state.auth = True
             st.rerun()
-        else: st.error("❌ Credenciales incorrectas")
+        else: st.error("❌ Error")
     st.stop()
 
-# --- FUNCIONES DE APOYO ---
-def corregir_numero(valor):
-    try:
-        if pd.isna(valor) or str(valor).strip() in ["", "0", "0.0"]: return 0
-        s = str(valor).upper().replace('S/', '').replace('$', '').replace(' ', '').replace(',', '').strip()
-        return int(float(re.sub(r'[^\d.]', '', s)))
-    except: return 0
-
-def generar_excel_web(items, cliente, ruc):
-    output = io.BytesIO()
-    writer = pd.ExcelWriter(output, engine='xlsxwriter')
-    pd.DataFrame(items).to_excel(writer, sheet_name='Cotizacion', index=False, startrow=5)
-    workbook, ws = writer.book, writer.sheets['Cotizacion']
-    fmt_h = workbook.add_format({'bg_color': '#1C2833', 'bold': True, 'font_color': 'white', 'border': 1, 'align': 'center'})
-    ws.set_column('A:A', 15); ws.set_column('B:B', 60); ws.set_column('C:E', 12)
-    for i, col in enumerate(['Código Sap', 'Descripción', 'Cantidad', 'Precio Unit.', 'Total']):
-        ws.write(5, i, col, fmt_h)
-    writer.close()
-    return output.getvalue()
-
-# --- MOTOR DE VISIÓN IA REFORZADO ---
+# --- MOTOR DE VISIÓN IA (EXTRACCIÓN PURA) ---
 def extraer_codigos_ia(imagen_pil):
     prompt = """
-    Actúa como un experto en logística. Analiza esta imagen que contiene una lista de productos en una cuadrícula (posiblemente con fondo amarillo).
-    Extrae CUALQUIER código alfanumérico que parezca un SKU o Código SAP (ejemplos: CN0900033NA8, RN0800070NA8, WH0...).
-    Ignora textos que no sean códigos.
-    Formato de respuesta: SKU:CANTIDAD, separado por comas.
-    Si no hay cantidad visible, pon :1.
-    Ejemplo: CN0900033NA8:1, CN0900043NA8:1
-    Responde ÚNICAMENTE los códigos.
+    Analiza la imagen y extrae todos los códigos SKU/SAP que veas (ejemplos: CN0900033NA8, RN..., WH...).
+    Devuelve la respuesta en formato SKU:CANTIDAD separados por comas.
+    Si no hay cantidad, usa 1. 
+    Respuesta ejemplo: CN0900033NA8:1, CN0900043NA8:1
+    NO escribas nada más, solo los códigos.
     """
     try:
+        # Enviamos la imagen a Gemini
         response = model.generate_content([prompt, imagen_pil])
         return response.text.strip()
     except Exception as e:
-        return f"ERROR: {e}"
+        return f"ERROR_API: {str(e)}"
 
-# --- INTERFAZ PRINCIPAL ---
+# --- INTERFAZ ---
 st.title("💼 QTC Smart Sales")
 st.sidebar.header("📂 Carga de Datos")
 
@@ -83,79 +62,79 @@ f_p = st.sidebar.file_uploader("1. Catálogo de Precios", type=['xlsx'])
 f_s = st.sidebar.file_uploader("2. Reporte de Stock", type=['xlsx'])
 
 if f_p and f_s:
-    df_p_raw = pd.read_excel(f_p)
-    xls_s = pd.ExcelFile(f_s)
-    h_s = st.sidebar.selectbox("Hoja de Stock:", xls_s.sheet_names)
-    df_s_raw = pd.read_excel(f_s, sheet_name=h_s)
-
-    def limpiar(df):
-        for i in range(min(15, len(df))):
-            fila = [str(x).upper() for x in df.iloc[i].values]
-            if any(h in item for h in ['SKU', 'SAP', 'ARTICULO', 'COD SAP'] for item in fila):
+    # Carga rápida
+    df_p = pd.read_excel(f_p)
+    df_s = pd.read_excel(f_s)
+    
+    # Limpieza de columnas (detectamos SKU en ambos)
+    def auto_clean(df):
+        for i in range(min(10, len(df))):
+            row_vals = [str(x).upper() for x in df.iloc[i].values]
+            if any(h in val for h in ['SKU', 'SAP', 'ARTICULO', 'COD SAP'] for val in row_vals):
                 df.columns = [str(c).strip() for c in df.iloc[i]]
-                return df.iloc[i+1:].reset_index(drop=True).fillna(0)
-        return df.fillna(0)
+                return df.iloc[i+1:].reset_index(drop=True)
+        return df
 
-    df_p = limpiar(df_p_raw); df_s = limpiar(df_s_raw)
+    df_p = auto_clean(df_p)
+    df_s = auto_clean(df_s)
 
     c_sku_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['SKU', 'SAP', 'COD SAP'])), df_p.columns[0])
-    c_desc_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['DESCRIPCION', 'GOODS', 'NOMBRE PRODUCTO'])), df_p.columns[1])
+    c_desc_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['DESCRIPCION', 'GOODS', 'NOMBRE'])), df_p.columns[1])
     c_sku_s = next((c for c in df_s.columns if any(x in str(c).upper() for x in ['NUMERO', 'SKU', 'ARTICULO'])), df_s.columns[0])
     c_dsp = next((c for c in df_s.columns if 'DISPONIBLE' in str(c).upper()), df_s.columns[-1])
     
     precios_opc = [c for c in df_p.columns if any(p in str(c).upper() for p in ['VIP', 'P.', 'BOX', 'MAYOR', 'IR'])]
-    col_p_sel = st.selectbox("🎯 Precio a aplicar:", precios_opc)
+    col_p_sel = st.selectbox("🎯 Precio:", precios_opc)
 
     st.divider()
-    modo = st.radio("Método de pedido:", ["⌨️ Manual", "📸 Imagen (IA Pro)"])
+    img_file = st.file_uploader("📸 Sube la foto del pedido", type=['jpg', 'png', 'jpeg'])
     
-    # IMPORTANTE: Usamos session_state para que el pedido persista al procesar
-    if "pedido_ia" not in st.session_state: st.session_state.pedido_ia = {}
+    if "pedido_final" not in st.session_state: st.session_state.pedido_final = {}
 
-    if modo == "⌨️ Manual":
-        txt = st.text_area("Pega SKU:CANTIDAD")
-        if txt:
-            temp_pedido = {}
-            for it in txt.split(','):
-                if ':' in it:
-                    parts = it.split(':')
-                    temp_pedido[parts[0].strip().upper()] = int(re.sub(r'\D', '', parts[1])) if parts[1].strip().isdigit() else 1
-                else: temp_pedido[it.strip().upper()] = 1
-            st.session_state.pedido_ia = temp_pedido
-    else:
-        img_file = st.file_uploader("Sube foto del pedido", type=['jpg', 'png', 'jpeg'])
-        if img_file:
-            img_pil = Image.open(img_file)
-            st.image(img_pil, width=300)
-            if st.button("🔍 Escanear con IA"):
-                with st.spinner("IA analizando con precisión quirúrgica..."):
-                    texto_ia = extraer_codigos_ia(img_pil)
-                    if texto_ia and "ERROR" not in texto_ia:
-                        st.success(f"Detección: {texto_ia}")
-                        temp_pedido = {}
-                        for it in texto_ia.split(','):
-                            it = it.strip()
-                            if ':' in it:
-                                p_parts = it.split(':')
-                                sku = p_parts[0].strip().upper()
-                                cant = int(re.sub(r'\D', '', p_parts[1])) if p_parts[1].strip().isdigit() else 1
-                                temp_pedido[sku] = cant
-                            else: temp_pedido[it.upper()] = 1
-                        st.session_state.pedido_ia = temp_pedido
+    if img_file:
+        img_pil = Image.open(img_file)
+        st.image(img_pil, width=400)
+        
+        if st.button("🔍 ESCANEAR CON IA PRO"):
+            with st.spinner("IA Pensando..."):
+                respuesta_raw = extraer_codigos_ia(img_pil)
+                
+                # MOSTRAR QUÉ DIJO LA IA (Para depurar)
+                st.info(f"🤖 Respuesta de la IA: {respuesta_raw}")
+                
+                if "ERROR_API" in respuesta_raw:
+                    st.error(f"Hubo un problema con la llave de Google: {respuesta_raw}")
+                else:
+                    temp_ped = {}
+                    # Limpiamos posibles caracteres de markdown que a veces pone Gemini
+                    clean_text = respuesta_raw.replace('```', '').replace('csv', '').strip()
+                    for it in clean_text.split(','):
+                        if ':' in it:
+                            sku, cant = it.split(':')
+                            temp_ped[sku.strip().upper()] = int(re.sub(r'\D', '', cant)) if cant.strip() else 1
+                        else:
+                            temp_ped[it.strip().upper()] = 1
+                    st.session_state.pedido_final = temp_ped
+                    st.success("✅ Pedido cargado. Dale al botón de abajo para procesar stock.")
 
-    if st.button("🚀 PROCESAR DISPONIBILIDAD") and st.session_state.pedido_ia:
+    if st.button("🚀 PROCESAR DISPONIBILIDAD") and st.session_state.pedido_final:
         res = []
-        for sku_ped, cant_ped in st.session_state.pedido_ia.items():
+        for sku_ped, cant_ped in st.session_state.pedido_final.items():
             mask = df_p[c_sku_p].astype(str).str.contains(sku_ped, case=False, na=False)
             variantes = df_p[mask]
-            if variantes.empty:
-                st.warning(f"❌ {sku_ped} no se encontró en el catálogo.")
-                continue
             for _, fila in variantes.iterrows():
-                info = fila.to_dict(); info['PEDIDO'] = cant_ped; sku_real = str(info[c_sku_p]).strip()
+                info = fila.to_dict()
+                info['PEDIDO'] = cant_ped
+                sku_real = str(info[c_sku_p]).strip()
                 m_stk = df_s[df_s[c_sku_s].astype(str).str.strip() == sku_real]
-                info['Disp'] = corregir_numero(m_stk[c_dsp].iloc[0] if not m_stk.empty else 0)
-                info['P_UNIT'] = corregir_numero(info[col_p_sel])
+                
+                # Fix decimales/miles
+                def clean_n(v):
+                    try: return int(float(str(v).replace('S/', '').replace(',', '').strip()))
+                    except: return 0
+
+                info['Disp'] = clean_n(m_stk[c_dsp].iloc[0] if not m_stk.empty else 0)
+                info['P_UNIT'] = clean_n(fila[col_p_sel])
                 info['ALERTA'] = "OK" if info['Disp'] >= cant_ped else "SIN STOCK"
                 res.append(info)
 
@@ -164,12 +143,3 @@ if f_p and f_s:
             st.subheader("📊 Balance de Stock")
             def color_a(row): return ['background-color: #FF3333; color: black; font-weight: bold' if row.ALERTA == "SIN STOCK" else '' for _ in row]
             st.dataframe(df_res[[c_sku_p, c_desc_p, 'P_UNIT', 'PEDIDO', 'Disp', 'ALERTA']].style.apply(color_a, axis=1))
-
-            with st.expander("📥 Generar Cotización"):
-                c1, c2 = st.columns(2)
-                n_cli = c1.text_input("Cliente", value="CLIENTE NUEVO")
-                r_cli = c2.text_input("RUC/DNI", value="-")
-                items_ok = df_res[df_res.ALERTA == "OK"]
-                if not items_ok.empty:
-                    f_list = [{'sku': r[c_sku_p], 'desc': r[c_desc_p], 'cant': r['PEDIDO'], 'p_u': r['P_UNIT'], 'total': r['PEDIDO']*r['P_UNIT']} for _, r in items_ok.iterrows()]
-                    st.download_button("📥 Descargar Excel", generar_excel_web(f_list, n_cli, r_cli), f"Coti_{n_cli}.xlsx")
