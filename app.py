@@ -64,7 +64,7 @@ def generar_excel_web(items, cliente, ruc):
     return output.getvalue()
 
 # --- 3. INTERFAZ PRINCIPAL ---
-st.title("💎Consola de Operaciones QTC Pro - Business Suite")
+st.title("💎QTC Smart Sales - Business Suite")
 st.sidebar.header("📂 Carga de Archivos")
 
 f_p = st.sidebar.file_uploader("1. Catálogo de Precios (Excel)", type=['xlsx'])
