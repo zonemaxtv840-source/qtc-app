@@ -1,28 +1,36 @@
 import streamlit as st
 import pandas as pd
 import re, io, os
-import numpy as np
 from PIL import Image
 import google.generativeai as genai
 
-# --- CONFIGURACIÓN DE PÁGINA ---
+# --- CONFIGURACIÓN ---
 st.set_page_config(page_title="QTC Smart Sales Pro", layout="wide")
 
-# --- CONEXIÓN IA (PROTECCIÓN TOTAL) ---
+# --- CONEXIÓN IA ULTRA-REFORZADA ---
 if "GOOGLE_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
     
-    # Intentamos cargar el modelo con un bloque de seguridad
+    # TRUCO: Buscar qué modelos hay disponibles para tu llave
     try:
-        # Forzamos al sistema a no usar 'v1beta' si da error
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        modelos_disponibles = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        # Prioridad: Flash 1.5 -> Pro 1.5 -> Pro Vision
+        if 'models/gemini-1.5-flash' in modelos_disponibles:
+            model_name = 'gemini-1.5-flash'
+        elif 'models/gemini-1.5-pro' in modelos_disponibles:
+            model_name = 'gemini-1.5-pro'
+        else:
+            model_name = 'gemini-pro-vision'
+        
+        model = genai.GenerativeModel(model_name)
     except Exception as e:
-        st.error(f"⚠️ Error al inicializar IA: {e}")
+        st.error(f"⚠️ Error al listar modelos: {e}")
+        st.stop()
 else:
-    st.error("❌ API KEY no encontrada. Agrégala en Settings > Secrets de Streamlit.")
+    st.error("❌ No hay API KEY en Secrets.")
     st.stop()
 
-# --- ESTILO CORPORATIVO ---
+# --- ESTILO ---
 st.markdown("""
     <style>
     .stButton>button { background-color: #F79646; color: white; border-radius: 8px; font-weight: bold; width: 100%; }
@@ -34,86 +42,81 @@ st.markdown("""
 # --- LOGIN ---
 if "auth" not in st.session_state: st.session_state.auth = False
 if not st.session_state.auth:
-    st.title("🔐 Acceso Corporativo QTC")
+    st.title("🔐 Acceso QTC")
     u = st.text_input("Usuario")
     p = st.text_input("Contraseña", type="password")
     if st.button("Ingresar"):
         if u == "admin" and p == "qtc2026": 
             st.session_state.auth = True
             st.rerun()
-        else: st.error("❌ Credenciales incorrectas")
+        else: st.error("Acceso denegado")
     st.stop()
 
 # --- MOTOR DE VISIÓN IA ---
 def extraer_codigos_ia(imagen_pil):
     prompt = """
-    Eres un extractor de datos de alta precisión. 
-    Analiza la imagen y busca códigos de producto (SKUs). 
-    Formato de salida: SKU:CANTIDAD, separado por comas.
-    Ejemplo: CN0900033NA8:1, RN0800070NA8:5
-    Si no hay cantidad visible, usa 1. Solo devuelve los códigos, nada de texto extra.
+    Analiza esta imagen y extrae códigos SKU de productos y sus cantidades.
+    Patrones comunes: CN..., RN..., LP..., o números largos.
+    Formato: SKU:CANTIDAD, separado por comas.
+    Si no hay cantidad, pon 1. Ejemplo: CN0900033NA8:1, RN0800070NA8:3
+    Responde solo los códigos.
     """
     try:
-        # Bloque de generación directo
         response = model.generate_content([prompt, imagen_pil])
-        if response and response.text:
-            return response.text.strip()
-        else:
-            return "ERROR: La IA no devolvió texto."
+        return response.text.strip() if response.text else "ERROR: IA sin respuesta"
     except Exception as e:
         return f"ERROR_TECNICO: {str(e)}"
 
 # --- INTERFAZ ---
 st.title("💼 QTC Smart Sales")
-st.sidebar.header("📂 Carga de Bases de Datos")
+st.sidebar.header("📂 Carga de Datos")
 
-f_p = st.sidebar.file_uploader("1. Catálogo de Precios (Excel)", type=['xlsx'])
-f_s = st.sidebar.file_uploader("2. Reporte de Stock (Excel)", type=['xlsx'])
+f_p = st.sidebar.file_uploader("1. Catálogo de Precios", type=['xlsx'])
+f_s = st.sidebar.file_uploader("2. Reporte de Stock", type=['xlsx'])
 
 if f_p and f_s:
     df_p_raw = pd.read_excel(f_p)
     df_s_raw = pd.read_excel(f_s)
 
-    def auto_limpieza(df):
+    def limpiar(df):
         for i in range(min(15, len(df))):
-            linea = [str(x).upper() for x in df.iloc[i].values]
-            if any(h in val for h in ['SKU', 'SAP', 'COD SAP', 'ARTICULO'] for val in linea):
+            row = [str(x).upper() for x in df.iloc[i].values]
+            if any(h in v for h in ['SKU', 'SAP', 'ARTICULO', 'COD SAP'] for v in row):
                 df.columns = [str(c).strip() for c in df.iloc[i]]
                 return df.iloc[i+1:].reset_index(drop=True).fillna(0)
         return df.fillna(0)
 
-    df_p = auto_limpieza(df_p_raw); df_s = auto_limpieza(df_s_raw)
+    df_p = limpiar(df_p_raw); df_s = limpiar(df_s_raw)
 
-    c_sku_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['SKU', 'SAP', 'COD SAP'])), df_p.columns[0])
-    c_desc_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['DESCRIPCION', 'GOODS', 'NOMBRE'])), df_p.columns[1])
-    c_sku_s = next((c for c in df_s.columns if any(x in str(c).upper() for x in ['NUMERO', 'SKU', 'ARTICULO'])), df_s.columns[0])
+    c_sku_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['SKU', 'SAP', 'COD SAP'])), df_p.columns)
+    c_desc_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['DESCRIPCION', 'GOODS', 'NOMBRE'])), df_p.columns)
+    c_sku_s = next((c for c in df_s.columns if any(x in str(c).upper() for x in ['NUMERO', 'SKU', 'ARTICULO'])), df_s.columns)
     c_dsp = next((c for c in df_s.columns if 'DISPONIBLE' in str(c).upper()), df_s.columns[-1])
     
     precios = [c for c in df_p.columns if any(p in str(c).upper() for p in ['VIP', 'P.', 'BOX', 'MAYOR', 'IR'])]
-    col_p_sel = st.selectbox("🎯 Nivel de Precio a aplicar:", precios)
+    col_p_sel = st.selectbox("🎯 Precio:", precios)
 
     st.divider()
-    img_file = st.file_uploader("📸 Sube la foto del pedido del cliente", type=['jpg', 'png', 'jpeg'])
+    img_file = st.file_uploader("📸 Sube la foto del pedido", type=['jpg', 'png', 'jpeg'])
     
     if "pedido_ia" not in st.session_state: st.session_state.pedido_ia = {}
 
     if img_file:
         img_pil = Image.open(img_file)
-        st.image(img_pil, width=350, caption="Imagen cargada")
+        st.image(img_pil, width=350)
         if st.button("🔍 ESCANEAR CON IA"):
-            with st.spinner("IA analizando con precisión..."):
+            with st.spinner(f"Usando motor {model_name}..."):
                 res_raw = extraer_codigos_ia(img_pil)
                 if "ERROR" in res_raw:
-                    st.error(f"Detalle técnico: {res_raw}")
+                    st.error(res_raw)
                 else:
-                    st.info(f"🤖 IA detectó: {res_raw}")
+                    st.info(f"🤖 Detectado: {res_raw}")
                     temp = {}
-                    # Limpieza agresiva de caracteres extraños
-                    clean = res_raw.replace('`', '').replace('csv', '').replace('SKU:', '').strip()
+                    # Limpieza final de texto
+                    clean = res_raw.replace('`', '').replace('csv', '').strip()
                     for item in clean.split(','):
                         if ':' in item:
                             s, c = item.split(':')
-                            # Extraer solo números de la cantidad
                             c_num = int(re.sub(r'\D', '', c)) if re.sub(r'\D', '', c) else 1
                             temp[s.strip().upper()] = c_num
                         else:
@@ -121,14 +124,13 @@ if f_p and f_s:
                     st.session_state.pedido_ia = temp
 
     if st.button("🚀 PROCESAR DISPONIBILIDAD") and st.session_state.pedido_ia:
-        res_final = []
+        final_data = []
         for sku_ped, cant_ped in st.session_state.pedido_ia.items():
-            # Búsqueda flexible
             mask = df_p[c_sku_p].astype(str).str.contains(re.escape(sku_ped), case=False, na=False)
             match = df_p[mask]
             
             if match.empty:
-                st.warning(f"⚠️ El código {sku_ped} no existe en este catálogo.")
+                st.warning(f"No se encontró {sku_ped}")
                 continue
 
             for _, fila in match.iterrows():
@@ -138,19 +140,16 @@ if f_p and f_s:
                 stk_row = df_s[df_s[c_sku_s].astype(str).str.strip() == sku_real]
                 
                 def n_clean(v):
-                    try: 
-                        val = str(v).replace('S/', '').replace(',', '').strip()
-                        return int(float(val))
+                    try: return int(float(str(v).replace('S/', '').replace(',', '').strip()))
                     except: return 0
 
-                info['Disp'] = n_clean(stk_row[c_dsp].iloc[0] if not stk_row.empty else 0)
+                info['Disp'] = n_clean(stk_row[c_dsp].iloc if not stk_row.empty else 0)
                 info['P_UNIT'] = n_clean(fila[col_p_sel])
                 info['ALERTA'] = "OK" if info['Disp'] >= cant_ped else "SIN STOCK"
-                res_final.append(info)
+                final_data.append(info)
 
-        if res_final:
-            df_final = pd.DataFrame(res_final).drop_duplicates()
-            st.subheader("📊 Balance de Disponibilidad Actual")
-            def estilo_rojo(row):
-                return ['background-color: #FF3333; color: black; font-weight: bold' if row.ALERTA == "SIN STOCK" else '' for _ in row]
-            st.dataframe(df_final[[c_sku_p, c_desc_p, 'P_UNIT', 'PEDIDO', 'Disp', 'ALERTA']].style.apply(estilo_rojo, axis=1).format({'P_UNIT': 'S/. {:.2f}'}))
+        if final_data:
+            df_final = pd.DataFrame(final_data).drop_duplicates()
+            st.subheader("📊 Balance de Stock")
+            def color_red(row): return ['background-color: #FF3333; color: black; font-weight: bold' if row.ALERTA == "SIN STOCK" else '' for _ in row]
+            st.dataframe(df_final[[c_sku_p, c_desc_p, 'P_UNIT', 'PEDIDO', 'Disp', 'ALERTA']].style.apply(color_red, axis=1).format({'P_UNIT': 'S/. {:.2f}'}))
