@@ -5,3 +5,4 @@ xlsxwriter
 pytesseract
 Pillow
 opencv-python-headless
+google-generativeai
