@@ -1,9 +1,6 @@
 import streamlit as st
 import pandas as pd
-import re, io, cv2, os
-import numpy as np
-from PIL import Image
-import pytesseract
+import re, io, os
 from datetime import datetime
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
@@ -97,37 +94,34 @@ if f_p and f_s:
     df_p = limpiar_cabeceras(df_p_raw)
     df_s = limpiar_cabeceras(df_s_raw)
 
+    # Identificar columnas de Precios - FIX: 'options' en lugar de 'opciones'
     precios_opc = [c for c in df_p.columns if any(p in str(c).upper() for p in ['P. IR', 'P. BOX', 'P. VIP', 'SUGERIDO', 'VIP', 'BOX', 'MAYOR', 'PRECIO'])]
     if not precios_opc: precios_opc = df_p.columns.tolist()
-    col_p_sel = st.selectbox("🎯 Nivel de Precio a aplicar:", opciones=precios_opc)
+    
+    col_p_sel = st.selectbox("🎯 Nivel de Precio a aplicar:", options=precios_opc)
 
     st.divider()
-    
     pedido_dict = {}
     
     if f_ped:
         st.info("🔍 Analizando pedido en Excel...")
         df_ped_raw = pd.read_excel(f_ped)
         df_ped = limpiar_cabeceras(df_ped_raw)
-        
-        # Columnas de SKU posibles
         c_sku_ped = next((c for c in df_ped.columns if any(x in str(c).upper() for x in ['SKU', 'COD SAP', 'CODIGO', 'SAP', 'NO'])), df_ped.columns[0])
-        # Columnas de Cantidad posibles
         c_cant_ped = next((c for c in df_ped.columns if any(x in str(c).upper() for x in ['PEDIDO', 'CANTIDAD', 'CANT', 'SOLICITADO'])), None)
         
         if c_cant_ped:
             for _, fila_p in df_ped.iterrows():
                 val_cant = fila_p[c_cant_ped]
-                # Lógica: SOLO SI TIENE UN NÚMERO MAYOR A 0
-                if pd.notna(val_cant) and (isinstance(val_cant, (int, float)) or str(val_cant).isdigit()):
+                if pd.notna(val_cant) and (isinstance(val_cant, (int, float)) or str(val_cant).replace('.','').isdigit()):
                     cant_p = int(float(val_cant))
                     if cant_p > 0:
                         sku_p = str(fila_p[c_sku_ped]).strip().upper()
-                        if sku_p and sku_p != '0':
+                        if sku_p and sku_p != '0' and sku_p != '0.0':
                             pedido_dict[sku_p] = cant_p
-            st.success(f"✅ Se detectaron {len(pedido_dict)} productos solicitados en el Excel.")
+            st.success(f"✅ Se detectaron {len(pedido_dict)} productos solicitados.")
         else:
-            st.error("No se encontró la columna de cantidad en el Excel del pedido.")
+            st.error("No se encontró la columna de cantidad en el pedido.")
     else:
         txt_area = st.text_area("⌨️ O pega aquí SKU:CANTIDAD (separados por coma)")
         if txt_area:
@@ -150,13 +144,11 @@ if f_p and f_s:
         for cod_f, cant_f in pedido_dict.items():
             mask = df_p[c_sku_p].astype(str).str.contains(re.escape(cod_f), case=False, na=False)
             variantes = df_p[mask]
-            
             for _, fila in variantes.iterrows():
                 info = fila.to_dict()
                 info['PEDIDO'] = cant_f
                 sku_real = str(info[c_sku_p]).strip()
                 m_stk = df_s[df_s[c_sku_s].astype(str).str.strip() == sku_real]
-                
                 info['Disp'] = int(corregir_numero(m_stk[c_dsp].iloc[0] if not m_stk.empty else 0))
                 info['P_UNIT'] = corregir_numero(info[col_p_sel])
                 info['ALERTA'] = "OK" if info['Disp'] >= cant_f else "SIN STOCK"
@@ -166,20 +158,14 @@ if f_p and f_s:
             df_res = pd.DataFrame(resultados).drop_duplicates()
             def color_alerta(row):
                 return ['background-color: #FF3333; color: black; font-weight: bold' if row.ALERTA == "SIN STOCK" else '' for _ in row]
-            
             st.subheader("📊 Resultados de Cruce")
             st.dataframe(df_res[[c_sku_p, c_desc_p, 'P_UNIT', 'PEDIDO', 'Disp', 'ALERTA']].style.apply(color_alerta, axis=1).format({'P_UNIT': 'S/. {:.2f}'}))
-
             with st.expander("📥 Generar Cotización Final"):
-                c1, c2 = st.columns(2)
-                nombre_cli = c1.text_input("Cliente", value="CLIENTE NUEVO")
-                ruc_cli = c2.text_input("RUC/DNI", value="-")
+                n_cli = st.text_input("Cliente", value="CLIENTE NUEVO")
+                r_cli = st.text_input("RUC/DNI", value="-")
                 items_ok = df_res[df_res.ALERTA == "OK"]
                 if not items_ok.empty:
                     final_list = [{'sku': r[c_sku_p], 'desc': r[c_desc_p], 'cant': r['PEDIDO'], 'p_u': r['P_UNIT'], 'total': r['PEDIDO']*r['P_UNIT']} for _, r in items_ok.iterrows()]
-                    excel_data = generar_excel_web(final_list, nombre_cli, ruc_cli)
-                    st.download_button(label="📥 Descargar Excel", data=excel_data, file_name=f"Coti_{nombre_cli}.xlsx")
-                else:
-                    st.warning("No hay productos con stock suficiente para el Excel.")
+                    st.download_button("📥 Descargar Excel", generar_excel_web(final_list, n_cli, r_cli), f"Coti_{n_cli}.xlsx")
 
 
