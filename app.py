@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import re, io, cv2, os
 import numpy as np
 from PIL import Image
 import pytesseract
