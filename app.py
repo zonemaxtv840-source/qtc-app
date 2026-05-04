@@ -1,10 +1,9 @@
 import streamlit as st
 import pandas as pd
 import re, io, os
-from PIL import Image
 from datetime import datetime
 
-# --- CONFIGURACIÓN ---
+# --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="QTC Smart Sales", layout="wide")
 
 # --- ESTILO CORPORATIVO ---
@@ -20,10 +19,10 @@ st.markdown("""
 if "auth" not in st.session_state: st.session_state.auth = False
 if not st.session_state.auth:
     st.title("🔐 Acceso Corporativo QTC")
-    u = st.text_input("Usuario")
-    p = st.text_input("Contraseña", type="password")
+    user = st.text_input("Usuario")
+    pw = st.text_input("Contraseña", type="password")
     if st.button("Ingresar"):
-        if u == "admin" and p == "qtc2026": 
+        if user == "admin" and pw == "qtc2026": 
             st.session_state.auth = True
             st.rerun()
         else: st.error("❌ Credenciales incorrectas")
@@ -50,7 +49,7 @@ def generar_excel_web(items, cliente, ruc):
     return output.getvalue()
 
 # --- INTERFAZ PRINCIPAL ---
-st.title("💼 QTC Smart Sales")
+st.title("💼 QTC Smart Sales - Panel Manual")
 st.sidebar.header("📂 Carga de Datos")
 
 f_p = st.sidebar.file_uploader("1. Catálogo de Precios", type=['xlsx'])
@@ -64,8 +63,7 @@ if f_p and f_s:
 
     def limpiar(df):
         for i in range(min(15, len(df))):
-            fila = [str(x).upper() for x in df.iloc[i].values]
-            if any(h in item for h in ['SKU', 'SAP', 'ARTICULO', 'COD SAP'] for item in fila):
+            if any(h in [str(x).upper() for x in df.iloc[i].values] for h in ['SKU', 'SAP', 'ARTICULO', 'COD SAP']):
                 df.columns = [str(c).strip() for c in df.iloc[i]]
                 return df.iloc[i+1:].reset_index(drop=True).fillna(0)
         return df.fillna(0)
@@ -81,8 +79,7 @@ if f_p and f_s:
     col_p_sel = st.selectbox("🎯 Precio a aplicar:", precios_opc)
 
     st.divider()
-    st.subheader("⌨️ Ingreso Manual de Pedido")
-    txt = st.text_area("Pega SKU:CANTIDAD (ej: CN1271072NA8:4, CN0900374NA8:6)")
+    txt = st.text_area("⌨️ Pega SKU:CANTIDAD (separados por coma)")
     
     if st.button("🚀 PROCESAR DISPONIBILIDAD"):
         pedido = {}
@@ -90,7 +87,7 @@ if f_p and f_s:
             for it in txt.split(','):
                 if ':' in it:
                     parts = it.split(':')
-                    pedido[parts[0].strip().upper()] = int(re.sub(r'\D', '', parts[1])) if parts[1].strip() else 1
+                    pedido[parts[0].strip().upper()] = int(re.sub(r'\D', '', parts[1])) if len(parts)>1 and parts[1].strip() else 1
                 else: pedido[it.strip().upper()] = 1
 
         res = []
@@ -119,4 +116,5 @@ if f_p and f_s:
                 if not items_ok.empty:
                     f_list = [{'sku': r[c_sku_p], 'desc': r[c_desc_p], 'cant': r['PEDIDO'], 'p_u': r['P_UNIT'], 'total': r['PEDIDO']*r['P_UNIT']} for _, r in items_ok.iterrows()]
                     st.download_button("📥 Descargar Excel", generar_excel_web(f_list, n_cli, r_cli), f"Coti_{n_cli}.xlsx")
+
 
