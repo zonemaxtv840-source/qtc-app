@@ -149,5 +149,3 @@ if f_p and f_s:
                     st.download_button(label="📥 Descargar Cotización Excel", data=excel_data, file_name=f"Cotizacion_{nombre_cli}.xlsx")
                 else:
                     st.warning("No hay productos con stock para generar el Excel.")
-
-
