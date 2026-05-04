@@ -94,11 +94,15 @@ if f_p and f_s:
     df_p = limpiar_cabeceras(df_p_raw)
     df_s = limpiar_cabeceras(df_s_raw)
 
-    # Identificar columnas de Precios - FIX: 'options' en lugar de 'opciones'
-    precios_opc = [c for c in df_p.columns if any(p in str(c).upper() for p in ['P. IR', 'P. BOX', 'P. VIP', 'SUGERIDO', 'VIP', 'BOX', 'MAYOR', 'PRECIO'])]
+    # --- MOTOR DE DETECCIÓN DE PRECIOS MEJORADO ---
+    # Buscamos cualquier columna que contenga palabras relacionadas a precios
+    palabras_clave_precio = ['MAYOR', 'CAJA', 'VIP', 'IR', 'BOX', 'SUGERIDO', 'PRECIO', 'P.', 'UNIT']
+    precios_opc = [c for c in df_p.columns if any(p in str(c).upper() for p in palabras_clave_precio)]
+    
+    # Si no encuentra nada con las claves, muestra todas las columnas para no bloquearte
     if not precios_opc: precios_opc = df_p.columns.tolist()
     
-    col_p_sel = st.selectbox("🎯 Nivel de Precio a aplicar:", options=precios_opc)
+    col_p_sel = st.selectbox("🎯 Selecciona el Precio a aplicar:", options=precios_opc)
 
     st.divider()
     pedido_dict = {}
@@ -107,7 +111,7 @@ if f_p and f_s:
         st.info("🔍 Analizando pedido en Excel...")
         df_ped_raw = pd.read_excel(f_ped)
         df_ped = limpiar_cabeceras(df_ped_raw)
-        c_sku_ped = next((c for c in df_ped.columns if any(x in str(c).upper() for x in ['SKU', 'COD SAP', 'CODIGO', 'SAP', 'NO'])), df_ped.columns[0])
+        c_sku_ped = next((c for c in df_ped.columns if any(x in str(c).upper() for x in ['SKU', 'COD SAP', 'CODIGO', 'SAP', 'NO'])), df_ped.columns)
         c_cant_ped = next((c for c in df_ped.columns if any(x in str(c).upper() for x in ['PEDIDO', 'CANTIDAD', 'CANT', 'SOLICITADO'])), None)
         
         if c_cant_ped:
@@ -135,9 +139,9 @@ if f_p and f_s:
                     pedido_dict[it.strip().upper()] = 1
 
     if st.button("🚀 PROCESAR DISPONIBILIDAD") and pedido_dict:
-        c_sku_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['SKU', 'SAP', 'COD SAP'])), df_p.columns[0])
-        c_desc_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['DESCRIPCION', 'GOODS', 'NOMBRE'])), df_p.columns[1])
-        c_sku_s = next((c for c in df_s.columns if any(x in str(c).upper() for x in ['NUMERO', 'SKU', 'ARTICULO'])), df_s.columns[0])
+        c_sku_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['SKU', 'SAP', 'COD SAP'])), df_p.columns)
+        c_desc_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['DESCRIPCION', 'GOODS', 'NOMBRE'])), df_p.columns)
+        c_sku_s = next((c for c in df_s.columns if any(x in str(c).upper() for x in ['NUMERO', 'SKU', 'ARTICULO'])), df_s.columns)
         c_dsp = next((c for c in df_s.columns if 'DISPONIBLE' in str(c).upper()), df_s.columns[-1])
 
         resultados = []
@@ -166,6 +170,4 @@ if f_p and f_s:
                 items_ok = df_res[df_res.ALERTA == "OK"]
                 if not items_ok.empty:
                     final_list = [{'sku': r[c_sku_p], 'desc': r[c_desc_p], 'cant': r['PEDIDO'], 'p_u': r['P_UNIT'], 'total': r['PEDIDO']*r['P_UNIT']} for _, r in items_ok.iterrows()]
-                    st.download_button("📥 Descargar Excel", generar_excel_web(final_list, n_cli, r_cli), f"Coti_{n_cli}.xlsx")
-
-
+                    st.download_button(label="📥 Descargar Excel", data=generar_excel_web(final_list, n_cli, r_cli), file_name=f"Coti_{n_cli}.xlsx")
