@@ -4,89 +4,133 @@ import re, io, os, time
 from datetime import datetime
 from PIL import Image
 
-# --- CONFIGURACIÓN DE LA PÁGINA ---
+# --- CONFIGURACIÓN DE PÁGINA (FAVICON) ---
 try:
     img_logo = Image.open("logo.png")
     st.set_page_config(page_title="QTC Smart Sales", page_icon=img_logo, layout="wide")
 except:
     st.set_page_config(page_title="QTC Smart Sales", page_icon="💼", layout="wide")
 
-# --- ESTILO VISUAL CORPORATIVO AVANZADO ---
+# --- INTERFAZ PREMIUM (CSS PERSONALIZADO) ---
 st.markdown("""
     <style>
-    /* Fondo de la página */
-    .stApp { background-color: #f8f9fa; }
-    
-    /* Botones principales */
-    .stButton>button {
-        background-color: #F79646;
+    /* Fondo con degradado corporativo */
+    .stApp {
+        background: linear-gradient(135deg, #1C2833 0%, #2C3E50 100%);
         color: white;
-        border-radius: 10px;
-        height: 3.5em;
-        width: 100%;
-        font-weight: bold;
-        border: none;
-        transition: 0.3s;
-        box-shadow: 0px 4px 15px rgba(247, 150, 70, 0.3);
-    }
-    .stButton>button:hover {
-        background-color: #e67e22;
-        box-shadow: 0px 6px 20px rgba(247, 150, 70, 0.5);
-        transform: translateY(-2px);
     }
 
-    /* Contenedor del Login */
-    .login-box {
-        background-color: white;
-        padding: 40px;
-        border-radius: 20px;
-        box-shadow: 0px 10px 30px rgba(0,0,0,0.1);
-        text-align: center;
-        margin-top: 50px;
+    /* Caja de Login tipo 'Glassmorphism' */
+    .login-container {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 50px;
+        border-radius: 25px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        max-width: 450px;
+        margin: auto;
+        border: 1px solid rgba(255,255,255,0.2);
     }
-    
-    /* Personalización de Sidebar */
-    [data-testid="stSidebar"] { background-color: #1C2833; color: white; }
-    
-    /* Inputs */
-    .stTextInput>div>div>input { border-radius: 10px; }
-    
-    /* Tablas */
-    .stDataFrame { border: 1px solid #F79646; border-radius: 10px; }
+
+    /* Ajuste del título */
+    .login-title {
+        color: #1C2833;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-weight: 700;
+        letter-spacing: -1px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+    /* Estilo de los inputs */
+    .stTextInput input {
+        border-radius: 12px !important;
+        border: 2px solid #eee !important;
+        padding: 12px !important;
+        transition: 0.3s;
+    }
+    .stTextInput input:focus {
+        border-color: #F79646 !important;
+        box-shadow: 0 0 10px rgba(247, 150, 70, 0.2) !important;
+    }
+
+    /* Botón QTC Premium */
+    .stButton>button {
+        background: linear-gradient(90deg, #F79646 0%, #E67E22 100%) !important;
+        color: white !important;
+        border: none !important;
+        padding: 15px !important;
+        border-radius: 12px !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        transition: all 0.3s ease !important;
+        cursor: pointer !important;
+    }
+    .stButton>button:hover {
+        transform: translateY(-3px) !important;
+        box-shadow: 0 10px 20px rgba(247, 150, 70, 0.4) !important;
+        filter: brightness(1.1) !important;
+    }
+
+    /* Sidebar Estilizado */
+    [data-testid="stSidebar"] {
+        background-color: #111b21 !important;
+        border-right: 1px solid #2d3436;
+    }
+
+    /* Footer */
+    .footer {
+        position: fixed;
+        bottom: 10px;
+        width: 100%;
+        text-align: center;
+        font-size: 12px;
+        color: rgba(255,255,255,0.5);
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 1. SISTEMA DE LOGIN PROFESIONAL ---
+# --- 1. SISTEMA DE LOGIN PREMIUM ---
 if "auth" not in st.session_state:
     st.session_state.auth = False
 
 if not st.session_state.auth:
-    _, col2, _ = st.columns([1,2,1])
-    with col2:
-        st.markdown('<div class="login-box">', unsafe_allow_html=True)
-        try:
-            st.image("logo.png", width=180)
-        except:
-            st.title("💼 QTC PRO")
+    # Centrado vertical y horizontal total
+    st.write("<br><br><br>", unsafe_allow_html=True)
+    _, central_col, _ = st.columns([1, 2, 1])
+    
+    with central_col:
+        st.markdown('<div class="login-container">', unsafe_allow_html=True)
         
-        st.markdown("<h2 style='color: #1C2833; margin-bottom: 20px;'>Control de Acceso</h2>", unsafe_allow_html=True)
-        user = st.text_input("Usuario", placeholder="Usuario corporativo")
+        # Logo Centrado
+        try:
+            st.image("logo.png", width=220)
+        except:
+            st.markdown("<h1 style='text-align:center; color:#F79646;'>QTC</h1>", unsafe_allow_html=True)
+        
+        st.markdown("<h2 class="login-title">Control de Acceso</h2>", unsafe_allow_html=True)
+        
+        user = st.text_input("Usuario Corporativo", placeholder="ej. cristhian.leon")
         pw = st.text_input("Contraseña", type="password", placeholder="••••••••")
         
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("ACCEDER AL PANEL"):
+        st.write("<br>", unsafe_allow_html=True)
+        
+        if st.button("Ingresar al Sistema"):
             if user == "admin" and pw == "qtc2026": 
                 st.session_state.auth = True
-                st.success("✅ Acceso concedido")
-                time.sleep(0.5)
+                st.balloons()
+                time.sleep(1)
                 st.rerun()
             else:
-                st.error("❌ Credenciales incorrectas")
+                st.error("Credenciales no válidas")
+        
         st.markdown('</div>', unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: gray; font-size: 12px; margin-top: 20px;'>© 2026 Que Tal Compra - Business Intelligence Unit</p>", unsafe_allow_html=True)
+    
+    st.markdown('<div class="footer">© 2026 Grupo QTC - Business Intelligence Unit | V.Premium</div>', unsafe_allow_html=True)
     st.stop()
 
-# --- 2. FUNCIONES LÓGICAS ---
+# --- 2. FUNCIONES LÓGICAS (ESTABLES) ---
 def corregir_numero(valor):
     if pd.isna(valor) or str(valor).strip() in ["", "0", "0.0"]: return 0.0
     s = str(valor).upper().replace('S/', '').replace('$', '').replace(' ', '').strip()
@@ -104,10 +148,10 @@ def generar_excel_web(items, cliente, ruc):
     writer = pd.ExcelWriter(output, engine='xlsxwriter')
     pd.DataFrame(items).to_excel(writer, sheet_name='Cotizacion', index=False, startrow=5)
     workbook, ws = writer.book, writer.sheets['Cotizacion']
-    fmt_h = workbook.add_format({'bg_color': '#F79646', 'bold': True, 'border': 1, 'align': 'center', 'font_color': 'white'})
+    fmt_h = workbook.add_format({'bg_color': '#F79646', 'bold': True, 'align': 'center', 'font_color': 'white', 'border': 1})
     fmt_m = workbook.add_format({'num_format': '"S/." #,##0.00', 'border': 1})
     fmt_b = workbook.add_format({'border': 1})
-    ws.set_column('A:A', 20); ws.set_column('B:B', 75); ws.set_column('C:E', 15)
+    ws.set_column('A:A', 15); ws.set_column('B:B', 65); ws.set_column('C:E', 12)
     ws.write('A1', 'FECHA:', workbook.add_format({'bold': True})); ws.write('B1', datetime.now().strftime("%d/%m/%Y"))
     ws.write('A2', 'CLIENTE:', workbook.add_format({'bold': True})); ws.write('B2', cliente.upper()); ws.write('A3', 'RUC:', workbook.add_format({'bold': True})); ws.write('B3', ruc)
     for i, col in enumerate(['Código Sap', 'Descripción', 'Cantidad', 'Precio Unit.', 'Total']):
@@ -119,50 +163,49 @@ def generar_excel_web(items, cliente, ruc):
     writer.close()
     return output.getvalue()
 
-# --- 3. INTERFAZ PRINCIPAL ---
+# --- 3. PANEL DE OPERACIONES ---
 with st.sidebar:
     try: st.image("logo.png", use_container_width=True)
-    except: st.title("💼 QTC Pro")
+    except: st.title("💎 QTC PRO")
     st.divider()
-    st.header("📂 Carga de Datos")
-    f_p = st.file_uploader("1. Catálogo de Precios", type=['xlsx'])
-    f_s = st.file_uploader("2. Reporte de Stock", type=['xlsx'])
+    st.header("📂 Gestión de Datos")
+    f_p = st.file_uploader("1. Lista de Precios", type=['xlsx'])
+    f_s = st.file_uploader("2. Reporte de Almacén", type=['xlsx'])
     f_ped = st.file_uploader("3. Excel de Pedido (Opcional)", type=['xlsx'])
+    st.write("<br><br>", unsafe_allow_html=True)
+    if st.button("Cerrar Sesión"):
+        st.session_state.auth = False
+        st.rerun()
 
-st.title("📊 Panel de Operaciones Inteligentes")
+st.title("📊 Panel de Inteligencia de Ventas")
 
 if f_p and f_s:
     df_p_raw = pd.read_excel(f_p)
     xls_s = pd.ExcelFile(f_s)
-    h_s = st.sidebar.selectbox("Hoja de Stock:", xls_s.sheet_names)
+    h_s = st.sidebar.selectbox("Punto de Venta (Hoja):", xls_s.sheet_names)
     df_s_raw = pd.read_excel(f_s, sheet_name=h_s)
 
     def limpiar_cabeceras(df):
         for i in range(min(15, len(df))):
             fila = [str(x).upper() for x in df.iloc[i].values]
-            if any(h in item for h in ['SKU', 'SAP', 'ARTICULO', 'NUMERO', 'COD SAP'] for item in fila):
+            if any(h in item for h in ['SKU', 'SAP', 'ARTICULO', 'COD SAP'] for item in fila):
                 df.columns = [str(c).strip() for c in df.iloc[i]]
                 return df.iloc[i+1:].reset_index(drop=True).fillna(0)
         return df.fillna(0)
 
-    df_p = limpiar_cabeceras(df_p_raw)
-    df_s = limpiar_cabeceras(df_s_raw)
+    df_p = limpiar_cabeceras(df_p_raw); df_s = limpiar_cabeceras(df_s_raw)
 
-    palabras_clave_precio = ['MAYOR', 'CAJA', 'VIP', 'IR', 'BOX', 'SUGERIDO', 'PRECIO', 'P.']
-    precios_opc = [c for c in df_p.columns if any(p in str(c).upper() for p in palabras_clave_precio)]
-    if not precios_opc: precios_opc = df_p.columns.tolist()
-    
-    col_p_sel = st.selectbox("🎯 Selecciona Nivel de Precio:", options=precios_opc)
+    precios_opc = [c for c in df_p.columns if any(p in str(c).upper() for p in ['MAYOR', 'CAJA', 'VIP', 'IR', 'BOX', 'SUGERIDO', 'PRECIO'])]
+    col_p_sel = st.selectbox("🎯 Estrategia de Precio:", options=precios_opc if precios_opc else df_p.columns)
 
     st.divider()
     pedido_dict = {}
     
     if f_ped:
-        st.info("📦 Procesando pedido desde archivo Excel...")
         df_ped_raw = pd.read_excel(f_ped)
         df_ped = limpiar_cabeceras(df_ped_raw)
         c_sku_ped = next((c for c in df_ped.columns if any(x in str(c).upper() for x in ['SKU', 'COD SAP', 'CODIGO', 'SAP', 'NO'])), df_ped.columns[0])
-        c_cant_ped = next((c for c in df_ped.columns if any(x in str(c).upper() for x in ['PEDIDO', 'CANTIDAD', 'CANT', 'SOLICITADO'])), None)
+        c_cant_ped = next((c for c in df_ped.columns if any(x in str(c).upper() for x in ['PEDIDO', 'CANTIDAD', 'CANT'])), None)
         
         if c_cant_ped:
             for _, fila_p in df_ped.iterrows():
@@ -172,49 +215,47 @@ if f_p and f_s:
                     if cant_p > 0:
                         sku_p = str(fila_p[c_sku_ped]).strip().upper()
                         if sku_p not in ['0', '0.0', 'NAN']: pedido_dict[sku_p] = cant_p
-            st.success(f"✅ Pedido detectado: {len(pedido_dict)} SKUs encontrados.")
-    else:
-        txt_area = st.text_area("⌨️ Ingreso Manual (SKU:CANTIDAD, SKU:CANTIDAD...)")
-        if txt_area:
-            for it in txt_area.split(','):
-                if ':' in it:
-                    parts = it.split(':')
-                    pedido_dict[parts[0].strip().upper()] = int(re.sub(r'\D', '', parts[1])) if parts[1].strip().isdigit() else 1
-                else:
-                    pedido_dict[it.strip().upper()] = 1
+            st.success(f"📦 Pedido cargado: {len(pedido_dict)} SKUs")
 
-    if st.button("🚀 PROCESAR DISPONIBILIDAD") and pedido_dict:
+    txt_area = st.text_area("⌨️ Entrada rápida de códigos (SKU:CANTIDAD, ...)", placeholder="ej. CN9404211NA8:5, RN0800070NA8:1")
+    if txt_area:
+        for it in txt_area.split(','):
+            if ':' in it:
+                parts = it.split(':')
+                pedido_dict[parts[0].strip().upper()] = int(re.sub(r'\D', '', parts[1])) if parts[1].strip().isdigit() else 1
+            else:
+                pedido_dict[it.strip().upper()] = 1
+
+    if st.button("🚀 ANALIZAR DISPONIBILIDAD") and pedido_dict:
         c_sku_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['SKU', 'SAP', 'COD SAP'])), df_p.columns[0])
         c_desc_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['DESCRIPCION', 'GOODS', 'NOMBRE'])), df_p.columns[1])
         c_sku_s = next((c for c in df_s.columns if any(x in str(c).upper() for x in ['NUMERO', 'SKU', 'ARTICULO'])), df_s.columns[0])
         c_dsp = next((c for c in df_s.columns if 'DISPONIBLE' in str(c).upper()), df_s.columns[-1])
 
         resultados = []
-        for cod_f, cant_f in pedido_dict.items():
-            mask = df_p[c_sku_p].astype(str).str.contains(re.escape(cod_f), case=False, na=False)
+        for sku_ped, cant_ped in pedido_dict.items():
+            mask = df_p[c_sku_p].astype(str).str.contains(re.escape(sku_ped), case=False, na=False)
             variantes = df_p[mask]
             for _, fila in variantes.iterrows():
-                info = fila.to_dict()
-                info['PEDIDO'] = cant_f
-                sku_real = str(info[c_sku_p]).strip()
+                info = fila.to_dict(); info['PEDIDO'] = cant_ped; sku_real = str(info[c_sku_p]).strip()
                 m_stk = df_s[df_s[c_sku_s].astype(str).str.strip() == sku_real]
                 info['Disp'] = int(corregir_numero(m_stk[c_dsp].iloc[0] if not m_stk.empty else 0))
                 info['P_UNIT'] = corregir_numero(info[col_p_sel])
-                info['ALERTA'] = "OK" if info['Disp'] >= cant_f else "SIN STOCK"
+                info['ALERTA'] = "OK" if info['Disp'] >= cant_ped else "SIN STOCK"
                 resultados.append(info)
 
         if resultados:
             df_res = pd.DataFrame(resultados).drop_duplicates()
-            def color_alerta(row): return ['background-color: #FF3333; color: black; font-weight: bold' if row.ALERTA == "SIN STOCK" else '' for _ in row]
-            st.subheader("📋 Balance de Disponibilidad Real")
-            st.dataframe(df_res[[c_sku_p, c_desc_p, 'P_UNIT', 'PEDIDO', 'Disp', 'ALERTA']].style.apply(color_alerta, axis=1).format({'P_UNIT': 'S/. {:.2f}'}))
+            def style_row(row): return ['background-color: #FF3333; color: black; font-weight: bold' if row.ALERTA == "SIN STOCK" else 'color: #1C2833' for _ in row]
+            st.subheader("📋 Resultados del Balance")
+            st.dataframe(df_res[[c_sku_p, c_desc_p, 'P_UNIT', 'PEDIDO', 'Disp', 'ALERTA']].style.apply(style_row, axis=1).format({'P_UNIT': 'S/. {:.2f}'}))
             
-            with st.expander("📥 Exportar Cotización"):
+            with st.expander("📥 Generar Documento Comercial"):
                 c1, c2 = st.columns(2)
-                n_cli = c1.text_input("Cliente", value="CLIENTE NUEVO")
-                r_cli = c2.text_input("RUC/DNI", value="-")
+                n_cli = c1.text_input("Razon Social / Cliente", value="CLIENTE NUEVO")
+                r_cli = c2.text_input("RUC / DNI", value="-")
                 items_ok = df_res[df_res.ALERTA == "OK"]
                 if not items_ok.empty:
                     final_list = [{'sku': r[c_sku_p], 'desc': r[c_desc_p], 'cant': r['PEDIDO'], 'p_u': r['P_UNIT'], 'total': r['PEDIDO']*r['P_UNIT']} for _, r in items_ok.iterrows()]
-                    st.download_button("📥 Descargar Excel Naranja", generar_excel_web(final_list, n_cli, r_cli), f"Cotizacion_{n_cli}.xlsx")
+                    st.download_button("📥 DESCARGAR COTIZACIÓN EXCEL", generar_excel_web(final_list, n_cli, r_cli), f"QTC_{n_cli}_{datetime.now().strftime('%d%m')}.xlsx")
 
