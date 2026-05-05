@@ -4,101 +4,108 @@ import re, io, os, time
 from datetime import datetime
 from PIL import Image
 
-# --- 1. CONFIGURACIÓN E INTERFAZ (CSS DE ALTO CONTRASTE) ---
+# --- 1. CONFIGURACIÓN DE PÁGINA ---
 try:
     img_logo = Image.open("logo.png")
     st.set_page_config(page_title="QTC Smart Sales", page_icon=img_logo, layout="wide")
 except:
-    st.set_page_config(page_title="QTC Smart Sales", page_icon="💼", layout="wide")
+    st.set_page_config(page_title="QTC Smart Sales", page_icon="📊", layout="wide")
 
+# --- 2. CSS ESTILO "DARK STUDIO" (SIN TECHO BLANCO) ---
 st.markdown("""
     <style>
-    /* ELIMINAR BARRAS Y ESPACIOS BLANCOS SUPERIORES */
-    [data-testid="stHeader"] {display: none !important;}
+    /* ELIMINACIÓN TOTAL DE CABECERAS Y ESPACIOS */
+    header, [data-testid="stHeader"] {display: none !important;}
     .block-container {padding-top: 0rem !important; padding-bottom: 0rem !important;}
     
-    /* FONDO DE LA APP */
-    .stApp { background-color: #f0f2f6; }
+    /* FONDO DEL ESTUDIO */
+    .stApp {
+        background-color: #111b21; /* Azul muy oscuro casi negro */
+    }
 
-    /* TARJETA DE LOGIN */
+    /* TARJETA DE LOGIN ELEGANTE */
     .login-card {
-        background-color: white !important;
-        padding: 40px;
-        border-radius: 20px;
-        box-shadow: 0px 10px 40px rgba(0,0,0,0.15);
-        border-top: 8px solid #F79646;
+        background-color: #ffffff;
+        padding: 50px;
+        border-radius: 25px;
+        box-shadow: 0px 20px 50px rgba(0,0,0,0.5);
         text-align: center;
-        margin-top: 50px;
+        border: 1px solid rgba(255,255,255,0.1);
+        margin-top: 10vh; /* Centrado vertical */
     }
 
-    /* FORZAR COLOR DE LETRAS (AZUL OSCURO) */
-    .login-card h1, .login-card h2, .login-card p, .stTextInput label {
-        color: #1C2833 !important;
-        font-family: 'Segoe UI', Tahoma, sans-serif;
-    }
+    /* TEXTOS DE ALTO CONTRASTE */
+    .login-card h1 { color: #F79646 !important; font-family: 'Inter', sans-serif; font-weight: 800; margin-bottom: 10px; }
+    .login-card h3 { color: #1C2833 !important; font-family: 'Inter', sans-serif; font-weight: 400; margin-bottom: 30px; }
     
-    /* INPUTS CON BORDE VISIBLE */
+    /* INPUTS ESTILO MODERNO */
+    .stTextInput label { color: #1C2833 !important; font-weight: 600 !important; font-size: 14px !important; }
     .stTextInput input {
+        border-radius: 12px !important;
+        border: 2px solid #eaebed !important;
+        padding: 12px !important;
         color: #1C2833 !important;
-        background-color: #fff !important;
-        border: 2px solid #dcdde1 !important;
-        border-radius: 10px !important;
     }
 
-    /* BOTÓN QTC NARANJA */
+    /* BOTÓN PREMIUM */
     .stButton>button {
-        background-color: #F79646 !important;
+        background: linear-gradient(135deg, #F79646 0%, #E67E22 100%) !important;
         color: white !important;
         border-radius: 12px !important;
-        height: 3.5em !important;
+        height: 3.8em !important;
         width: 100% !important;
         font-weight: bold !important;
         border: none !important;
         font-size: 16px !important;
-        box-shadow: 0px 4px 10px rgba(247, 150, 70, 0.3);
+        transition: 0.3s all ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
-    .stButton>button:hover { background-color: #e67e22 !important; }
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0px 10px 20px rgba(247, 150, 70, 0.4);
+    }
 
-    /* SIDEBAR OSCURO */
-    [data-testid="stSidebar"] { background-color: #1C2833 !important; }
-    [data-testid="stSidebar"] * { color: white !important; }
+    /* SIDEBAR */
+    [data-testid="stSidebar"] { background-color: #1c2833 !important; }
+    [data-testid="stSidebar"] * { color: #ffffff !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. SISTEMA DE ACCESO ---
+# --- 3. LÓGICA DE ACCESO ---
 if "auth" not in st.session_state:
     st.session_state.auth = False
 
 if not st.session_state.auth:
+    # Contenedor central
     _, col_central, _ = st.columns([1, 1.2, 1])
     
     with col_central:
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
         try:
-            st.image("logo.png", width=220)
+            st.image("logo.png", width=240)
         except:
-            st.markdown("<h1 style='font-size: 50px; margin-bottom: 0;'>QTC</h1>", unsafe_allow_html=True)
+            st.markdown("<h1>QTC</h1>", unsafe_allow_html=True)
         
-        st.markdown("<h2 style='margin-top: 0;'>Panel de Operaciones</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='font-size: 14px;'>Ingrese credenciales para continuar</p>", unsafe_allow_html=True)
+        st.markdown("<h3>Sistema de Inteligencia Comercial</h3>", unsafe_allow_html=True)
         
-        user = st.text_input("Usuario")
-        pw = st.text_input("Contraseña", type="password")
+        user = st.text_input("Usuario Corporativo", placeholder="nombre.apellido")
+        pw = st.text_input("Contraseña", type="password", placeholder="••••••••")
         
         st.write("<br>", unsafe_allow_html=True)
         
-        if st.button("ACCEDER AHORA"):
+        if st.button("Sincronizar y Entrar"):
             if user == "admin" and pw == "qtc2026": 
                 st.session_state.auth = True
-                st.success("✅ Acceso correcto")
+                st.success("✅ Conexión establecida")
                 time.sleep(0.5)
                 st.rerun()
             else:
-                st.error("Credenciales incorrectas")
+                st.error("❌ Credenciales incorrectas")
         st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
-# --- 3. LÓGICA DE DATOS (PROTECCIÓN CONTRA ERRORES) ---
+# --- 4. FUNCIONES DE INGENIERÍA DE DATOS ---
 def corregir_numero(valor):
     if pd.isna(valor) or str(valor).strip() in ["", "0", "0.0"]: return 0.0
     s = str(valor).upper().replace('S/', '').replace('$', '').replace(' ', '').strip()
@@ -131,7 +138,7 @@ def generar_excel_web(items, cliente, ruc):
     writer.close()
     return output.getvalue()
 
-# --- 4. PANEL PRINCIPAL ---
+# --- 5. PANEL DE CONTROL (POST-LOGIN) ---
 with st.sidebar:
     try: st.image("logo.png", use_container_width=True)
     except: st.title("💎 QTC PRO")
@@ -169,11 +176,12 @@ if f_p and f_s:
     
     if f_ped:
         df_ped = limpiar_df(pd.read_excel(f_ped))
-        c_sku_ped_list = [c for c in df_ped.columns if any(x in str(c).upper() for x in ['SKU', 'COD SAP', 'CODIGO', 'SAP'])]
-        c_cant_ped_list = [c for c in df_ped.columns if any(x in str(c).upper() for x in ['PEDIDO', 'CANTIDAD', 'CANT'])]
+        # BUSQUEDA SEGURA DE COLUMNAS
+        c_sku_ped_matches = [c for c in df_ped.columns if any(x in str(c).upper() for x in ['SKU', 'COD SAP', 'CODIGO', 'SAP'])]
+        c_cant_ped_matches = [c for c in df_ped.columns if any(x in str(c).upper() for x in ['PEDIDO', 'CANTIDAD', 'CANT'])]
         
-        if c_sku_ped_list and c_cant_ped_list:
-            c_s_p = c_sku_ped_list[0]; c_c_p = c_cant_ped_list[0]
+        if c_sku_ped_matches and c_cant_ped_matches:
+            c_s_p = c_sku_ped_matches[0]; c_c_p = c_cant_ped_matches[0]
             for _, fila in df_ped.iterrows():
                 if pd.notna(fila[c_c_p]) and corregir_numero(fila[c_c_p]) > 0:
                     pedido_dict[str(fila[c_s_p]).strip().upper()] = int(corregir_numero(fila[c_c_p]))
@@ -187,7 +195,7 @@ if f_p and f_s:
             else: pedido_dict[it.strip().upper()] = 1
 
     if st.button("🚀 ANALIZAR STOCK"):
-        # USAMOS [0] PARA EVITAR ERROR 'DATAFRAME' OBJECT HAS NO STR
+        # USAMOS INDEXADO [0] PARA EVITAR ERROR 'DATAFRAME' OBJECT
         c_sku_p = [c for c in df_p.columns if any(x in str(c).upper() for x in ['SKU', 'SAP', 'COD SAP'])][0]
         c_desc_p = [c for c in df_p.columns if any(x in str(c).upper() for x in ['DESCRIPCION', 'GOODS', 'NOMBRE'])][0]
         c_sku_s = [c for c in df_s.columns if any(x in str(c).upper() for x in ['NUMERO', 'SKU', 'ARTICULO'])][0]
@@ -200,10 +208,7 @@ if f_p and f_s:
             for _, fila in variantes.iterrows():
                 info = fila.to_dict(); info['PEDIDO'] = cant_ped; sku_real = str(info[c_sku_p]).strip()
                 m_stk = df_s[df_s[c_sku_s].astype(str).str.strip() == sku_real]
-                if not m_stk.empty:
-                    info['Disp'] = int(corregir_numero(m_stk[c_dsp].iloc[0]))
-                else:
-                    info['Disp'] = 0
+                info['Disp'] = int(corregir_numero(m_stk[c_dsp].iloc[0] if not m_stk.empty else 0))
                 info['P_UNIT'] = corregir_numero(info[col_p_sel])
                 info['ALERTA'] = "OK" if info['Disp'] >= cant_ped else "SIN STOCK"
                 resultados.append(info)
@@ -219,3 +224,4 @@ if f_p and f_s:
                 if not items_ok.empty:
                     f_list = [{'sku': r[c_sku_p], 'desc': r[c_desc_p], 'cant': r['PEDIDO'], 'p_u': r['P_UNIT'], 'total': r['PEDIDO']*r['P_UNIT']} for _, r in items_ok.iterrows()]
                     st.download_button("📥 DESCARGAR EXCEL", generar_excel_web(f_list, n_cli, "-"), f"Coti_{n_cli}.xlsx")
+
