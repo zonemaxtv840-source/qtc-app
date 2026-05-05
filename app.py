@@ -1,54 +1,87 @@
-import streamlit as st
-import pandas as pd
-import re, io, os
-from datetime import datetime
-from PIL import Image
-
-# --- CONFIGURACIÓN DE LA PÁGINA (LOGO EN LA PESTAÑA) ---
-# Intentamos cargar el logo para la pestaña
-try:
-    img_logo = Image.open("logo.png")
-    st.set_page_config(page_title="QTC Smart Sales", page_icon=img_logo, layout="wide")
-except:
-    st.set_page_config(page_title="QTC Smart Sales", page_icon="💼", layout="wide")
-
-# --- ESTILO VISUAL CORPORATIVO ---
+# --- ESTILO VISUAL CORPORATIVO AVANZADO ---
 st.markdown("""
     <style>
-    .stButton>button { background-color: #F79646; color: white; border-radius: 8px; height: 3em; width: 100%; font-weight: bold; }
-    .stDownloadButton>button { background-color: #28a745; color: white; border-radius: 8px; width: 100%; }
-    [data-testid="stSidebar"] { background-color: #1C2833; color: white; }
-    .stDataFrame { border: 1px solid #F79646; border-radius: 5px; }
-    /* Ajuste para el logo en la barra lateral */
-    [data-testid="stSidebarNav"] { padding-top: 20px; }
+    /* Fondo de la página */
+    .stApp {
+        background-color: #f8f9fa;
+    }
+    
+    /* Botones principales */
+    .stButton>button {
+        background-color: #F79646;
+        color: white;
+        border-radius: 10px;
+        height: 3.5em;
+        width: 100%;
+        font-weight: bold;
+        border: none;
+        transition: 0.3s;
+        box-shadow: 0px 4px 15px rgba(247, 150, 70, 0.3);
+    }
+    .stButton>button:hover {
+        background-color: #e67e22;
+        box-shadow: 0px 6px 20px rgba(247, 150, 70, 0.5);
+        transform: translateY(-2px);
+    }
+
+    /* Contenedor del Login */
+    .login-box {
+        background-color: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0px 10px 30px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    
+    /* Personalización de Sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #1C2833;
+    }
+    
+    /* Inputs */
+    .stTextInput>div>div>input {
+        border-radius: 10px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- LOGO EN LA BARRA LATERAL ---
-with st.sidebar:
-    try:
-        st.image("logo.png", use_container_width=True)
-    except:
-        st.write("💼 **QTC Pro**")
-    st.divider()
-
-# --- 1. SISTEMA DE LOGIN ---
+# --- 1. SISTEMA DE LOGIN PROFESIONAL ---
 if "auth" not in st.session_state:
     st.session_state.auth = False
 
 if not st.session_state.auth:
-    st.title("🔐 Acceso Corporativo QTC")
-    col_log1, col_log2 = st.columns(2)
-    with col_log1:
-        user = st.text_input("Usuario")
-        pw = st.text_input("Contraseña", type="password")
-        if st.button("Ingresar"):
+    # Centrar el login usando columnas
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        st.markdown('<div class="login-box">', unsafe_allow_html=True)
+        
+        # Mostrar logo central si existe
+        try:
+            st.image("logo.png", width=180)
+        except:
+            st.title("💼 QTC PRO")
+            
+        st.markdown("<h2 style='color: #1C2833; margin-bottom: 20px;'>Iniciar Sesión</h2>", unsafe_allow_html=True)
+        
+        user = st.text_input("Usuario", placeholder="Ingresa tu usuario")
+        pw = st.text_input("Contraseña", type="password", placeholder="••••••••")
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        if st.button("ACCEDER AL PANEL"):
             if user == "admin" and pw == "qtc2026": 
                 st.session_state.auth = True
+                st.success("✅ Acceso concedido")
+                time.sleep(1) # Pequeña pausa para efecto visual
                 st.rerun()
             else:
                 st.error("❌ Credenciales incorrectas")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: gray; font-size: 12px; margin-top: 20px;'>© 2026 Que Tal Compra - Business Intelligence Unit</p>", unsafe_allow_html=True)
     st.stop()
+
 
 # --- 2. FUNCIONES LÓGICAS ---
 def corregir_numero(valor):
