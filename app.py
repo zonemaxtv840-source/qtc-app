@@ -4,53 +4,43 @@ import re, io, os, time
 from datetime import datetime
 from PIL import Image
 
-# --- CONFIGURACIÓN DE PÁGINA (FAVICON) ---
+# --- CONFIGURACIÓN DE PÁGINA ---
 try:
     img_logo = Image.open("logo.png")
     st.set_page_config(page_title="QTC Smart Sales", page_icon=img_logo, layout="wide")
 except:
     st.set_page_config(page_title="QTC Smart Sales", page_icon="💼", layout="wide")
 
-# --- INTERFAZ PREMIUM (CSS PERSONALIZADO) ---
+# --- INTERFAZ PREMIUM (CSS) ---
 st.markdown("""
     <style>
-    /* Fondo con degradado corporativo */
     .stApp {
         background: linear-gradient(135deg, #1C2833 0%, #2C3E50 100%);
         color: white;
     }
 
-    /* Caja de Login tipo 'Glassmorphism' */
     .login-container {
-        background: rgba(255, 255, 255, 0.95);
-        padding: 50px;
-        border-radius: 25px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        background: rgba(255, 255, 255, 0.98);
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.5);
         max-width: 450px;
         margin: auto;
-        border: 1px solid rgba(255,255,255,0.2);
     }
 
-    /* Ajuste del título */
     .login-title {
         color: #1C2833;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: 'Segoe UI', sans-serif;
         font-weight: 700;
-        letter-spacing: -1px;
-        margin-bottom: 30px;
+        margin-bottom: 25px;
         text-align: center;
     }
 
     /* Estilo de los inputs */
     .stTextInput input {
-        border-radius: 12px !important;
-        border: 2px solid #eee !important;
-        padding: 12px !important;
-        transition: 0.3s;
-    }
-    .stTextInput input:focus {
-        border-color: #F79646 !important;
-        box-shadow: 0 0 10px rgba(247, 150, 70, 0.2) !important;
+        border-radius: 10px !important;
+        border: 1px solid #ddd !important;
+        padding: 10px !important;
     }
 
     /* Botón QTC Premium */
@@ -58,79 +48,72 @@ st.markdown("""
         background: linear-gradient(90deg, #F79646 0%, #E67E22 100%) !important;
         color: white !important;
         border: none !important;
-        padding: 15px !important;
-        border-radius: 12px !important;
-        font-size: 16px !important;
+        padding: 12px !important;
+        border-radius: 10px !important;
         font-weight: 700 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1px !important;
         transition: all 0.3s ease !important;
-        cursor: pointer !important;
     }
+    
     .stButton>button:hover {
-        transform: translateY(-3px) !important;
-        box-shadow: 0 10px 20px rgba(247, 150, 70, 0.4) !important;
-        filter: brightness(1.1) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 5px 15px rgba(247, 150, 70, 0.4) !important;
     }
 
-    /* Sidebar Estilizado */
+    /* Sidebar */
     [data-testid="stSidebar"] {
         background-color: #111b21 !important;
-        border-right: 1px solid #2d3436;
     }
-
-    /* Footer */
+    
     .footer {
         position: fixed;
         bottom: 10px;
         width: 100%;
         text-align: center;
-        font-size: 12px;
-        color: rgba(255,255,255,0.5);
+        font-size: 11px;
+        color: rgba(255,255,255,0.4);
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 1. SISTEMA DE LOGIN PREMIUM ---
+# --- 1. SISTEMA DE LOGIN ---
 if "auth" not in st.session_state:
     st.session_state.auth = False
 
 if not st.session_state.auth:
-    # Centrado vertical y horizontal total
     st.write("<br><br><br>", unsafe_allow_html=True)
     _, central_col, _ = st.columns([1, 2, 1])
     
     with central_col:
         st.markdown('<div class="login-container">', unsafe_allow_html=True)
         
-        # Logo Centrado
         try:
-            st.image("logo.png", width=220)
+            st.image("logo.png", width=200)
         except:
             st.markdown("<h1 style='text-align:center; color:#F79646;'>QTC</h1>", unsafe_allow_html=True)
         
-        st.markdown("<h2 class="login-title">Control de Acceso</h2>", unsafe_allow_html=True)
+        # FIX DE SINTAXIS AQUÍ (Usando comillas simples para la clase)
+        st.markdown("<h2 class='login-title'>Control de Acceso</h2>", unsafe_allow_html=True)
         
-        user = st.text_input("Usuario Corporativo", placeholder="ej. cristhian.leon")
+        user = st.text_input("Usuario Corporativo", placeholder="Nombre de usuario")
         pw = st.text_input("Contraseña", type="password", placeholder="••••••••")
         
         st.write("<br>", unsafe_allow_html=True)
         
-        if st.button("Ingresar al Sistema"):
+        if st.button("INGRESAR AL PANEL"):
             if user == "admin" and pw == "qtc2026": 
                 st.session_state.auth = True
-                st.balloons()
-                time.sleep(1)
+                st.success("Acceso exitoso")
+                time.sleep(0.5)
                 st.rerun()
             else:
-                st.error("Credenciales no válidas")
+                st.error("Credenciales incorrectas")
         
         st.markdown('</div>', unsafe_allow_html=True)
     
-    st.markdown('<div class="footer">© 2026 Grupo QTC - Business Intelligence Unit | V.Premium</div>', unsafe_allow_html=True)
+    st.markdown('<div class="footer">© 2026 Grupo QTC - Business Intelligence Unit</div>', unsafe_allow_html=True)
     st.stop()
 
-# --- 2. FUNCIONES LÓGICAS (ESTABLES) ---
+# --- 2. FUNCIONES LÓGICAS ---
 def corregir_numero(valor):
     if pd.isna(valor) or str(valor).strip() in ["", "0", "0.0"]: return 0.0
     s = str(valor).upper().replace('S/', '').replace('$', '').replace(' ', '').strip()
@@ -177,7 +160,7 @@ with st.sidebar:
         st.session_state.auth = False
         st.rerun()
 
-st.title("📊 Panel de Inteligencia de Ventas")
+st.title("📊 Inteligencia de Ventas QTC")
 
 if f_p and f_s:
     df_p_raw = pd.read_excel(f_p)
@@ -204,7 +187,7 @@ if f_p and f_s:
     if f_ped:
         df_ped_raw = pd.read_excel(f_ped)
         df_ped = limpiar_cabeceras(df_ped_raw)
-        c_sku_ped = next((c for c in df_ped.columns if any(x in str(c).upper() for x in ['SKU', 'COD SAP', 'CODIGO', 'SAP', 'NO'])), df_ped.columns[0])
+        c_sku_ped = next((c for c in df_ped.columns if any(x in str(c).upper() for x in ['SKU', 'COD SAP', 'CODIGO', 'SAP', 'NO'])), df_ped.columns)
         c_cant_ped = next((c for c in df_ped.columns if any(x in str(c).upper() for x in ['PEDIDO', 'CANTIDAD', 'CANT'])), None)
         
         if c_cant_ped:
@@ -217,7 +200,7 @@ if f_p and f_s:
                         if sku_p not in ['0', '0.0', 'NAN']: pedido_dict[sku_p] = cant_p
             st.success(f"📦 Pedido cargado: {len(pedido_dict)} SKUs")
 
-    txt_area = st.text_area("⌨️ Entrada rápida de códigos (SKU:CANTIDAD, ...)", placeholder="ej. CN9404211NA8:5, RN0800070NA8:1")
+    txt_area = st.text_area("⌨️ Entrada rápida (SKU:CANTIDAD, ...)", placeholder="ej. CN9404211NA8:5, RN0800070NA8:1")
     if txt_area:
         for it in txt_area.split(','):
             if ':' in it:
@@ -227,9 +210,9 @@ if f_p and f_s:
                 pedido_dict[it.strip().upper()] = 1
 
     if st.button("🚀 ANALIZAR DISPONIBILIDAD") and pedido_dict:
-        c_sku_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['SKU', 'SAP', 'COD SAP'])), df_p.columns[0])
-        c_desc_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['DESCRIPCION', 'GOODS', 'NOMBRE'])), df_p.columns[1])
-        c_sku_s = next((c for c in df_s.columns if any(x in str(c).upper() for x in ['NUMERO', 'SKU', 'ARTICULO'])), df_s.columns[0])
+        c_sku_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['SKU', 'SAP', 'COD SAP'])), df_p.columns)
+        c_desc_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['DESCRIPCION', 'GOODS', 'NOMBRE'])), df_p.columns)
+        c_sku_s = next((c for c in df_s.columns if any(x in str(c).upper() for x in ['NUMERO', 'SKU', 'ARTICULO'])), df_s.columns)
         c_dsp = next((c for c in df_s.columns if 'DISPONIBLE' in str(c).upper()), df_s.columns[-1])
 
         resultados = []
@@ -247,15 +230,14 @@ if f_p and f_s:
         if resultados:
             df_res = pd.DataFrame(resultados).drop_duplicates()
             def style_row(row): return ['background-color: #FF3333; color: black; font-weight: bold' if row.ALERTA == "SIN STOCK" else 'color: #1C2833' for _ in row]
-            st.subheader("📋 Resultados del Balance")
+            st.subheader("📋 Balance de Disponibilidad")
             st.dataframe(df_res[[c_sku_p, c_desc_p, 'P_UNIT', 'PEDIDO', 'Disp', 'ALERTA']].style.apply(style_row, axis=1).format({'P_UNIT': 'S/. {:.2f}'}))
             
-            with st.expander("📥 Generar Documento Comercial"):
+            with st.expander("📥 Generar Cotización"):
                 c1, c2 = st.columns(2)
                 n_cli = c1.text_input("Razon Social / Cliente", value="CLIENTE NUEVO")
                 r_cli = c2.text_input("RUC / DNI", value="-")
                 items_ok = df_res[df_res.ALERTA == "OK"]
                 if not items_ok.empty:
                     final_list = [{'sku': r[c_sku_p], 'desc': r[c_desc_p], 'cant': r['PEDIDO'], 'p_u': r['P_UNIT'], 'total': r['PEDIDO']*r['P_UNIT']} for _, r in items_ok.iterrows()]
-                    st.download_button("📥 DESCARGAR COTIZACIÓN EXCEL", generar_excel_web(final_list, n_cli, r_cli), f"QTC_{n_cli}_{datetime.now().strftime('%d%m')}.xlsx")
-
+                    st.download_button("📥 DESCARGAR COTIZACIÓN EXCEL", generar_excel_web(final_list, n_cli, r_cli), f"Coti_QTC_{n_cli}.xlsx")
