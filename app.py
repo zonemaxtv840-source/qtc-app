@@ -2,9 +2,15 @@ import streamlit as st
 import pandas as pd
 import re, io, os
 from datetime import datetime
+from PIL import Image
 
-# --- CONFIGURACIÓN DE LA PÁGINA ---
-st.set_page_config(page_title="QTC PRO - Consola de Ventas", layout="wide")
+# --- CONFIGURACIÓN DE LA PÁGINA (LOGO EN LA PESTAÑA) ---
+# Intentamos cargar el logo para la pestaña
+try:
+    img_logo = Image.open("logo.png")
+    st.set_page_config(page_title="QTC Smart Sales", page_icon=img_logo, layout="wide")
+except:
+    st.set_page_config(page_title="QTC Smart Sales", page_icon="💼", layout="wide")
 
 # --- ESTILO VISUAL CORPORATIVO ---
 st.markdown("""
@@ -13,8 +19,18 @@ st.markdown("""
     .stDownloadButton>button { background-color: #28a745; color: white; border-radius: 8px; width: 100%; }
     [data-testid="stSidebar"] { background-color: #1C2833; color: white; }
     .stDataFrame { border: 1px solid #F79646; border-radius: 5px; }
+    /* Ajuste para el logo en la barra lateral */
+    [data-testid="stSidebarNav"] { padding-top: 20px; }
     </style>
     """, unsafe_allow_html=True)
+
+# --- LOGO EN LA BARRA LATERAL ---
+with st.sidebar:
+    try:
+        st.image("logo.png", use_container_width=True)
+    except:
+        st.write("💼 **QTC Pro**")
+    st.divider()
 
 # --- 1. SISTEMA DE LOGIN ---
 if "auth" not in st.session_state:
