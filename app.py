@@ -645,3 +645,117 @@ with tab_buscar:
         if st.button("➕ Agregar productos manualmente", use_container_width=True):
             lineas_agregadas = 0
             for line in texto_multiple.split('\n'):
+                line = line.strip()
+                if not line:
+                    continue
+                if ':' in line:
+                    parts = line.split(':')
+                    if len(parts) == 2:
+                        try:
+                            sku = parts[0].strip().upper()
+                            cantidad = int(parts[1].strip())
+                            if cantidad > 0:
+                                st.session_state.productos_seleccionados[sku] = st.session_state.productos_seleccionados.get(sku, 0) + cantidad
+                                lineas_agregadas += 1
+                        except:
+                            pass
+                elif line:
+                    st.session_state.productos_seleccionados[line.strip().upper()] = st.session_state.productos_seleccionados.get(line.strip().upper(), 0) + 1
+                    lineas_agregadas += 1
+            
+            if lineas_agregadas > 0:
+                st.success(f"✅ {lineas_agregadas} productos agregados! Total: {len(st.session_state.productos_seleccionados)}")
+                st.rerun()
+            else:
+                st.warning("No se agregaron productos. Usa formato SKU:CANTIDAD")
+        
+        # ==========================================
+        # Mostrar productos seleccionados
+        # ==========================================
+        if st.session_state.productos_seleccionados:
+            st.markdown("---")
+            st.markdown(f"### ✅ Productos seleccionados para cotizar ({len(st.session_state.productos_seleccionados)})")
+            
+            # Mostrar tabla editable de seleccionados
+            seleccionados_editables = []
+            for sku, cant in list(st.session_state.productos_seleccionados.items()):
+                col1, col2, col3 = st.columns([3, 1, 1])
+                with col1:
+                    st.markdown(f"`{sku}`")
+                with col2:
+                    nueva_cant = st.number_input(
+                        "Cant", 
+                        min_value=0, 
+                        max_value=999, 
+                        value=cant,
+                        key=f"edit_sel_{sku}",
+                        label_visibility="collapsed"
+                    )
+                with col3:
+                    if st.button("🗑️", key=f"del_sel_{sku}"):
+                        nueva_cant = 0
+                
+                if nueva_cant > 0:
+                    seleccionados_editables.append({'SKU': sku, 'Cantidad': nueva_cant})
+                st.divider()
+            
+            # Actualizar seleccionados
+            st.session_state.productos_seleccionados = {item['SKU']: item['Cantidad'] for item in seleccionados_editables}
+            
+            if st.session_state.productos_seleccionados:
+                df_seleccionados = pd.DataFrame([
+                    {'SKU': sku, 'Cantidad': cant} 
+                    for sku, cant in st.session_state.productos_seleccionados.items()
+                ])
+                st.dataframe(df_seleccionados, use_container_width=True)
+                
+                if st.button("📋 TRANSFERIR A COTIZACIÓN", use_container_width=True, type="primary"):
+                    st.session_state.skus_transferidos = st.session_state.productos_seleccionados.copy()
+                    st.session_state.productos_seleccionados = {}
+                    st.success(f"✅ {len(st.session_state.skus_transferidos)} productos transferidos!")
+                    st.info("👉 Ve a la pestaña 'Cotización' y haz clic en PROCESAR")
+            else:
+                st.info("Todos los productos han sido eliminados")
+
+# ============================================
+# TAB 3: DASHBOARD
+# ============================================
+with tab_dashboard:
+    st.markdown("### 📊 Dashboard de Ventas")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{st.session_state.get('cotizaciones', 0)}</div>
+            <div class="metric-label">📄 Cotizaciones Generadas</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{st.session_state.get('total_prods', 0)}</div>
+            <div class="metric-label">🌿 Productos Cotizados</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        total_catalogos = len(st.session_state.get('catalogos', []))
+        total_stocks = len(st.session_state.get('stocks', []))
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{total_catalogos}</div>
+            <div class="metric-label">📚 Catálogos</div>
+            <div style="font-size:0.8rem;">+ {total_stocks} stocks</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    st.markdown("### 📋 Resumen de Catálogos Cargados")
+    if st.session_state.catalogos:
+        for cat in st.session_state.catalogos:
+            st.markdown(f"- **{cat['nombre']}**")
+    else:
+        st.info("No hay catálogos cargados")
+
+st.markdown("---")
+st.markdown("*💚 QTC Smart Sales Pro - Búsqueda Múltiple de Productos*")
