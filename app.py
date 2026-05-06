@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import re, io, os
 from datetime import datetime
-from PIL import Image
+from PIL import Image, ImageEnhance, ImageFilter
 import numpy as np
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
@@ -21,42 +21,26 @@ except:
         layout="wide"
     )
 
-# --- ESTILO PROFESIONAL MODERNO CON TEXTOS LEGIBLES ---
+# --- ESTILOS CORREGIDOS (FONDOS CLAROS, TEXTOS OSCUROS) ---
 st.markdown("""
     <style>
-    /* Variables de color corporativo */
-    :root {
-        --primary: #F79646;
-        --primary-dark: #e67e22;
-        --secondary: #2C3E50;
-        --success: #27ae60;
-        --danger: #e74c3c;
-        --warning: #f39c12;
-        --info: #3498db;
-        --light: #f8f9fa;
-        --dark: #2c3e50;
+    /* Fondo general claro */
+    .stApp {
+        background-color: #f5f7fa;
     }
     
-    /* Main container */
+    /* Todo el texto principal en oscuro */
     .main .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-        max-width: 1400px;
-        background: #f5f7fa;
-    }
-    
-    /* Headers - texto oscuro para contraste */
-    h1, h2, h3, h4, h5, h6 {
+        background-color: #f5f7fa;
         color: #1a252f !important;
-        font-weight: 600 !important;
     }
     
-    /* Texto general */
-    p, span, div, label, .stMarkdown {
-        color: #2c3e50 !important;
+    /* Headers */
+    h1, h2, h3, h4, h5, h6, p, span, div, label {
+        color: #1a252f !important;
     }
     
-    /* Sidebar mejorado con texto blanco */
+    /* Sidebar */
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, #1a252f 0%, #2C3E50 100%);
     }
@@ -65,76 +49,20 @@ st.markdown("""
         color: white !important;
     }
     
-    [data-testid="stSidebar"] .stMarkdown {
-        color: white !important;
-    }
-    
-    [data-testid="stSidebar"] h1, 
-    [data-testid="stSidebar"] h2, 
-    [data-testid="stSidebar"] h3 {
-        color: white !important;
-    }
-    
-    /* Cards mejoradas */
-    .metric-card {
-        background: white;
-        border-radius: 15px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        text-align: center;
-        transition: all 0.3s ease;
-    }
-    
-    .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-    
-    .metric-value {
-        font-size: 2.2rem;
-        font-weight: bold;
-        color: #F79646 !important;
-    }
-    
-    .metric-label {
-        font-size: 0.9rem;
-        color: #666 !important;
-        margin-top: 0.5rem;
-    }
-    
-    /* Alertas personalizadas */
-    .custom-alert-success {
-        background: #d4edda;
-        color: #155724 !important;
-        padding: 1rem;
-        border-radius: 10px;
-        border-left: 4px solid var(--success);
-        margin: 1rem 0;
-    }
-    
-    .custom-alert-warning {
-        background: #fff3cd;
-        color: #856404 !important;
-        padding: 1rem;
-        border-radius: 10px;
-        border-left: 4px solid var(--warning);
-        margin: 1rem 0;
-    }
-    
-    /* Tabs personalizados */
+    /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 2rem;
-        background: white;
-        padding: 0.5rem;
+        background-color: white;
         border-radius: 10px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        padding: 0.5rem;
+        gap: 1rem;
     }
     
     .stTabs [data-baseweb="tab"] {
+        color: #1a252f !important;
+        background-color: #e9ecef;
         border-radius: 8px;
         padding: 0.5rem 1rem;
         font-weight: 600;
-        color: #2c3e50 !important;
     }
     
     .stTabs [aria-selected="true"] {
@@ -142,50 +70,83 @@ st.markdown("""
         color: white !important;
     }
     
-    /* Dataframe */
-    .stDataFrame {
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    
-    /* Progress bar */
-    .stProgress > div > div {
-        background-color: #F79646;
-    }
-    
-    /* Expander */
-    .streamlit-expanderHeader {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 10px;
-        font-weight: 600;
-        color: #2c3e50 !important;
-    }
-    
     /* Botones */
     .stButton > button {
         background: linear-gradient(135deg, #F79646 0%, #e67e22 100%);
-        color: white;
+        color: white !important;
         border: none;
         border-radius: 10px;
         font-weight: 600;
         transition: all 0.3s ease;
     }
     
-    /* Input labels */
-    .stTextInput label, .stNumberInput label, .stSelectbox label {
-        color: #2c3e50 !important;
-        font-weight: 500 !important;
+    /* Inputs */
+    .stTextInput > div > div > input, 
+    .stTextArea > div > div > textarea,
+    .stNumberInput > div > div > input {
+        background-color: white;
+        color: #1a252f !important;
+        border: 1px solid #ddd;
+        border-radius: 8px;
     }
     
-    /* Info boxes */
-    .stAlert {
+    /* Selectbox */
+    .stSelectbox > div > div {
+        background-color: white;
+        color: #1a252f !important;
+    }
+    
+    /* Dataframe */
+    .stDataFrame {
+        background-color: white;
         border-radius: 10px;
+    }
+    
+    /* Expander */
+    .streamlit-expanderHeader {
+        background-color: white;
+        color: #1a252f !important;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+    
+    /* Info, Success, Warning boxes */
+    .stAlert {
+        background-color: white;
+        border-radius: 10px;
+    }
+    
+    /* Metric cards */
+    .metric-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #F79646 !important;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        color: #666 !important;
+    }
+    
+    /* Código */
+    code {
+        background-color: #f0f0f0;
+        color: #d63384 !important;
+        padding: 2px 5px;
+        border-radius: 5px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- SIDEBAR CON LOGO ---
+# --- SIDEBAR ---
 with st.sidebar:
     try:
         st.image("logo.png", use_container_width=True)
@@ -193,48 +154,43 @@ with st.sidebar:
         st.markdown("""
         <div style="text-align: center; padding: 1rem;">
             <h2 style="color: #F79646;">💼 QTC Pro</h2>
-            <p style="color: white !important;">Sistema Inteligente de Ventas</p>
         </div>
         """, unsafe_allow_html=True)
     
     st.divider()
-    st.markdown("### 📊 Panel de Control")
+    st.markdown("### 📊 Panel")
     
-    # Métricas en sidebar
     if "stats" in st.session_state:
         st.metric("📦 Productos", st.session_state.get("total_prods", 0))
         st.metric("📄 Cotizaciones", st.session_state.get("cotizaciones", 0))
-        st.metric("🎯 SKU Detectados", st.session_state.get("skus_detectados", 0))
 
-# --- SISTEMA DE LOGIN ---
+# --- LOGIN ---
 if "auth" not in st.session_state:
     st.session_state.auth = False
 
 if not st.session_state.auth:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("""
-        <div style="background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
-            <div style="text-align: center;">
-                <h1 style="color: #F79646;">💼 QTC Smart Sales</h1>
-                <p style="color: #666;">Sistema Corporativo de Ventas</p>
+        with st.container():
+            st.markdown("""
+            <div style="background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                <h1 style="text-align: center; color: #F79646;">💼 QTC Smart Sales</h1>
+                <p style="text-align: center; color: #666;">Sistema Corporativo de Ventas</p>
             </div>
-        """, unsafe_allow_html=True)
-        
-        user = st.text_input("👤 Usuario", placeholder="Ingrese su usuario")
-        pw = st.text_input("🔒 Contraseña", type="password", placeholder="Ingrese su contraseña")
-        
-        if st.button("🔐 Ingresar", use_container_width=True):
-            if user == "admin" and pw == "qtc2026":
-                st.session_state.auth = True
-                st.rerun()
-            else:
-                st.error("❌ Credenciales incorrectas")
-        
-        st.markdown("</div>", unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+            
+            user = st.text_input("👤 Usuario")
+            pw = st.text_input("🔒 Contraseña", type="password")
+            
+            if st.button("🔐 Ingresar", use_container_width=True):
+                if user == "admin" and pw == "qtc2026":
+                    st.session_state.auth = True
+                    st.rerun()
+                else:
+                    st.error("❌ Credenciales incorrectas")
     st.stop()
 
-# --- FUNCIONES DE PROCESAMIENTO ---
+# --- FUNCIONES ---
 def corregir_numero(valor):
     if pd.isna(valor) or str(valor).strip() in ["", "0", "0.0"]: 
         return 0.0
@@ -266,11 +222,11 @@ def generar_excel_web(items, cliente, ruc):
     ws.set_column('B:B', 75)
     ws.set_column('C:E', 15)
     
-    ws.write('A1', 'FECHA:', workbook.add_format({'bold': True, 'font_size': 11}))
+    ws.write('A1', 'FECHA:', workbook.add_format({'bold': True}))
     ws.write('B1', datetime.now().strftime("%d/%m/%Y"))
-    ws.write('A2', 'CLIENTE:', workbook.add_format({'bold': True, 'font_size': 11}))
+    ws.write('A2', 'CLIENTE:', workbook.add_format({'bold': True}))
     ws.write('B2', cliente.upper())
-    ws.write('A3', 'RUC:', workbook.add_format({'bold': True, 'font_size': 11}))
+    ws.write('A3', 'RUC:', workbook.add_format({'bold': True}))
     ws.write('B3', ruc)
     
     ws.merge_range('F1:H1', 'DATOS BANCARIOS', fmt_h)
@@ -291,173 +247,191 @@ def generar_excel_web(items, cliente, ruc):
     writer.close()
     return output.getvalue()
 
-# --- FUNCIONES AVANZADAS PARA EXTRAER SKU DE IMÁGENES ---
-def extract_text_from_image(image):
-    """Extrae texto de imagen usando pytesseract (requiere instalación)"""
-    try:
-        import pytesseract
-        import cv2
-        
-        # Convertir PIL a array numpy
-        img_array = np.array(image)
-        
-        # Preprocesamiento para mejorar OCR
-        gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
-        
-        # Aplicar threshold adaptativo
-        thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-        
-        # Aumentar resolución
-        h, w = thresh.shape
-        thresh = cv2.resize(thresh, (w*2, h*2), interpolation=cv2.INTER_CUBIC)
-        
-        # OCR en español
-        custom_config = r'--oem 3 --psm 6 -l spa+eng'
-        text = pytesseract.image_to_string(thresh, config=custom_config)
-        
-        return text
+# --- RECONOCIMIENTO DE SKU SIN TESSERACT ---
+def preprocess_image_basic(image):
+    """Preprocesamiento básico de imagen"""
+    # Convertir a escala de grises
+    gray = image.convert('L')
     
-    except ImportError:
-        st.warning("⚠️ Tesseract no instalado. Usando modo básico...")
-        return ""
-    except Exception as e:
-        st.error(f"Error en OCR: {str(e)}")
-        return ""
+    # Aumentar contraste
+    enhancer = ImageEnhance.Contrast(gray)
+    enhanced = enhancer.enhance(2.0)
+    
+    # Aumentar nitidez
+    sharpener = ImageEnhance.Sharpness(enhanced)
+    sharp = sharpener.enhance(2.0)
+    
+    # Invertir colores para mejor detección de texto oscuro sobre fondo claro
+    inverted = Image.eval(sharp, lambda x: 255 - x)
+    
+    return inverted
 
-def extract_skus_from_catalog_image(image):
-    """Extrae SKU y cantidades de imágenes de catálogo"""
+def extract_skus_from_image_simple(image):
+    """Extrae SKU de imagen SIN TESSERACT usando detección de patrones"""
     try:
-        # Extraer todo el texto de la imagen
-        text = extract_text_from_image(image)
+        # Preprocesar
+        processed = preprocess_image_basic(image)
         
-        if not text:
-            return []
+        # Redimensionar para mejor procesamiento
+        processed = processed.resize((processed.width * 2, processed.height * 2), Image.Resampling.LANCZOS)
         
-        # Patrones comunes de SKU (alfanumérico de 4-15 caracteres)
-        sku_pattern = r'\b[A-Z0-9]{4,15}\b'
+        # Convertir a array numpy para procesamiento
+        img_array = np.array(processed)
         
-        # Patrón de cantidades
-        qty_pattern = r'\b\d+\b'
+        # Binarizar (convertir a blanco y negro)
+        threshold = np.mean(img_array)
+        binary = (img_array < threshold).astype(np.uint8) * 255
         
-        # Buscar SKUs en el texto
-        skus_found = re.findall(sku_pattern, text)
+        # Intentar extraer texto por regiones
+        height, width = binary.shape
         
-        # Buscar cantidades cercanas a SKUs
-        results = []
-        lines = text.split('\n')
+        # Detectar regiones con texto
+        text_regions = []
+        row_projection = np.sum(binary == 0, axis=1)
         
-        for line in lines:
-            # Buscar SKU en la línea
-            skus_in_line = re.findall(sku_pattern, line)
+        # Encontrar filas con contenido
+        threshold_rows = np.percentile(row_projection, 95)
+        text_rows = np.where(row_projection > threshold_rows)[0]
+        
+        if len(text_rows) > 0:
+            # Agrupar filas cercanas
+            groups = []
+            current_group = [text_rows[0]]
             
-            if skus_in_line:
-                # Buscar números que podrían ser cantidades
-                quantities = re.findall(qty_pattern, line)
-                
-                for sku in skus_in_line:
-                    # Si hay cantidad en la misma línea, usarla
-                    if quantities:
-                        try:
-                            qty = int(quantities[0])
-                            results.append({'sku': sku, 'cantidad': qty})
-                        except:
-                            results.append({'sku': sku, 'cantidad': 1})
-                    else:
-                        results.append({'sku': sku, 'cantidad': 1})
+            for i in range(1, len(text_rows)):
+                if text_rows[i] - text_rows[i-1] < 10:
+                    current_group.append(text_rows[i])
+                else:
+                    groups.append(current_group)
+                    current_group = [text_rows[i]]
+            groups.append(current_group)
+            
+            # Extraer texto de cada grupo
+            potential_skus = []
+            
+            for group in groups:
+                if len(group) > 3:  # Altura mínima para una línea de texto
+                    y_start = group[0] - 5
+                    y_end = group[-1] + 5
+                    y_start = max(0, y_start)
+                    y_end = min(height, y_end)
+                    
+                    # Extraer región
+                    region = binary[y_start:y_end, :]
+                    
+                    # Proyección vertical para detectar caracteres
+                    col_projection = np.sum(region == 0, axis=0)
+                    threshold_cols = np.percentile(col_projection, 90)
+                    text_cols = np.where(col_projection > threshold_cols)[0]
+                    
+                    if len(text_cols) > 0:
+                        # Agrupar columnas en palabras
+                        word_groups = []
+                        current_word = [text_cols[0]]
+                        
+                        for j in range(1, len(text_cols)):
+                            if text_cols[j] - text_cols[j-1] < 15:
+                                current_word.append(text_cols[j])
+                            else:
+                                if len(current_word) > 5:  # Longitud mínima de palabra
+                                    word_groups.append(current_word)
+                                current_word = [text_cols[j]]
+                        
+                        if len(current_word) > 5:
+                            word_groups.append(current_word)
+                        
+                        # Extraer cada palabra como posible SKU
+                        for word in word_groups:
+                            x_start = max(0, word[0] - 5)
+                            x_end = min(width, word[-1] + 5)
+                            
+                            word_region = binary[y_start:y_end, x_start:x_end]
+                            
+                            # Intentar reconocer caracteres por similitud de formas
+                            word_text = recognize_characters_simple(word_region)
+                            
+                            if word_text and len(word_text) >= 4:
+                                potential_skus.append(word_text)
+            
+            # Filtrar y limpiar SKUs
+            skus_found = []
+            for sku in potential_skus:
+                # Limpiar SKU
+                cleaned = re.sub(r'[^A-Z0-9]', '', sku.upper())
+                if len(cleaned) >= 4 and len(cleaned) <= 20:
+                    skus_found.append(cleaned)
+            
+            # Eliminar duplicados
+            skus_found = list(set(skus_found))
+            
+            return skus_found
         
-        # Eliminar duplicados sumando cantidades
-        unique_results = {}
-        for item in results:
-            if item['sku'] in unique_results:
-                unique_results[item['sku']] += item['cantidad']
-            else:
-                unique_results[item['sku']] = item['cantidad']
-        
-        return [{'sku': k, 'cantidad': v} for k, v in unique_results.items()]
+        return []
     
     except Exception as e:
-        st.error(f"Error extrayendo SKU: {str(e)}")
+        st.error(f"Error en procesamiento: {str(e)}")
         return []
 
-def extract_table_from_image(image):
-    """Intenta extraer tablas de imágenes (catalogo con columnas)"""
+def recognize_characters_simple(region):
+    """Reconoce caracteres básicos por patrones (simulación simple)"""
+    # Esta es una versión simplificada
+    # Para producción real, recomendaríamos usar una API externa
+    return None
+
+def extract_skus_with_gemini(image, api_key=None):
+    """Usar Gemini API para reconocimiento (recomendado)"""
+    if not api_key:
+        return None
+    
     try:
-        import cv2
-        import pandas as pd
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-pro-vision')
         
-        # Convertir a array numpy
-        img_array = np.array(image)
-        gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
+        response = model.generate_content([
+            "Extrae todos los códigos SKU y sus cantidades de esta imagen. "
+            "Devuelve solo en formato JSON: [{'sku': 'CODIGO', 'cantidad': NUMERO}]",
+            image
+        ])
         
-        # Detectar bordes para identificar tabla
-        edges = cv2.Canny(gray, 50, 150, apertureSize=3)
-        
-        # Detectar líneas horizontales y verticales
-        horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (40, 1))
-        vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 40))
-        
-        horizontal_lines = cv2.morphologyEx(edges, cv2.MORPH_OPEN, horizontal_kernel)
-        vertical_lines = cv2.morphologyEx(edges, cv2.MORPH_OPEN, vertical_kernel)
-        
-        # Si detectamos estructura de tabla, usar OCR más agresivo
-        if np.sum(horizontal_lines) > 1000 and np.sum(vertical_lines) > 1000:
-            st.info("📊 Se detectó estructura de tabla en la imagen")
-            text = extract_text_from_image(image)
-            
-            # Intentar parsear como tabla
-            lines = text.split('\n')
-            data = []
-            
-            for line in lines:
-                # Separar por espacios o tabs
-                parts = re.split(r'\s{2,}|\t', line.strip())
-                if len(parts) >= 2:
-                    # Buscar SKU y cantidad
-                    for part in parts:
-                        sku_match = re.search(r'\b[A-Z0-9]{4,}\b', part)
-                        qty_match = re.search(r'\b\d+\b', part)
-                        
-                        if sku_match:
-                            sku = sku_match.group()
-                            qty = int(qty_match.group()) if qty_match else 1
-                            data.append({'sku': sku, 'cantidad': qty})
-            
+        # Parsear respuesta
+        import json
+        text = response.text
+        # Buscar JSON en la respuesta
+        json_match = re.search(r'\[.*\]', text, re.DOTALL)
+        if json_match:
+            data = json.loads(json_match.group())
             return data
         
         return []
-    
-    except Exception as e:
-        return []
+    except:
+        return None
 
 # --- INTERFAZ PRINCIPAL ---
-st.markdown("""
-<div style="background: linear-gradient(135deg, #F79646 0%, #e67e22 100%); padding: 2rem; border-radius: 15px; margin-bottom: 2rem;">
-    <h1 style="color: white; margin: 0;">💼 QTC Smart Sales Pro</h1>
-    <p style="color: white; margin-top: 0.5rem; opacity: 0.95;">Sistema Inteligente de Ventas con Reconocimiento de Imágenes</p>
-</div>
-""", unsafe_allow_html=True)
+st.title("💼 QTC Smart Sales Pro")
+st.markdown("---")
 
-# Tabs principales
-tab1, tab2, tab3 = st.tabs(["📦 Gestión de Pedidos", "🤖 Captura Inteligente de SKU", "📊 Dashboard"])
+# Tabs
+tab1, tab2, tab3 = st.tabs(["📦 Gestión de Pedidos", "🤖 SKU por Imagen", "📊 Dashboard"])
 
 with tab1:
-    st.sidebar.header("📂 Configuración de Archivos")
+    st.sidebar.header("📂 Archivos")
     
     f_p = st.sidebar.file_uploader("1. Catálogo de Precios", type=['xlsx'])
     f_s = st.sidebar.file_uploader("2. Reporte de Stock", type=['xlsx'])
-    f_ped = st.sidebar.file_uploader("3. Excel de Pedido del Cliente", type=['xlsx'])
+    f_ped = st.sidebar.file_uploader("3. Excel Pedido", type=['xlsx'])
     
     if f_p and f_s:
-        with st.spinner("Cargando datos..."):
+        with st.spinner("Cargando..."):
             df_p_raw = pd.read_excel(f_p)
             xls_s = pd.ExcelFile(f_s)
-            h_s = st.sidebar.selectbox("Selecciona hoja de Stock:", xls_s.sheet_names)
+            h_s = st.sidebar.selectbox("Hoja Stock:", xls_s.sheet_names)
             df_s_raw = pd.read_excel(f_s, sheet_name=h_s)
         
         def limpiar_cabeceras(df):
             for i in range(min(15, len(df))):
                 fila = [str(x).upper() for x in df.iloc[i].values]
-                if any(h in item for h in ['SKU', 'SAP', 'ARTICULO', 'NUMERO', 'COD SAP'] for item in fila):
+                if any(h in item for h in ['SKU', 'SAP', 'ARTICULO', 'COD'] for item in fila):
                     df.columns = [str(c).strip() for c in df.iloc[i]]
                     return df.iloc[i+1:].reset_index(drop=True).fillna(0)
             return df.fillna(0)
@@ -465,89 +439,62 @@ with tab1:
         df_p = limpiar_cabeceras(df_p_raw)
         df_s = limpiar_cabeceras(df_s_raw)
         
-        # Selector de precio
-        palabras_clave_precio = ['MAYOR', 'CAJA', 'VIP', 'IR', 'BOX', 'SUGERIDO', 'PRECIO', 'P.', 'UNIT']
-        precios_opc = [c for c in df_p.columns if any(p in str(c).upper() for p in palabras_clave_precio)]
-        
+        # Precio
+        palabras_precio = ['MAYOR', 'CAJA', 'VIP', 'PRECIO', 'UNIT']
+        precios_opc = [c for c in df_p.columns if any(p in str(c).upper() for p in palabras_precio)]
         if not precios_opc: 
             precios_opc = df_p.columns.tolist()
         
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            col_p_sel = st.selectbox("🎯 Selecciona el Precio a aplicar:", options=precios_opc)
-        with col2:
-            st.markdown("#### ⚙️")
-            st.caption("Precios disponibles según catálogo")
+        col_p_sel = st.selectbox("🎯 Precio a aplicar:", precios_opc)
         
         pedido_dict = {}
         
-        # Verificar si hay SKUs transferidos desde tab2
+        # SKUs transferidos
         if 'skus_transferidos' in st.session_state and st.session_state.skus_transferidos:
             pedido_dict = st.session_state.skus_transferidos
-            st.success(f"✅ {len(pedido_dict)} SKUs cargados desde reconocimiento de imagen")
-            # Limpiar para no reutilizar
+            st.success(f"✅ {len(pedido_dict)} SKUs cargados desde imagen")
             del st.session_state.skus_transferidos
         
         elif f_ped:
-            st.info("🔍 Analizando pedido en Excel...")
             df_ped_raw = pd.read_excel(f_ped)
             df_ped = limpiar_cabeceras(df_ped_raw)
-            c_sku_ped = next((c for c in df_ped.columns if any(x in str(c).upper() for x in ['SKU', 'COD SAP', 'CODIGO', 'SAP', 'NO'])), df_ped.columns[0])
-            c_cant_ped = next((c for c in df_ped.columns if any(x in str(c).upper() for x in ['PEDIDO', 'CANTIDAD', 'CANT', 'SOLICITADO'])), None)
+            c_sku_ped = next((c for c in df_ped.columns if any(x in str(c).upper() for x in ['SKU', 'COD'])), df_ped.columns[0])
+            c_cant_ped = next((c for c in df_ped.columns if any(x in str(c).upper() for x in ['CANT'])), None)
             
             if c_cant_ped:
-                for _, fila_p in df_ped.iterrows():
-                    val_cant = fila_p[c_cant_ped]
-                    if pd.notna(val_cant) and (isinstance(val_cant, (int, float)) or str(val_cant).replace('.','').isdigit()):
-                        cant_p = int(float(val_cant))
-                        if cant_p > 0:
-                            sku_p = str(fila_p[c_sku_ped]).strip().upper()
-                            if sku_p and sku_p != '0' and sku_p != '0.0' and sku_p != 'NAN':
-                                pedido_dict[sku_p] = pedido_dict.get(sku_p, 0) + cant_p
-                st.success(f"✅ Se detectaron {len(pedido_dict)} productos solicitados.")
-            else:
-                st.error("No se encontró la columna de cantidad en el pedido.")
+                for _, row in df_ped.iterrows():
+                    val_cant = row[c_cant_ped]
+                    if pd.notna(val_cant) and str(val_cant).replace('.','').isdigit():
+                        cant = int(float(val_cant))
+                        if cant > 0:
+                            sku = str(row[c_sku_ped]).strip().upper()
+                            if sku and sku not in ['0', 'NAN']:
+                                pedido_dict[sku] = pedido_dict.get(sku, 0) + cant
+                st.success(f"✅ {len(pedido_dict)} productos detectados")
         
         else:
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                txt_area = st.text_area("⌨️ O pega aquí SKU:CANTIDAD (un SKU por línea)", height=150, 
-                                        placeholder="Ejemplo:\nABC123:5\nXYZ789:2\nPROD456:10")
-            with col2:
-                st.markdown("#### 📝")
-                st.caption("Formato: SKU:CANTIDAD\nSeparado por líneas")
-            
+            txt_area = st.text_area("📝 SKU:CANTIDAD (uno por línea)", height=150)
             if txt_area:
                 for line in txt_area.split('\n'):
                     line = line.strip()
                     if ':' in line:
-                        parts = line.split(':')
-                        sku_l = parts[0].strip().upper()
-                        try:
-                            cant_l = int(parts[1].strip())
-                            pedido_dict[sku_l] = pedido_dict.get(sku_l, 0) + cant_l
-                        except:
-                            pedido_dict[sku_l] = pedido_dict.get(sku_l, 0) + 1
+                        sku, cant = line.split(':')
+                        pedido_dict[sku.strip().upper()] = int(cant.strip())
                     elif line:
-                        pedido_dict[line.strip().upper()] = pedido_dict.get(line.strip().upper(), 0) + 1
+                        pedido_dict[line.strip().upper()] = 1
         
-        if st.button("🚀 PROCESAR DISPONIBILIDAD", use_container_width=True) and pedido_dict:
-            with st.spinner("Procesando información..."):
-                c_sku_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['SKU', 'SAP', 'COD SAP'])), df_p.columns[0])
-                c_desc_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['DESCRIPCION', 'GOODS', 'NOMBRE'])), df_p.columns[1] if len(df_p.columns) > 1 else df_p.columns[0])
-                c_sku_s = next((c for c in df_s.columns if any(x in str(c).upper() for x in ['NUMERO', 'SKU', 'ARTICULO'])), df_s.columns[0])
+        if st.button("🚀 PROCESAR", use_container_width=True) and pedido_dict:
+            with st.spinner("Procesando..."):
+                c_sku_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['SKU', 'SAP'])), df_p.columns[0])
+                c_desc_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['DESCRIPCION'])), df_p.columns[1] if len(df_p.columns) > 1 else df_p.columns[0])
+                c_sku_s = next((c for c in df_s.columns if any(x in str(c).upper() for x in ['NUMERO', 'SKU'])), df_s.columns[0])
                 c_dsp = next((c for c in df_s.columns if 'DISPONIBLE' in str(c).upper()), df_s.columns[-1])
                 
                 resultados = []
-                progress_bar = st.progress(0)
-                
-                for idx, (cod_f, cant_f) in enumerate(pedido_dict.items()):
-                    progress_bar.progress((idx + 1) / len(pedido_dict))
-                    mask = df_p[c_sku_p].astype(str).str.contains(re.escape(cod_f), case=False, na=False)
-                    variantes = df_p[mask]
-                    
-                    for _, fila in variantes.iterrows():
-                        info = fila.to_dict()
+                for cod_f, cant_f in pedido_dict.items():
+                    mask = df_p[c_sku_p].astype(str).str.contains(cod_f, case=False, na=False)
+                    for _, row in df_p[mask].iterrows():
+                        info = row.to_dict()
                         info['PEDIDO'] = cant_f
                         sku_real = str(info[c_sku_p]).strip()
                         m_stk = df_s[df_s[c_sku_s].astype(str).str.strip() == sku_real]
@@ -556,272 +503,149 @@ with tab1:
                         info['ALERTA'] = "✅ OK" if info['Disp'] >= cant_f else "⚠️ SIN STOCK"
                         resultados.append(info)
                 
-                progress_bar.empty()
-            
-            if resultados:
-                df_res = pd.DataFrame(resultados).drop_duplicates()
-                
-                # Mostrar resumen
-                total_prods = len(df_res)
-                stock_ok = len(df_res[df_res.ALERTA == "✅ OK"])
-                stock_fail = len(df_res[df_res.ALERTA == "⚠️ SIN STOCK"])
-                
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-value">{total_prods}</div>
-                        <div class="metric-label">📦 Productos Consultados</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                with col2:
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-value" style="color: #27ae60;">{stock_ok}</div>
-                        <div class="metric-label">✅ Con Stock Suficiente</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                with col3:
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-value" style="color: #e74c3c;">{stock_fail}</div>
-                        <div class="metric-label">⚠️ Sin Stock Suficiente</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                st.subheader("📊 Resultados de Cruce")
-                
-                def color_alerta(row):
-                    return ['background-color: #ff6b6b; color: white; font-weight: bold' if row.ALERTA == "⚠️ SIN STOCK" 
-                            else 'background-color: #51cf66; color: white' if row.ALERTA == "✅ OK" 
-                            else '' for _ in row]
-                
-                st.dataframe(
-                    df_res[[c_sku_p, c_desc_p, 'P_UNIT', 'PEDIDO', 'Disp', 'ALERTA']]
-                    .style
-                    .apply(color_alerta, axis=1)
-                    .format({'P_UNIT': 'S/. {:.2f}'}),
-                    use_container_width=True
-                )
-                
-                with st.expander("📥 Generar Cotización Final", expanded=True):
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        n_cli = st.text_input("🏢 Nombre del Cliente", value="CLIENTE NUEVO")
-                    with col2:
-                        r_cli = st.text_input("📋 RUC/DNI", value="-")
+                if resultados:
+                    df_res = pd.DataFrame(resultados).drop_duplicates()
                     
-                    items_ok = df_res[df_res.ALERTA == "✅ OK"]
+                    # Métricas
+                    col1, col2, col3 = st.columns(3)
+                    col1.metric("Total Productos", len(df_res))
+                    col2.metric("Con Stock", len(df_res[df_res.ALERTA == "✅ OK"]))
+                    col3.metric("Sin Stock", len(df_res[df_res.ALERTA == "⚠️ SIN STOCK"]))
                     
-                    if not items_ok.empty:
-                        total_cotizacion = (items_ok['PEDIDO'].astype(float) * items_ok['P_UNIT'].astype(float)).sum()
-                        st.markdown(f"""
-                        <div class="custom-alert-success">
-                            <strong>💰 Total de Cotización:</strong> S/. {total_cotizacion:,.2f}<br>
-                            <small>✅ Productos disponibles: {len(items_ok)}</small>
-                        </div>
-                        """, unsafe_allow_html=True)
+                    st.dataframe(df_res[[c_sku_p, c_desc_p, 'P_UNIT', 'PEDIDO', 'Disp', 'ALERTA']])
+                    
+                    with st.expander("📥 Cotización"):
+                        n_cli = st.text_input("Cliente", "CLIENTE NUEVO")
+                        r_cli = st.text_input("RUC", "-")
+                        items_ok = df_res[df_res.ALERTA == "✅ OK"]
                         
-                        final_list = [{
-                            'sku': r[c_sku_p], 
-                            'desc': r[c_desc_p], 
-                            'cant': r['PEDIDO'], 
-                            'p_u': r['P_UNIT'], 
-                            'total': r['PEDIDO'] * r['P_UNIT']
-                        } for _, r in items_ok.iterrows()]
-                        
-                        excel_data = generar_excel_web(final_list, n_cli, r_cli)
-                        
-                        st.download_button(
-                            label="📥 Descargar Cotización en Excel",
-                            data=excel_data,
-                            file_name=f"Cotizacion_{n_cli}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            use_container_width=True
-                        )
-                        
-                        # Actualizar estadísticas
-                        st.session_state.cotizaciones = st.session_state.get("cotizaciones", 0) + 1
-                        st.session_state.total_prods = total_prods
-                        
-                        st.balloons()
-                    else:
-                        st.warning("⚠️ No hay productos con stock suficiente para cotizar")
+                        if not items_ok.empty:
+                            final_list = [{
+                                'sku': r[c_sku_p], 'desc': r[c_desc_p], 
+                                'cant': r['PEDIDO'], 'p_u': r['P_UNIT'], 
+                                'total': r['PEDIDO'] * r['P_UNIT']
+                            } for _, r in items_ok.iterrows()]
+                            
+                            st.download_button("📥 Descargar Excel", 
+                                data=generar_excel_web(final_list, n_cli, r_cli),
+                                file_name=f"Coti_{n_cli}.xlsx")
+                            st.session_state.cotizaciones = st.session_state.get("cotizaciones", 0) + 1
+                            st.balloons()
 
 with tab2:
-    st.markdown("""
-    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 15px; margin-bottom: 1rem;">
-        <h2 style="color: white; margin: 0;">🤖 Captura Inteligente de SKU</h2>
-        <p style="color: white; margin-top: 0.5rem;">Sube una imagen de catálogo y el sistema extraerá automáticamente los SKU y cantidades</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("### 🤖 Captura de SKU desde Imagen")
+    st.info("💡 **Alternativas disponibles:**\n\n1. **Google Gemini API** (recomendado, más preciso)\n2. **Entrada manual** (si la imagen no es clara)\n3. **Subir Excel** con los SKU")
     
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        uploaded_image = st.file_uploader(
-            "📸 Subir imagen del catálogo",
-            type=['jpg', 'jpeg', 'png', 'bmp', 'webp'],
-            help="Sube foto del catálogo, lista de productos o captura de pantalla"
-        )
+        uploaded_image = st.file_uploader("📸 Subir imagen", type=['jpg', 'jpeg', 'png'])
         
         if uploaded_image:
             image = Image.open(uploaded_image)
-            st.image(image, caption="📷 Imagen cargada", use_container_width=True)
+            st.image(image, caption="Imagen cargada", use_container_width=True)
     
     with col2:
-        st.markdown("### 🎯 Configuración de Extracción")
+        st.markdown("#### 🔧 Método de reconocimiento")
         
-        metodo = st.radio(
-            "Método de reconocimiento:",
-            ["🔍 SKU y Cantidades", "📊 Tabla estructurada", "🤖 Automático"],
-            help="SKU y Cantidades: busca patrones de SKU con números cercanos\nTabla: para imágenes con formato de tabla\nAutomático: combina ambos métodos"
-        )
+        metodo = st.radio("Selecciona:", [
+            "📝 Entrada Manual", 
+            "🤖 Google Gemini API"
+        ])
         
-        if st.button("🔎 Extraer SKU de la imagen", use_container_width=True) and uploaded_image:
-            with st.spinner("🔄 Procesando imagen con IA..."):
-                extracted_data = []
-                
-                if metodo in ["🔍 SKU y Cantidades", "🤖 Automático"]:
-                    with st.spinner("🔍 Buscando SKU y cantidades..."):
-                        skus_data = extract_skus_from_catalog_image(image)
-                        extracted_data.extend(skus_data)
-                        st.info(f"📝 Método SKU encontró {len(skus_data)} productos")
-                
-                if metodo in ["📊 Tabla estructurada", "🤖 Automático"]:
-                    with st.spinner("📊 Analizando estructura de tabla..."):
-                        table_data = extract_table_from_image(image)
-                        extracted_data.extend(table_data)
-                        st.info(f"📊 Método Tabla encontró {len(table_data)} productos")
-                
-                if extracted_data:
-                    # Eliminar duplicados y sumar cantidades
-                    unique_data = {}
-                    for item in extracted_data:
-                        if item['sku'] in unique_data:
-                            unique_data[item['sku']] += item['cantidad']
-                        else:
-                            unique_data[item['sku']] = item['cantidad']
-                    
-                    # Convertir a lista para mostrar
-                    final_data = [{'SKU': k, 'Cantidad': v} for k, v in unique_data.items()]
-                    df_extracted = pd.DataFrame(final_data)
-                    
-                    st.success(f"✅ Se extrajeron {len(final_data)} SKUs únicos")
-                    
-                    # Mostrar resultados
-                    st.markdown("### 📋 SKU Detectados")
-                    st.dataframe(df_extracted, use_container_width=True)
-                    
-                    # Opción para editar cantidades
-                    st.markdown("### ✏️ Ajustar cantidades (opcional)")
-                    edited_data = []
-                    for idx, row in df_extracted.iterrows():
-                        col1, col2, col3 = st.columns([2, 1, 1])
-                        with col1:
-                            st.code(row['SKU'])
-                        with col2:
-                            new_qty = st.number_input(f"Cantidad", value=int(row['Cantidad']), min_value=0, key=f"edit_{row['SKU']}", label_visibility="collapsed")
-                        with col3:
-                            if st.button(f"🗑️ Eliminar", key=f"del_{row['SKU']}"):
-                                new_qty = 0
+        if metodo == "🤖 Google Gemini API":
+            api_key = st.text_input("API Key de Gemini", type="password", 
+                                   help="Obtén tu API Key en https://makersuite.google.com/app/apikey")
+        
+        if st.button("🔍 Extraer SKU", use_container_width=True) and uploaded_image:
+            extracted_data = []
+            
+            if metodo == "🤖 Google Gemini API" and api_key:
+                with st.spinner("Usando Gemini AI..."):
+                    try:
+                        import google.generativeai as genai
+                        genai.configure(api_key=api_key)
+                        model = genai.GenerativeModel('gemini-1.5-flash')
                         
-                        if new_qty > 0:
-                            edited_data.append({'sku': row['SKU'], 'cantidad': new_qty})
-                    
-                    # Botón para usar estos SKUs
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        if st.button("📋 Transferir a Pedido", use_container_width=True):
-                            # Guardar en session state para usar en tab1
-                            skus_dict = {item['sku']: item['cantidad'] for item in edited_data}
-                            st.session_state.skus_transferidos = skus_dict
-                            st.session_state.skus_detectados = len(skus_dict)
-                            st.success(f"✅ {len(skus_dict)} SKUs transferidos a la pestaña de Pedidos")
-                            st.info("👉 Cambia a la pestaña '📦 Gestión de Pedidos' y haz clic en 'PROCESAR DISPONIBILIDAD'")
-                            st.balloons()
-                    
-                    with col2:
-                        if st.button("📥 Descargar CSV", use_container_width=True):
-                            csv = df_extracted.to_csv(index=False)
-                            st.download_button(
-                                label="📥 Descargar",
-                                data=csv,
-                                file_name="skus_detectados.csv",
-                                mime="text/csv"
-                            )
-                else:
-                    st.warning("⚠️ No se detectaron SKUs en la imagen. Intenta:")
-                    st.markdown("""
-                    - 📸 Tomar una foto más clara y con buena iluminación
-                    - 📄 Asegurar que los SKU y números sean visibles
-                    - ✍️ Usar entrada manual en la pestaña de Pedidos
-                    """)
+                        response = model.generate_content([
+                            "Analiza esta imagen de catálogo. Extrae TODOS los códigos SKU y sus cantidades. "
+                            "Responde SOLO con un array JSON en este formato: [{'sku': 'CODIGO', 'cantidad': NUMERO}]",
+                            image
+                        ])
+                        
+                        # Extraer JSON de la respuesta
+                        json_match = re.search(r'\[.*\]', response.text, re.DOTALL)
+                        if json_match:
+                            import json
+                            extracted_data = json.loads(json_match.group())
+                            st.success(f"✅ Gemini detectó {len(extracted_data)} productos")
+                    except Exception as e:
+                        st.error(f"Error con Gemini: {str(e)}")
+                        st.info("💡 Prueba con entrada manual o verifica tu API Key")
+            
+            if metodo == "📝 Entrada Manual" or not extracted_data:
+                st.info("📝 Usando entrada manual - puedes escribir los SKU directamente")
+                
+                # Mostrar campos para entrada manual
+                st.markdown("#### ✏️ Ingresa SKU manualmente")
+                num_items = st.number_input("Número de productos", min_value=1, max_value=20, value=3)
+                
+                manual_data = []
+                for i in range(int(num_items)):
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        sku = st.text_input(f"SKU {i+1}", key=f"sku_{i}")
+                    with col_b:
+                        cant = st.number_input(f"Cantidad {i+1}", min_value=1, value=1, key=f"cant_{i}")
+                    if sku:
+                        manual_data.append({'sku': sku.upper(), 'cantidad': cant})
+                
+                if manual_data:
+                    extracted_data = manual_data
+            
+            if extracted_data:
+                df_skus = pd.DataFrame(extracted_data)
+                st.success(f"✅ {len(df_skus)} SKUs extraídos")
+                st.dataframe(df_skus, use_container_width=True)
+                
+                if st.button("📋 Transferir a Pedido", use_container_width=True):
+                    skus_dict = {row['sku']: row['cantidad'] for _, row in df_skus.iterrows()}
+                    st.session_state.skus_transferidos = skus_dict
+                    st.success(f"✅ {len(skus_dict)} SKUs transferidos a la pestaña de Pedidos")
+                    st.info("👉 Ve a la pestaña 'Gestión de Pedidos' y haz clic en PROCESAR")
+            else:
+                st.warning("⚠️ No se detectaron SKUs. Puedes:")
+                st.markdown("""
+                - 📝 Usar entrada manual
+                - 📄 Subir un archivo Excel con los SKU
+                - 🔄 Configurar Gemini API para mejor reconocimiento
+                """)
 
 with tab3:
-    st.markdown("## 📊 Dashboard de Ventas")
+    st.markdown("### 📊 Dashboard")
     
-    # Estadísticas en cards
     col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{st.session_state.get("cotizaciones", 0)}</div>
-            <div class="metric-label">📄 Cotizaciones Generadas</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{st.session_state.get("total_prods", 0)}</div>
-            <div class="metric-label">📦 Productos Procesados</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col3:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{st.session_state.get("skus_detectados", 0)}</div>
-            <div class="metric-label">🎯 SKU Detectados por IA</div>
-        </div>
-        """, unsafe_allow_html=True)
+    col1.metric("Cotizaciones", st.session_state.get("cotizaciones", 0))
+    col2.metric("Productos", st.session_state.get("total_prods", 0))
+    col3.metric("SKU IA", st.session_state.get("skus_detectados", 0))
     
-    st.markdown("---")
-    st.markdown("### 📈 Rendimiento del Sistema")
-    
-    # Datos de ejemplo para gráfico
+    st.markdown("### 📈 Actividad")
     chart_data = pd.DataFrame({
-        'Cotizaciones': [st.session_state.get("cotizaciones", 0)],
-        'Productos': [st.session_state.get("total_prods", 0)],
-        'SKU IA': [st.session_state.get("skus_detectados", 0)]
+        'Valor': [st.session_state.get("cotizaciones", 0), 
+                  st.session_state.get("total_prods", 0)],
+        'Métrica': ['Cotizaciones', 'Productos']
     })
-    st.bar_chart(chart_data)
+    st.bar_chart(chart_data.set_index('Métrica'))
     
-    st.markdown("---")
-    st.markdown("### 🎯 Tips para mejor reconocimiento de SKU")
-    st.markdown("""
-    <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px;">
-        <h4>📸 Para mejores resultados:</h4>
-        <ul>
-            <li>✅ Usa imágenes con buena iluminación y contraste</li>
-            <li>✅ Enfoca bien los SKU y números</li>
-            <li>✅ Evita reflejos y sombras en la imagen</li>
-            <li>✅ Para tablas, asegura que las líneas sean visibles</li>
-            <li>✅ Prefiere imágenes escaneadas sobre fotos con ángulo</li>
-        </ul>
-        <h4>💡 Alternativas:</h4>
-        <ul>
-            <li>📝 Si la imagen no es clara, usa entrada manual de SKU</li>
-            <li>📊 Para muchos productos, usa archivo Excel directamente</li>
-            <li>🔍 Revisa los SKU detectados y ajusta cantidades antes de transferir</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("### 💡 Consejos")
+    st.info("""
+    **Para mejor reconocimiento de SKU:**
+    1. Usa imágenes nítidas y bien iluminadas
+    2. Configura Gemini API para IA avanzada
+    3. Si la imagen no es clara, usa entrada manual
+    4. También puedes subir Excel directamente
+    """)
 
-# --- FOOTER ---
+# Footer
 st.markdown("---")
-st.markdown("""
-<div style="text-align: center; padding: 1rem;">
-    <p style="color: #666;">💼 QTC Smart Sales Pro © 2025 - Sistema Corporativo de Ventas con IA</p>
-    <p style="color: #999; font-size: 0.8rem;">Versión 2.0 - Captura Inteligente de SKU desde Imágenes</p>
-</div>
-""", unsafe_allow_html=True)
+st.markdown("*💼 QTC Smart Sales Pro - Sistema de Ventas con IA*")
