@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import re, io, os
 from datetime import datetime
-from PIL import Image, ImageEnhance, ImageFilter
+from PIL import Image
 import numpy as np
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
@@ -21,128 +21,207 @@ except:
         layout="wide"
     )
 
-# --- ESTILOS CORREGIDOS (FONDOS CLAROS, TEXTOS OSCUROS) ---
-st.markdown("""
+# ============================================
+# 🎨 COLORES VERDE FRESH
+# ============================================
+COLORES = {
+    "fondo_principal": "#f0fdf4",        # Verde muy claro (fondo)
+    "fondo_tarjetas": "#ffffff",         # Blanco
+    "texto_principal": "#1a3c34",        # Verde oscuro para texto
+    "color_primario": "#27ae60",         # Verde fresh principal
+    "color_primario_oscuro": "#219a52",  # Verde más oscuro
+    "color_hover": "#2ecc71",            # Verde más brillante para hover
+    "sidebar_fondo1": "#0d2818",         # Verde muy oscuro
+    "sidebar_fondo2": "#1a4a2e",         # Verde oscuro
+    "sidebar_texto": "#ffffff",          # Blanco
+    "exito": "#27ae60",
+    "error": "#e74c3c",
+    "advertencia": "#f39c12",
+    "texto_tab_inactivo": "#555555",     # Gris oscuro para tabs inactivos
+    "texto_tab_activo": "#ffffff",       # Blanco para tab activo
+}
+# ============================================
+
+# --- ESTILOS CON COLORES VERDE FRESH ---
+st.markdown(f"""
     <style>
-    /* Fondo general claro */
-    .stApp {
-        background-color: #f5f7fa;
-    }
+    /* Fondo general */
+    .stApp {{
+        background-color: {COLORES["fondo_principal"]};
+    }}
     
-    /* Todo el texto principal en oscuro */
-    .main .block-container {
-        background-color: #f5f7fa;
-        color: #1a252f !important;
-    }
+    .main .block-container {{
+        background-color: {COLORES["fondo_principal"]};
+        color: {COLORES["texto_principal"]} !important;
+    }}
     
-    /* Headers */
-    h1, h2, h3, h4, h5, h6, p, span, div, label {
-        color: #1a252f !important;
-    }
+    /* Headers y texto */
+    h1, h2, h3, h4, h5, h6 {{
+        color: {COLORES["texto_principal"]} !important;
+        font-weight: 600 !important;
+    }}
+    
+    p, span, div, label, .stMarkdown {{
+        color: {COLORES["texto_principal"]} !important;
+    }}
     
     /* Sidebar */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #1a252f 0%, #2C3E50 100%);
-    }
+    [data-testid="stSidebar"] {{
+        background: linear-gradient(180deg, {COLORES["sidebar_fondo1"]} 0%, {COLORES["sidebar_fondo2"]} 100%);
+    }}
     
-    [data-testid="stSidebar"] * {
-        color: white !important;
-    }
+    [data-testid="stSidebar"] * {{
+        color: {COLORES["sidebar_texto"]} !important;
+    }}
     
-    /* Tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        background-color: white;
-        border-radius: 10px;
+    [data-testid="stSidebar"] h1, 
+    [data-testid="stSidebar"] h2, 
+    [data-testid="stSidebar"] h3 {{
+        color: {COLORES["sidebar_texto"]} !important;
+    }}
+    
+    /* Tabs - MEJORADO PARA LEGIBILIDAD */
+    .stTabs [data-baseweb="tab-list"] {{
+        background-color: {COLORES["fondo_tarjetas"]};
+        border-radius: 12px;
         padding: 0.5rem;
-        gap: 1rem;
-    }
+        gap: 0.5rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }}
     
-    .stTabs [data-baseweb="tab"] {
-        color: #1a252f !important;
-        background-color: #e9ecef;
+    .stTabs [data-baseweb="tab"] {{
+        color: {COLORES["texto_tab_inactivo"]} !important;
+        background-color: #f5f5f5;
         border-radius: 8px;
-        padding: 0.5rem 1rem;
+        padding: 0.6rem 1.2rem;
         font-weight: 600;
-    }
+        transition: all 0.3s ease;
+    }}
     
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #F79646 0%, #e67e22 100%);
+    .stTabs [data-baseweb="tab"]:hover {{
+        background-color: {COLORES["color_primario"]};
         color: white !important;
-    }
+    }}
     
-    /* Botones */
-    .stButton > button {
-        background: linear-gradient(135deg, #F79646 0%, #e67e22 100%);
+    .stTabs [aria-selected="true"] {{
+        background: linear-gradient(135deg, {COLORES["color_primario"]} 0%, {COLORES["color_primario_oscuro"]} 100%);
+        color: {COLORES["texto_tab_activo"]} !important;
+        box-shadow: 0 2px 8px rgba(39,174,96,0.3);
+    }}
+    
+    /* Botones - VERDE CON TEXTO BLANCO */
+    .stButton > button {{
+        background: linear-gradient(135deg, {COLORES["color_primario"]} 0%, {COLORES["color_primario_oscuro"]} 100%);
         color: white !important;
         border: none;
         border-radius: 10px;
         font-weight: 600;
+        padding: 0.6rem 1rem;
         transition: all 0.3s ease;
-    }
+    }}
+    
+    .stButton > button:hover {{
+        background: linear-gradient(135deg, {COLORES["color_hover"]} 0%, {COLORES["color_primario"]} 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(39,174,96,0.4);
+        color: white !important;
+    }}
+    
+    /* Botón de descarga */
+    .stDownloadButton > button {{
+        background: linear-gradient(135deg, {COLORES["color_primario"]} 0%, {COLORES["color_primario_oscuro"]} 100%);
+        color: white !important;
+    }}
     
     /* Inputs */
     .stTextInput > div > div > input, 
     .stTextArea > div > div > textarea,
-    .stNumberInput > div > div > input {
-        background-color: white;
-        color: #1a252f !important;
-        border: 1px solid #ddd;
+    .stNumberInput > div > div > input {{
+        background-color: {COLORES["fondo_tarjetas"]};
+        color: {COLORES["texto_principal"]} !important;
+        border: 2px solid #e0e0e0;
         border-radius: 8px;
-    }
+        padding: 0.5rem;
+    }}
+    
+    .stTextInput > div > div > input:focus,
+    .stTextArea > div > div > textarea:focus {{
+        border-color: {COLORES["color_primario"]};
+        box-shadow: 0 0 0 2px rgba(39,174,96,0.1);
+    }}
     
     /* Selectbox */
-    .stSelectbox > div > div {
-        background-color: white;
-        color: #1a252f !important;
-    }
+    .stSelectbox > div > div {{
+        background-color: {COLORES["fondo_tarjetas"]};
+        color: {COLORES["texto_principal"]} !important;
+        border-radius: 8px;
+    }}
     
     /* Dataframe */
-    .stDataFrame {
-        background-color: white;
+    .stDataFrame {{
+        background-color: {COLORES["fondo_tarjetas"]};
         border-radius: 10px;
-    }
+        border: 1px solid #e0e0e0;
+    }}
     
     /* Expander */
-    .streamlit-expanderHeader {
-        background-color: white;
-        color: #1a252f !important;
+    .streamlit-expanderHeader {{
+        background-color: {COLORES["fondo_tarjetas"]};
+        color: {COLORES["texto_principal"]} !important;
         border-radius: 10px;
         font-weight: 600;
-    }
-    
-    /* Info, Success, Warning boxes */
-    .stAlert {
-        background-color: white;
-        border-radius: 10px;
-    }
+        border: 1px solid #e0e0e0;
+    }}
     
     /* Metric cards */
-    .metric-card {
-        background: white;
+    .metric-card {{
+        background: {COLORES["fondo_tarjetas"]};
         border-radius: 15px;
         padding: 1.5rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
         text-align: center;
-    }
+        transition: all 0.3s ease;
+        border: 1px solid rgba(39,174,96,0.2);
+    }}
     
-    .metric-value {
-        font-size: 2rem;
+    .metric-card:hover {{
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(39,174,96,0.15);
+        border-color: {COLORES["color_primario"]};
+    }}
+    
+    .metric-value {{
+        font-size: 2.2rem;
         font-weight: bold;
-        color: #F79646 !important;
-    }
+        color: {COLORES["color_primario"]} !important;
+    }}
     
-    .metric-label {
+    .metric-label {{
         font-size: 0.9rem;
-        color: #666 !important;
-    }
+        color: {COLORES["texto_principal"]} !important;
+        margin-top: 0.5rem;
+    }}
+    
+    /* Alertas */
+    .stAlert {{
+        border-radius: 10px;
+        border-left: 4px solid {COLORES["color_primario"]};
+    }}
     
     /* Código */
-    code {
-        background-color: #f0f0f0;
-        color: #d63384 !important;
-        padding: 2px 5px;
+    code {{
+        background-color: #e8f5e9;
+        color: {COLORES["color_primario_oscuro"]} !important;
+        padding: 2px 6px;
         border-radius: 5px;
-    }
+        font-weight: 500;
+    }}
+    
+    /* Expander content */
+    .streamlit-expanderContent {{
+        background-color: {COLORES["fondo_tarjetas"]};
+        border-radius: 0 0 10px 10px;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -151,9 +230,10 @@ with st.sidebar:
     try:
         st.image("logo.png", use_container_width=True)
     except:
-        st.markdown("""
+        st.markdown(f"""
         <div style="text-align: center; padding: 1rem;">
-            <h2 style="color: #F79646;">💼 QTC Pro</h2>
+            <h2 style="color: {COLORES["color_primario"]};">💼 QTC Pro</h2>
+            <p style="color: white !important;">Sistema Verde Fresh</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -161,7 +241,7 @@ with st.sidebar:
     st.markdown("### 📊 Panel")
     
     if "stats" in st.session_state:
-        st.metric("📦 Productos", st.session_state.get("total_prods", 0))
+        st.metric("🌿 Productos", st.session_state.get("total_prods", 0))
         st.metric("📄 Cotizaciones", st.session_state.get("cotizaciones", 0))
 
 # --- LOGIN ---
@@ -172,10 +252,10 @@ if not st.session_state.auth:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         with st.container():
-            st.markdown("""
-            <div style="background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
-                <h1 style="text-align: center; color: #F79646;">💼 QTC Smart Sales</h1>
-                <p style="text-align: center; color: #666;">Sistema Corporativo de Ventas</p>
+            st.markdown(f"""
+            <div style="background: {COLORES["fondo_tarjetas"]}; padding: 2rem; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                <h1 style="text-align: center; color: {COLORES["color_primario"]};">💚 QTC Smart Sales</h1>
+                <p style="text-align: center; color: #666;">Sistema Verde Fresh</p>
             </div>
             """, unsafe_allow_html=True)
             
@@ -190,7 +270,7 @@ if not st.session_state.auth:
                     st.error("❌ Credenciales incorrectas")
     st.stop()
 
-# --- FUNCIONES ---
+# --- FUNCIONES (igual que antes) ---
 def corregir_numero(valor):
     if pd.isna(valor) or str(valor).strip() in ["", "0", "0.0"]: 
         return 0.0
@@ -214,7 +294,7 @@ def generar_excel_web(items, cliente, ruc):
     writer = pd.ExcelWriter(output, engine='xlsxwriter')
     pd.DataFrame(items).to_excel(writer, sheet_name='Cotizacion', index=False, startrow=5)
     workbook, ws = writer.book, writer.sheets['Cotizacion']
-    fmt_h = workbook.add_format({'bg_color': '#F79646', 'bold': True, 'border': 1, 'align': 'center', 'font_color': 'white'})
+    fmt_h = workbook.add_format({'bg_color': COLORES["color_primario"], 'bold': True, 'border': 1, 'align': 'center', 'font_color': 'white'})
     fmt_m = workbook.add_format({'num_format': '"S/." #,##0.00', 'border': 1})
     fmt_b = workbook.add_format({'border': 1})
     
@@ -247,168 +327,39 @@ def generar_excel_web(items, cliente, ruc):
     writer.close()
     return output.getvalue()
 
-# --- RECONOCIMIENTO DE SKU SIN TESSERACT ---
-def preprocess_image_basic(image):
-    """Preprocesamiento básico de imagen"""
-    # Convertir a escala de grises
-    gray = image.convert('L')
-    
-    # Aumentar contraste
-    enhancer = ImageEnhance.Contrast(gray)
-    enhanced = enhancer.enhance(2.0)
-    
-    # Aumentar nitidez
-    sharpener = ImageEnhance.Sharpness(enhanced)
-    sharp = sharpener.enhance(2.0)
-    
-    # Invertir colores para mejor detección de texto oscuro sobre fondo claro
-    inverted = Image.eval(sharp, lambda x: 255 - x)
-    
-    return inverted
-
-def extract_skus_from_image_simple(image):
-    """Extrae SKU de imagen SIN TESSERACT usando detección de patrones"""
-    try:
-        # Preprocesar
-        processed = preprocess_image_basic(image)
-        
-        # Redimensionar para mejor procesamiento
-        processed = processed.resize((processed.width * 2, processed.height * 2), Image.Resampling.LANCZOS)
-        
-        # Convertir a array numpy para procesamiento
-        img_array = np.array(processed)
-        
-        # Binarizar (convertir a blanco y negro)
-        threshold = np.mean(img_array)
-        binary = (img_array < threshold).astype(np.uint8) * 255
-        
-        # Intentar extraer texto por regiones
-        height, width = binary.shape
-        
-        # Detectar regiones con texto
-        text_regions = []
-        row_projection = np.sum(binary == 0, axis=1)
-        
-        # Encontrar filas con contenido
-        threshold_rows = np.percentile(row_projection, 95)
-        text_rows = np.where(row_projection > threshold_rows)[0]
-        
-        if len(text_rows) > 0:
-            # Agrupar filas cercanas
-            groups = []
-            current_group = [text_rows[0]]
-            
-            for i in range(1, len(text_rows)):
-                if text_rows[i] - text_rows[i-1] < 10:
-                    current_group.append(text_rows[i])
-                else:
-                    groups.append(current_group)
-                    current_group = [text_rows[i]]
-            groups.append(current_group)
-            
-            # Extraer texto de cada grupo
-            potential_skus = []
-            
-            for group in groups:
-                if len(group) > 3:  # Altura mínima para una línea de texto
-                    y_start = group[0] - 5
-                    y_end = group[-1] + 5
-                    y_start = max(0, y_start)
-                    y_end = min(height, y_end)
-                    
-                    # Extraer región
-                    region = binary[y_start:y_end, :]
-                    
-                    # Proyección vertical para detectar caracteres
-                    col_projection = np.sum(region == 0, axis=0)
-                    threshold_cols = np.percentile(col_projection, 90)
-                    text_cols = np.where(col_projection > threshold_cols)[0]
-                    
-                    if len(text_cols) > 0:
-                        # Agrupar columnas en palabras
-                        word_groups = []
-                        current_word = [text_cols[0]]
-                        
-                        for j in range(1, len(text_cols)):
-                            if text_cols[j] - text_cols[j-1] < 15:
-                                current_word.append(text_cols[j])
-                            else:
-                                if len(current_word) > 5:  # Longitud mínima de palabra
-                                    word_groups.append(current_word)
-                                current_word = [text_cols[j]]
-                        
-                        if len(current_word) > 5:
-                            word_groups.append(current_word)
-                        
-                        # Extraer cada palabra como posible SKU
-                        for word in word_groups:
-                            x_start = max(0, word[0] - 5)
-                            x_end = min(width, word[-1] + 5)
-                            
-                            word_region = binary[y_start:y_end, x_start:x_end]
-                            
-                            # Intentar reconocer caracteres por similitud de formas
-                            word_text = recognize_characters_simple(word_region)
-                            
-                            if word_text and len(word_text) >= 4:
-                                potential_skus.append(word_text)
-            
-            # Filtrar y limpiar SKUs
-            skus_found = []
-            for sku in potential_skus:
-                # Limpiar SKU
-                cleaned = re.sub(r'[^A-Z0-9]', '', sku.upper())
-                if len(cleaned) >= 4 and len(cleaned) <= 20:
-                    skus_found.append(cleaned)
-            
-            # Eliminar duplicados
-            skus_found = list(set(skus_found))
-            
-            return skus_found
-        
-        return []
-    
-    except Exception as e:
-        st.error(f"Error en procesamiento: {str(e)}")
-        return []
-
-def recognize_characters_simple(region):
-    """Reconoce caracteres básicos por patrones (simulación simple)"""
-    # Esta es una versión simplificada
-    # Para producción real, recomendaríamos usar una API externa
-    return None
-
-def extract_skus_with_gemini(image, api_key=None):
-    """Usar Gemini API para reconocimiento (recomendado)"""
+def extract_skus_with_gemini(image, api_key):
+    """Usar Gemini API para reconocimiento - Versión Segura"""
     if not api_key:
         return None
     
     try:
         import google.generativeai as genai
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-pro-vision')
+        
+        # Usar el modelo correcto
+        model = genai.GenerativeModel('gemini-1.5-pro')
         
         response = model.generate_content([
-            "Extrae todos los códigos SKU y sus cantidades de esta imagen. "
-            "Devuelve solo en formato JSON: [{'sku': 'CODIGO', 'cantidad': NUMERO}]",
+            "Extrae todos los códigos SKU y sus cantidades de esta imagen de catálogo. "
+            "Devuelve SOLO un array JSON válido en este formato: [{\"sku\": \"CODIGO\", \"cantidad\": NUMERO}]. "
+            "Si no hay cantidad, asume 1. Si ves una tabla, extrae todos los SKU y cantidades.",
             image
         ])
         
-        # Parsear respuesta
-        import json
         text = response.text
-        # Buscar JSON en la respuesta
         json_match = re.search(r'\[.*\]', text, re.DOTALL)
         if json_match:
+            import json
             data = json.loads(json_match.group())
             return data
         
         return []
-    except:
+    except Exception as e:
+        st.error(f"Error con Gemini: {str(e)}")
         return None
 
 # --- INTERFAZ PRINCIPAL ---
-st.title("💼 QTC Smart Sales Pro")
+st.title("💚 QTC Smart Sales Pro - Verde Fresh")
 st.markdown("---")
 
 # Tabs
@@ -439,7 +390,6 @@ with tab1:
         df_p = limpiar_cabeceras(df_p_raw)
         df_s = limpiar_cabeceras(df_s_raw)
         
-        # Precio
         palabras_precio = ['MAYOR', 'CAJA', 'VIP', 'PRECIO', 'UNIT']
         precios_opc = [c for c in df_p.columns if any(p in str(c).upper() for p in palabras_precio)]
         if not precios_opc: 
@@ -449,7 +399,6 @@ with tab1:
         
         pedido_dict = {}
         
-        # SKUs transferidos
         if 'skus_transferidos' in st.session_state and st.session_state.skus_transferidos:
             pedido_dict = st.session_state.skus_transferidos
             st.success(f"✅ {len(pedido_dict)} SKUs cargados desde imagen")
@@ -483,7 +432,7 @@ with tab1:
                     elif line:
                         pedido_dict[line.strip().upper()] = 1
         
-        if st.button("🚀 PROCESAR", use_container_width=True) and pedido_dict:
+        if st.button("🚀 PROCESAR DISPONIBILIDAD", use_container_width=True) and pedido_dict:
             with st.spinner("Procesando..."):
                 c_sku_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['SKU', 'SAP'])), df_p.columns[0])
                 c_desc_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['DESCRIPCION'])), df_p.columns[1] if len(df_p.columns) > 1 else df_p.columns[0])
@@ -506,7 +455,6 @@ with tab1:
                 if resultados:
                     df_res = pd.DataFrame(resultados).drop_duplicates()
                     
-                    # Métricas
                     col1, col2, col3 = st.columns(3)
                     col1.metric("Total Productos", len(df_res))
                     col2.metric("Con Stock", len(df_res[df_res.ALERTA == "✅ OK"]))
@@ -514,7 +462,7 @@ with tab1:
                     
                     st.dataframe(df_res[[c_sku_p, c_desc_p, 'P_UNIT', 'PEDIDO', 'Disp', 'ALERTA']])
                     
-                    with st.expander("📥 Cotización"):
+                    with st.expander("📥 Generar Cotización"):
                         n_cli = st.text_input("Cliente", "CLIENTE NUEVO")
                         r_cli = st.text_input("RUC", "-")
                         items_ok = df_res[df_res.ALERTA == "✅ OK"]
@@ -528,124 +476,105 @@ with tab1:
                             
                             st.download_button("📥 Descargar Excel", 
                                 data=generar_excel_web(final_list, n_cli, r_cli),
-                                file_name=f"Coti_{n_cli}.xlsx")
+                                file_name=f"Cotizacion_{n_cli}_{datetime.now().strftime('%Y%m%d')}.xlsx")
                             st.session_state.cotizaciones = st.session_state.get("cotizaciones", 0) + 1
+                            st.session_state.total_prods = len(df_res)
                             st.balloons()
 
 with tab2:
-    st.markdown("### 🤖 Captura de SKU desde Imagen")
-    st.info("💡 **Alternativas disponibles:**\n\n1. **Google Gemini API** (recomendado, más preciso)\n2. **Entrada manual** (si la imagen no es clara)\n3. **Subir Excel** con los SKU")
+    st.markdown("### 🤖 Captura Inteligente de SKU")
+    st.info("💚 Usa Gemini AI para extraer SKU automáticamente desde imágenes")
     
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        uploaded_image = st.file_uploader("📸 Subir imagen", type=['jpg', 'jpeg', 'png'])
+        uploaded_image = st.file_uploader("📸 Subir imagen del catálogo", type=['jpg', 'jpeg', 'png'])
         
         if uploaded_image:
             image = Image.open(uploaded_image)
             st.image(image, caption="Imagen cargada", use_container_width=True)
     
     with col2:
-        st.markdown("#### 🔧 Método de reconocimiento")
+        st.markdown("#### 🔧 Configuración de Gemini")
         
-        metodo = st.radio("Selecciona:", [
-            "📝 Entrada Manual", 
-            "🤖 Google Gemini API"
-        ])
+        # ⚠️ IMPORTANTE: Usa st.secrets para producción
+        # Por ahora, permitimos entrada manual pero con advertencia
+        st.warning("⚠️ **Seguridad:** No compartas tu API Key. En producción, usa st.secrets")
         
-        if metodo == "🤖 Google Gemini API":
-            api_key = st.text_input("API Key de Gemini", type="password", 
-                                   help="Obtén tu API Key en https://makersuite.google.com/app/apikey")
+        api_key = st.text_input("Google Gemini API Key", type="password", 
+                               help="Obtén tu API Key en https://makersuite.google.com/app/apikey")
         
-        if st.button("🔍 Extraer SKU", use_container_width=True) and uploaded_image:
-            extracted_data = []
-            
-            if metodo == "🤖 Google Gemini API" and api_key:
-                with st.spinner("Usando Gemini AI..."):
-                    try:
-                        import google.generativeai as genai
-                        genai.configure(api_key=api_key)
-                        model = genai.GenerativeModel('gemini-1.5-flash')
-                        
-                        response = model.generate_content([
-                            "Analiza esta imagen de catálogo. Extrae TODOS los códigos SKU y sus cantidades. "
-                            "Responde SOLO con un array JSON en este formato: [{'sku': 'CODIGO', 'cantidad': NUMERO}]",
-                            image
-                        ])
-                        
-                        # Extraer JSON de la respuesta
-                        json_match = re.search(r'\[.*\]', response.text, re.DOTALL)
-                        if json_match:
-                            import json
-                            extracted_data = json.loads(json_match.group())
-                            st.success(f"✅ Gemini detectó {len(extracted_data)} productos")
-                    except Exception as e:
-                        st.error(f"Error con Gemini: {str(e)}")
-                        st.info("💡 Prueba con entrada manual o verifica tu API Key")
-            
-            if metodo == "📝 Entrada Manual" or not extracted_data:
-                st.info("📝 Usando entrada manual - puedes escribir los SKU directamente")
-                
-                # Mostrar campos para entrada manual
-                st.markdown("#### ✏️ Ingresa SKU manualmente")
-                num_items = st.number_input("Número de productos", min_value=1, max_value=20, value=3)
-                
-                manual_data = []
-                for i in range(int(num_items)):
-                    col_a, col_b = st.columns(2)
-                    with col_a:
-                        sku = st.text_input(f"SKU {i+1}", key=f"sku_{i}")
-                    with col_b:
-                        cant = st.number_input(f"Cantidad {i+1}", min_value=1, value=1, key=f"cant_{i}")
-                    if sku:
-                        manual_data.append({'sku': sku.upper(), 'cantidad': cant})
-                
-                if manual_data:
-                    extracted_data = manual_data
-            
-            if extracted_data:
-                df_skus = pd.DataFrame(extracted_data)
-                st.success(f"✅ {len(df_skus)} SKUs extraídos")
-                st.dataframe(df_skus, use_container_width=True)
-                
-                if st.button("📋 Transferir a Pedido", use_container_width=True):
-                    skus_dict = {row['sku']: row['cantidad'] for _, row in df_skus.iterrows()}
-                    st.session_state.skus_transferidos = skus_dict
-                    st.success(f"✅ {len(skus_dict)} SKUs transferidos a la pestaña de Pedidos")
-                    st.info("👉 Ve a la pestaña 'Gestión de Pedidos' y haz clic en PROCESAR")
+        if st.button("🌿 Extraer SKU con Gemini", use_container_width=True) and uploaded_image:
+            if not api_key:
+                st.warning("⚠️ Ingresa tu API Key de Gemini")
             else:
-                st.warning("⚠️ No se detectaron SKUs. Puedes:")
-                st.markdown("""
-                - 📝 Usar entrada manual
-                - 📄 Subir un archivo Excel con los SKU
-                - 🔄 Configurar Gemini API para mejor reconocimiento
-                """)
+                with st.spinner("🤖 Analizando imagen..."):
+                    extracted_data = extract_skus_with_gemini(image, api_key)
+                    
+                    if extracted_data and len(extracted_data) > 0:
+                        df_skus = pd.DataFrame(extracted_data)
+                        st.success(f"✅ Extraídos {len(df_skus)} SKUs")
+                        st.dataframe(df_skus, use_container_width=True)
+                        
+                        if st.button("📋 Transferir a Pedido", use_container_width=True):
+                            skus_dict = {row['sku']: row['cantidad'] for _, row in df_skus.iterrows()}
+                            st.session_state.skus_transferidos = skus_dict
+                            st.session_state.skus_detectados = len(skus_dict)
+                            st.success(f"✅ {len(skus_dict)} SKUs transferidos")
+                            st.info("👉 Ve a 'Gestión de Pedidos' y procesa")
+                    else:
+                        st.warning("⚠️ No se detectaron SKUs. Prueba entrada manual.")
+        
+        st.markdown("---")
+        st.markdown("#### ✏️ Entrada Manual")
+        num_items = st.number_input("Número de productos", min_value=1, max_value=10, value=3)
+        
+        manual_data = []
+        for i in range(int(num_items)):
+            col_a, col_b = st.columns(2)
+            with col_a:
+                sku = st.text_input(f"SKU {i+1}", key=f"manual_sku_{i}")
+            with col_b:
+                cant = st.number_input(f"Cantidad {i+1}", min_value=1, value=1, key=f"manual_cant_{i}")
+            if sku:
+                manual_data.append({'sku': sku.upper(), 'cantidad': cant})
+        
+        if manual_data and st.button("📋 Transferir Manual", use_container_width=True):
+            skus_dict = {item['sku']: item['cantidad'] for item in manual_data}
+            st.session_state.skus_transferidos = skus_dict
+            st.success(f"✅ {len(skus_dict)} SKUs transferidos")
 
 with tab3:
-    st.markdown("### 📊 Dashboard")
+    st.markdown("### 📊 Dashboard Verde Fresh")
     
     col1, col2, col3 = st.columns(3)
-    col1.metric("Cotizaciones", st.session_state.get("cotizaciones", 0))
-    col2.metric("Productos", st.session_state.get("total_prods", 0))
-    col3.metric("SKU IA", st.session_state.get("skus_detectados", 0))
+    with col1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{st.session_state.get("cotizaciones", 0)}</div>
+            <div class="metric-label">📄 Cotizaciones</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{st.session_state.get("total_prods", 0)}</div>
+            <div class="metric-label">🌿 Productos</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{st.session_state.get("skus_detectados", 0)}</div>
+            <div class="metric-label">🤖 SKU IA</div>
+        </div>
+        """, unsafe_allow_html=True)
     
-    st.markdown("### 📈 Actividad")
-    chart_data = pd.DataFrame({
-        'Valor': [st.session_state.get("cotizaciones", 0), 
-                  st.session_state.get("total_prods", 0)],
-        'Métrica': ['Cotizaciones', 'Productos']
-    })
-    st.bar_chart(chart_data.set_index('Métrica'))
-    
-    st.markdown("### 💡 Consejos")
+    st.markdown("---")
+    st.markdown("### 🔐 Seguridad API Key")
     st.info("""
-    **Para mejor reconocimiento de SKU:**
-    1. Usa imágenes nítidas y bien iluminadas
-    2. Configura Gemini API para IA avanzada
-    3. Si la imagen no es clara, usa entrada manual
-    4. También puedes subir Excel directamente
-    """)
-
-# Footer
-st.markdown("---")
-st.markdown("*💼 QTC Smart Sales Pro - Sistema de Ventas con IA*")
+    **Para producción en Streamlit Cloud:**
+    
+    1. Crea un archivo `.streamlit/secrets.toml`:
+    ```toml
+    GEMINI_API_KEY = "tu_nueva_api_key_aqui"
