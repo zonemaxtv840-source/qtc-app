@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import re, io, os
@@ -19,28 +20,22 @@ COLORES = {
     "texto": "#1a3c34",
     "verde": "#27ae60",
     "verde_oscuro": "#219a52",
-    "verde_hover": "#2ecc71",
 }
 
 # --- ESTILOS ---
 st.markdown(f"""
     <style>
-    .stApp, .main .block-container {{
-        background-color: {COLORES["fondo"]};
-        color: {COLORES["texto"]} !important;
-    }}
+    .stApp {{ background-color: {COLORES["fondo"]}; }}
     .stButton > button {{
-        background: linear-gradient(135deg, {COLORES["verde"]}, {COLORES["verde_oscuro"]});
+        background: {COLORES["verde"]};
         color: white !important;
         border-radius: 10px;
-        font-weight: 600;
     }}
     .metric-card {{
         background: {COLORES["tarjeta"]};
         border-radius: 15px;
         padding: 1.5rem;
         text-align: center;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }}
     .metric-value {{
         font-size: 2rem;
@@ -103,7 +98,35 @@ def generar_excel(items, cliente, ruc):
     writer.close()
     return output.getvalue()
 
-# --- INTERFAZ ---
+def extract_skus_with_gemini(image):
+    """Extrae SKU usando Gemini API desde secrets"""
+    try:
+        import google.generativeai as genai
+        
+        # Tomar API Key desde secrets
+        api_key = st.secrets["GEMINI_API_KEY"]
+        genai.configure(api_key=api_key)
+        
+        model = genai.GenerativeModel('gemini-1.5-pro')
+        
+        response = model.generate_content([
+            "Extrae todos los códigos SKU y sus cantidades de esta imagen. "
+            "Devuelve SOLO un array JSON: [{\"sku\": \"CODIGO\", \"cantidad\": NUMERO}]",
+            image
+        ])
+        
+        text = response.text
+        json_match = re.search(r'\[.*\]', text, re.DOTALL)
+        if json_match:
+            import json
+            data = json.loads(json_match.group())
+            return data
+        return []
+    except Exception as e:
+        st.error(f"Error: {str(e)}")
+        return []
+
+# --- INTERFAZ PRINCIPAL ---
 st.title("💚 QTC Smart Sales Pro")
 tab1, tab2, tab3 = st.tabs(["📦 Pedidos", "🤖 SKU por Imagen", "📊 Dashboard"])
 
@@ -114,15 +137,20 @@ with tab1:
     
     if f_precios and f_stock:
         df_precios = pd.read_excel(f_precios)
-        df_stock = pd.read_excel(f_stock)
         
         # Buscar columnas
         col_sku = next((c for c in df_precios.columns if 'SKU' in str(c).upper()), df_precios.columns[0])
         col_desc = next((c for c in df_precios.columns if 'DESC' in str(c).upper()), df_precios.columns[1])
         col_precio = st.selectbox("Columna de Precio", df_precios.columns)
         
-        # Ingreso manual
-        texto = st.text_area("SKU:CANTIDAD (uno por línea)", height=150)
+        # Verificar si hay SKUs transferidos
+        if 'skus_transferidos' in st.session_state:
+            texto_defecto = "\n".join([f"{sku}:{cant}" for sku, cant in st.session_state.skus_transferidos.items()])
+            del st.session_state.skus_transferidos
+        else:
+            texto_defecto = ""
+        
+        texto = st.text_area("SKU:CANTIDAD (uno por línea)", height=150, value=texto_defecto)
         pedidos = {}
         
         if texto:
@@ -133,7 +161,7 @@ with tab1:
                 elif linea.strip():
                     pedidos[linea.strip().upper()] = 1
         
-        if st.button("Procesar") and pedidos:
+        if st.button("Procesar", use_container_width=True) and pedidos:
             resultados = []
             for sku, cant in pedidos.items():
                 producto = df_precios[df_precios[col_sku].astype(str).str.contains(sku, case=False, na=False)]
@@ -149,29 +177,47 @@ with tab1:
             
             if resultados:
                 df_res = pd.DataFrame(resultados)
-                st.dataframe(df_res)
+                st.dataframe(df_res, use_container_width=True)
                 
                 total = df_res['Total'].sum()
-                st.metric("Total Cotización", f"S/. {total:,.2f}")
+                st.metric("💰 Total Cotización", f"S/. {total:,.2f}")
                 
                 cliente = st.text_input("Cliente", "CLIENTE NUEVO")
-                if st.button("Descargar Excel"):
+                if st.button("📥 Descargar Excel", use_container_width=True):
                     excel = generar_excel(resultados, cliente, "999999")
-                    st.download_button("📥 Descargar", excel, f"cotizacion_{cliente}.xlsx")
+                    st.download_button("Descargar", excel, f"cotizacion_{cliente}.xlsx")
+                    st.session_state.cotizaciones = st.session_state.get("cotizaciones", 0) + 1
+                    st.session_state.total_prods = len(resultados)
+                    st.balloons()
 
 with tab2:
-    st.markdown("### 🤖 Extraer SKU desde Imagen")
-    st.info("💡 Sube una foto del catálogo y el sistema extraerá los SKU")
+    st.markdown("### 🤖 Captura Inteligente de SKU")
+    st.info("💡 Sube una foto del catálogo y Gemini extraerá los SKU automáticamente")
     
-    imagen = st.file_uploader("Subir imagen", type=['jpg', 'png', 'jpeg'])
+    imagen = st.file_uploader("📸 Subir imagen", type=['jpg', 'png', 'jpeg'])
     
     if imagen:
         img = Image.open(imagen)
         st.image(img, width=300)
         
-        # Entrada manual alternativa
+        if st.button("🔍 Extraer SKU con Gemini", use_container_width=True):
+            with st.spinner("Analizando imagen..."):
+                datos = extract_skus_with_gemini(img)
+                
+                if datos:
+                    df_skus = pd.DataFrame(datos)
+                    st.success(f"✅ Se encontraron {len(datos)} SKUs")
+                    st.dataframe(df_skus, use_container_width=True)
+                    
+                    if st.button("📋 Transferir a Pedidos", use_container_width=True):
+                        skus_dict = {item['sku']: item['cantidad'] for item in datos}
+                        st.session_state.skus_transferidos = skus_dict
+                        st.success("✅ Transferido! Ve a la pestaña Pedidos")
+                else:
+                    st.warning("No se detectaron SKUs. Prueba con entrada manual abajo.")
+        
         st.markdown("---")
-        st.markdown("### ✏️ Ingreso Manual")
+        st.markdown("### ✏️ Entrada Manual (alternativa)")
         num = st.number_input("Cantidad de productos", min_value=1, max_value=10, value=3)
         
         skus_manual = {}
@@ -184,13 +230,13 @@ with tab2:
             if sku:
                 skus_manual[sku.upper()] = cant
         
-        if skus_manual and st.button("Transferir a Pedidos"):
-            # Guardar en session state
-            st.session_state.pedidos = skus_manual
+        if skus_manual and st.button("📋 Transferir Manual", use_container_width=True):
+            st.session_state.skus_transferidos = skus_manual
             st.success(f"✅ {len(skus_manual)} SKUs transferidos")
-            st.info("👉 Ve a la pestaña 'Pedidos' y pega los SKU manualmente")
 
 with tab3:
+    st.markdown("### 📊 Dashboard")
+    
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown(f"""
@@ -208,4 +254,4 @@ with tab3:
         """, unsafe_allow_html=True)
 
 st.markdown("---")
-st.markdown("*💚 QTC Smart Sales - Sistema Seguro*")
+st.markdown("*💚 QTC Smart Sales - Con Gemini AI*")
