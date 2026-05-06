@@ -572,11 +572,10 @@ with tab_cotizacion:
                     st.success("✅ Cotización generada!")
 
 # ============================================
-# TAB 2: BUSCAR PRODUCTOS (CON BÚSQUEDA MÚLTIPLE)
+# TAB 2: BUSCAR PRODUCTOS (CON BÚSQUEDA MÚLTIPLE MEJORADA)
 # ============================================
 with tab_buscar:
     st.markdown("### 🔍 Buscar y Agregar Productos")
-    st.caption("💡 Busca productos, selecciona cantidades, o agrega SKU manualmente")
     
     if not st.session_state.catalogos:
         st.warning("⚠️ Primero carga catálogos en la pestaña 'Cotización'")
@@ -594,46 +593,66 @@ with tab_buscar:
         )
         
         # ==========================================
-        # MÉTODO 1: Búsqueda por texto
+        # MÉTODO 1: Búsqueda por texto (múltiples términos)
         # ==========================================
-        st.markdown("#### 🔎 Búsqueda por texto")
-        busqueda = st.text_input("Buscar productos:", placeholder="Ej: cable, cargador, CN0900009WH8...")
+        st.markdown("#### 🔎 Buscar por descripción")
+        st.caption("💡 Puedes buscar varios productos separados por comas o espacios")
         
-        if busqueda and len(busqueda) >= 3:
+        busqueda_multiple = st.text_input(
+            "Buscar productos:", 
+            placeholder="Ej: cable, cargador, audifonos, CN0900009WH8"
+        )
+        
+        if busqueda_multiple and len(busqueda_multiple) >= 2:
+            # Dividir la búsqueda por comas o espacios
+            terminos = re.split(r'[, ]+', busqueda_multiple)
+            terminos = [t.strip() for t in terminos if len(t.strip()) >= 2]
+            
+            st.caption(f"🔍 Buscando {len(terminos)} término(s): {', '.join(terminos[:5])}{'...' if len(terminos) > 5 else ''}")
+            
             with st.spinner("Buscando..."):
                 precio_seleccionado = None if col_precio_consulta == "(No mostrar precio)" else col_precio_consulta
-                resultados_busqueda = buscar_en_catalogo(st.session_state.catalogos, busqueda, precio_seleccionado)
-            
-            if resultados_busqueda:
-                st.success(f"✅ {len(resultados_busqueda)} resultados encontrados")
+                todos_resultados = []
+                skus_vistos = set()
                 
-                for res in resultados_busqueda:
+                for termino in terminos:
+                    resultados = buscar_en_catalogo(st.session_state.catalogos, termino, precio_seleccionado)
+                    for res in resultados:
+                        if res['SKU'] not in skus_vistos:
+                            skus_vistos.add(res['SKU'])
+                            todos_resultados.append(res)
+            
+            if todos_resultados:
+                st.success(f"✅ {len(todos_resultados)} resultados encontrados (duplicados eliminados)")
+                
+                # Mostrar resultados con opción de seleccionar cantidad
+                for res in todos_resultados:
                     col1, col2, col3, col4 = st.columns([2, 4, 1, 1.5])
                     with col1:
                         st.markdown(f"**📦 {res['SKU']}**")
                     with col2:
-                        st.markdown(res['Descripción'])
+                        st.markdown(res['Descripción'][:60])
                     with col3:
                         precio_text = f"S/. {res['Precio']:,.2f}" if res['Precio'] else "Sin precio"
                         st.markdown(f"💰 {precio_text}")
                     with col4:
                         cantidad = st.number_input(
                             "Cant", min_value=0, max_value=999, value=0,
-                            key=f"multi_{res['SKU']}",
+                            key=f"multi_{res['SKU']}_{hash(res['SKU'])}",
                             label_visibility="collapsed"
                         )
                         if cantidad > 0:
                             st.session_state.productos_seleccionados[res['SKU']] = st.session_state.productos_seleccionados.get(res['SKU'], 0) + cantidad
                     st.divider()
             else:
-                st.warning("No se encontraron productos")
+                st.warning("No se encontraron productos con esos términos")
         
         # ==========================================
-        # MÉTODO 2: Agregar múltiples SKU manualmente
+        # MÉTODO 2: Agregar múltiples SKU manualmente (con cantidades)
         # ==========================================
         st.markdown("---")
-        st.markdown("#### 📝 Agregar múltiples SKU manualmente")
-        st.caption("Formato: SKU:CANTIDAD (uno por línea). Ejemplo: CN0900009WH8:5")
+        st.markdown("#### 📝 Agregar SKU específicos con cantidades")
+        st.caption("Formato: SKU:CANTIDAD (uno por línea)")
         
         texto_multiple = st.text_area(
             "Ingresa SKU:CANTIDAD",
@@ -664,7 +683,7 @@ with tab_buscar:
                     lineas_agregadas += 1
             
             if lineas_agregadas > 0:
-                st.success(f"✅ {lineas_agregadas} productos agregados! Total: {len(st.session_state.productos_seleccionados)}")
+                st.success(f"✅ {lineas_agregadas} productos agregados!")
                 st.rerun()
             else:
                 st.warning("No se agregaron productos. Usa formato SKU:CANTIDAD")
@@ -674,9 +693,9 @@ with tab_buscar:
         # ==========================================
         if st.session_state.productos_seleccionados:
             st.markdown("---")
-            st.markdown(f"### ✅ Productos seleccionados para cotizar ({len(st.session_state.productos_seleccionados)})")
+            st.markdown(f"### ✅ Productos seleccionados ({len(st.session_state.productos_seleccionados)})")
             
-            # Mostrar tabla editable de seleccionados
+            # Mostrar tabla editable
             seleccionados_editables = []
             for sku, cant in list(st.session_state.productos_seleccionados.items()):
                 col1, col2, col3 = st.columns([3, 1, 1])
@@ -684,10 +703,7 @@ with tab_buscar:
                     st.markdown(f"`{sku}`")
                 with col2:
                     nueva_cant = st.number_input(
-                        "Cant", 
-                        min_value=0, 
-                        max_value=999, 
-                        value=cant,
+                        "Cant", min_value=0, max_value=999, value=cant,
                         key=f"edit_sel_{sku}",
                         label_visibility="collapsed"
                     )
@@ -699,7 +715,7 @@ with tab_buscar:
                     seleccionados_editables.append({'SKU': sku, 'Cantidad': nueva_cant})
                 st.divider()
             
-            # Actualizar seleccionados
+            # Actualizar
             st.session_state.productos_seleccionados = {item['SKU']: item['Cantidad'] for item in seleccionados_editables}
             
             if st.session_state.productos_seleccionados:
@@ -709,11 +725,17 @@ with tab_buscar:
                 ])
                 st.dataframe(df_seleccionados, use_container_width=True)
                 
-                if st.button("📋 TRANSFERIR A COTIZACIÓN", use_container_width=True, type="primary"):
-                    st.session_state.skus_transferidos = st.session_state.productos_seleccionados.copy()
-                    st.session_state.productos_seleccionados = {}
-                    st.success(f"✅ {len(st.session_state.skus_transferidos)} productos transferidos!")
-                    st.info("👉 Ve a la pestaña 'Cotización' y haz clic en PROCESAR")
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("🗑️ Limpiar todo", use_container_width=True):
+                        st.session_state.productos_seleccionados = {}
+                        st.rerun()
+                with col2:
+                    if st.button("📋 TRANSFERIR A COTIZACIÓN", use_container_width=True, type="primary"):
+                        st.session_state.skus_transferidos = st.session_state.productos_seleccionados.copy()
+                        st.session_state.productos_seleccionados = {}
+                        st.success(f"✅ {len(st.session_state.skus_transferidos)} productos transferidos!")
+                        st.info("👉 Ve a la pestaña 'Cotización' y haz clic en PROCESAR")
             else:
                 st.info("Todos los productos han sido eliminados")
 
