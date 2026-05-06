@@ -31,18 +31,23 @@ COLORES = {
     "borde": "#E0E0E0",
 }
 
-# --- ESTILOS CSS ---
+# --- ESTILOS CSS CORREGIDOS ---
 st.markdown(f"""
     <style>
+    /* Fondo general */
     .stApp {{ background-color: {COLORES["fondo_principal"]}; }}
     .main .block-container {{ padding-top: 1rem; }}
+    
+    /* Textos generales */
     h1, h2, h3, h4, p, div, label {{ color: {COLORES["texto_principal"]} !important; }}
     
+    /* Sidebar */
     [data-testid="stSidebar"] {{
         background: linear-gradient(180deg, {COLORES["fondo_sidebar"]} 0%, #0d2818 100%);
     }}
     [data-testid="stSidebar"] * {{ color: {COLORES["texto_blanco"]} !important; }}
     
+    /* Botones */
     .stButton > button {{
         background: {COLORES["primario"]};
         color: white !important;
@@ -55,47 +60,57 @@ st.markdown(f"""
         transform: translateY(-2px);
     }}
     
-    .metric-card {{
-        background: {COLORES["fondo_tarjetas"]};
-        border-radius: 15px;
-        padding: 1.2rem;
-        text-align: center;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        border: 1px solid {COLORES["borde"]};
+    /* ========================================== */
+    /* FIX: FILE UPLOADER (cuadro de subida de archivos) */
+    /* ========================================== */
+    .stFileUploader > div > div {{
+        background-color: white !important;
+        border: 1px dashed {COLORES["primario"]} !important;
+        border-radius: 10px !important;
     }}
-    .metric-value {{
-        font-size: 2rem;
-        font-weight: bold;
-        color: {COLORES["primario"]} !important;
+    
+    .stFileUploader > div > div > div {{
+        color: {COLORES["texto_principal"]} !important;
+    }}
+    
+    .stFileUploader button {{
+        background-color: {COLORES["primario"]} !important;
+        color: white !important;
     }}
     
     /* ========================================== */
-    /* FIX: Arreglar SELECTBOX y inputs (texto visible) */
+    /* FIX: SELECTBOX (desplegables) */
     /* ========================================== */
     .stSelectbox > div > div {{
         background-color: white !important;
-        color: #1a1a2e !important;
+        color: {COLORES["texto_principal"]} !important;
+        border: 1px solid {COLORES["borde"]} !important;
+        border-radius: 8px !important;
     }}
     
     .stSelectbox > div > div > div {{
-        color: #1a1a2e !important;
+        color: {COLORES["texto_principal"]} !important;
     }}
     
     .stSelectbox label {{
-        color: #1a1a2e !important;
+        color: {COLORES["texto_principal"]} !important;
     }}
     
+    /* Dropdown menu options */
     div[data-baseweb="select"] > div {{
         background-color: white !important;
     }}
     
     div[data-baseweb="select"] ul {{
         background-color: white !important;
+        border: 1px solid {COLORES["borde"]} !important;
+        border-radius: 8px !important;
     }}
     
     div[data-baseweb="select"] li {{
-        color: #1a1a2e !important;
+        color: {COLORES["texto_principal"]} !important;
         background-color: white !important;
+        padding: 8px 12px !important;
     }}
     
     div[data-baseweb="select"] li:hover {{
@@ -107,9 +122,11 @@ st.markdown(f"""
         color: white !important;
     }}
     
-    /* Inputs de texto */
+    /* ========================================== */
+    /* FIX: TEXT INPUT (campos de texto) */
+    /* ========================================== */
     .stTextInput input, .stTextArea textarea, .stNumberInput input {{
-        color: #1a1a2e !important;
+        color: {COLORES["texto_principal"]} !important;
         background-color: white !important;
         border: 1px solid {COLORES["borde"]} !important;
         border-radius: 8px !important;
@@ -125,6 +142,30 @@ st.markdown(f"""
         color: #999999 !important;
     }}
     
+    /* ========================================== */
+    /* FIX: CHECKBOX y RADIO */
+    /* ========================================== */
+    .stCheckbox label, .stRadio label {{
+        color: {COLORES["texto_principal"]} !important;
+    }
+    
+    /* ========================================== */
+    /* FIX: METRIC CARDS */
+    /* ========================================== */
+    .metric-card {{
+        background: {COLORES["fondo_tarjetas"]};
+        border-radius: 15px;
+        padding: 1.2rem;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border: 1px solid {COLORES["borde"]};
+    }}
+    .metric-value {{
+        font-size: 2rem;
+        font-weight: bold;
+        color: {COLORES["primario"]} !important;
+    }}
+    
     /* Dataframe */
     .stDataFrame {{
         background-color: white !important;
@@ -134,7 +175,7 @@ st.markdown(f"""
     /* Expander */
     .streamlit-expanderHeader {{
         background-color: white !important;
-        color: #1a1a2e !important;
+        color: {COLORES["texto_principal"]} !important;
         border-radius: 10px !important;
     }}
     
@@ -142,6 +183,24 @@ st.markdown(f"""
     .stAlert {{
         background-color: white !important;
         border-radius: 10px !important;
+    }}
+    
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {{
+        background-color: white !important;
+        border-radius: 10px !important;
+        padding: 4px !important;
+    }}
+    
+    .stTabs [data-baseweb="tab"] {{
+        color: {COLORES["texto_principal"]} !important;
+        background-color: #f0f0f0 !important;
+        border-radius: 8px !important;
+    }}
+    
+    .stTabs [aria-selected="true"] {{
+        background-color: {COLORES["primario"]} !important;
+        color: white !important;
     }}
     </style>
 """, unsafe_allow_html=True)
@@ -183,7 +242,7 @@ if not st.session_state.auth:
     st.stop()
 
 # ============================================
-# FUNCIONES PRINCIPALES (igual que antes)
+# FUNCIONES PRINCIPALES
 # ============================================
 
 def corregir_numero(valor):
@@ -212,8 +271,72 @@ def limpiar_cabeceras(df):
             return df.iloc[i+1:].reset_index(drop=True)
     return df
 
+def cargar_archivo_datos(archivo):
+    """Carga archivo Excel o CSV automáticamente"""
+    try:
+        nombre = archivo.name.lower()
+        if nombre.endswith('.csv'):
+            # Intentar diferentes codificaciones para CSV
+            try:
+                df = pd.read_csv(archivo, encoding='utf-8')
+            except:
+                try:
+                    df = pd.read_csv(archivo, encoding='latin-1')
+                except:
+                    df = pd.read_csv(archivo, encoding='iso-8859-1')
+        else:
+            df = pd.read_excel(archivo)
+        
+        df = limpiar_cabeceras(df)
+        return df
+    except Exception as e:
+        return None
+
 def cargar_excel_completo(archivo):
     try:
+        nombre = archivo.name.lower()
+        
+        # Manejar CSV
+        if nombre.endswith('.csv'):
+            df = cargar_archivo_datos(archivo)
+            if df is None:
+                return None
+            
+            # Detectar columnas
+            col_sku = None
+            col_desc = None
+            columnas_precio = []
+            
+            for c in df.columns:
+                c_str = str(c).upper()
+                if any(p in c_str for p in ['SKU', 'COD', 'SAP', 'NUMERO']):
+                    if col_sku is None:
+                        col_sku = c
+                if any(p in c_str for p in ['DESC', 'NOMBRE', 'PRODUCTO']):
+                    if col_desc is None:
+                        col_desc = c
+                if any(p in c_str for p in ['PRECIO', 'CAJA', 'VIP', 'MAYOR', 'IR', 'BOX', 'SUGERIDO']):
+                    columnas_precio.append(c)
+            
+            if col_sku is None and len(df.columns) > 0:
+                col_sku = df.columns[0]
+            if col_desc is None and len(df.columns) > 1:
+                col_desc = df.columns[1]
+            if not columnas_precio and len(df.columns) > 2:
+                columnas_precio = [df.columns[2]]
+            
+            return {
+                'nombre': archivo.name,
+                'hojas': {'CSV': {
+                    'df': df,
+                    'col_sku': col_sku,
+                    'col_desc': col_desc,
+                    'columnas_precio': columnas_precio
+                }},
+                'total_hojas': 1
+            }
+        
+        # Manejar Excel
         xls = pd.ExcelFile(archivo)
         hojas_data = {}
         
@@ -269,6 +392,39 @@ def cargar_excel_completo(archivo):
 
 def cargar_stock(archivo):
     try:
+        nombre = archivo.name.lower()
+        
+        # Manejar CSV
+        if nombre.endswith('.csv'):
+            df = cargar_archivo_datos(archivo)
+            if df is None:
+                return None
+            
+            col_sku = None
+            col_cant = None
+            
+            for c in df.columns:
+                c_str = str(c).upper()
+                if any(p in c_str for p in ['SKU', 'COD', 'SAP', 'NUMERO']):
+                    if col_sku is None:
+                        col_sku = c
+                if any(p in c_str for p in ['DISP', 'STOCK', 'CANT', 'SALDO']):
+                    if col_cant is None:
+                        col_cant = c
+            
+            if col_sku is None and len(df.columns) > 0:
+                col_sku = df.columns[0]
+            if col_cant is None and len(df.columns) > 1:
+                col_cant = df.columns[1]
+            
+            return {
+                'nombre': archivo.name,
+                'df': df,
+                'col_sku': col_sku,
+                'col_cant': col_cant
+            }
+        
+        # Manejar Excel
         xls = pd.ExcelFile(archivo)
         dfs_stock = []
         
@@ -464,14 +620,15 @@ tab_cotizacion, tab_busqueda, tab_config = st.tabs([
 # ============================================
 with tab_config:
     st.markdown("### 📂 Carga de Archivos")
+    st.info("📄 Soporta archivos: Excel (.xlsx, .xls) y CSV (.csv) con codificación UTF-8")
     
     col1, col2 = st.columns(2)
     
     with col1:
         st.markdown("#### 📚 Catálogos de Precios")
         archivos_catalogos = st.file_uploader(
-            "Sube uno o más catálogos (Excel)",
-            type=['xlsx', 'xls'],
+            "Sube uno o más archivos (Excel o CSV)",
+            type=['xlsx', 'xls', 'csv'],
             accept_multiple_files=True,
             key="catalogos_upload"
         )
@@ -482,8 +639,8 @@ with tab_config:
         st.caption("• apri004.xlsx + yessica.xlsx → Stock Xiaomi")
         
         archivos_stock = st.file_uploader(
-            "Sube tus archivos de stock",
-            type=['xlsx', 'xls'],
+            "Sube tus archivos de stock (Excel o CSV)",
+            type=['xlsx', 'xls', 'csv'],
             accept_multiple_files=True,
             key="stocks_upload"
         )
@@ -495,8 +652,11 @@ with tab_config:
             if resultado and resultado['total_hojas'] > 0:
                 catalogos_cargados.append(resultado)
                 st.success(f"✅ {archivo.name}: {resultado['total_hojas']} hojas")
+            else:
+                st.error(f"❌ Error en {archivo.name}")
         if catalogos_cargados:
             st.session_state.catalogos = catalogos_cargados
+            st.info(f"📊 Total: {len(catalogos_cargados)} catálogos cargados")
     
     if archivos_stock:
         stocks_cargados = []
@@ -507,6 +667,15 @@ with tab_config:
                 st.success(f"✅ {archivo.name}: {len(resultado['df'])} productos")
         if stocks_cargados:
             st.session_state.stocks = stocks_cargados
+    
+    # Mostrar resumen
+    if st.session_state.catalogos:
+        st.markdown("---")
+        st.markdown("#### ✅ Catálogos Cargados")
+        for cat in st.session_state.catalogos:
+            with st.expander(f"📗 {cat['nombre']}"):
+                for hoja in cat['hojas'].keys():
+                    st.caption(f"  └─ {hoja}")
 
 # ============================================
 # TAB COTIZACIÓN
@@ -580,7 +749,7 @@ with tab_cotizacion:
                     })
         
         if st.button("🚀 PROCESAR COTIZACIÓN", use_container_width=True, type="primary") and pedidos:
-            with st.spinner("Buscando productos..."):
+            with st.spinner("Buscando productos en todos los catálogos..."):
                 resultados = []
                 no_encontrados = []
                 
@@ -643,7 +812,7 @@ with tab_cotizacion:
         
         if st.session_state.resultados:
             st.markdown("---")
-            st.markdown("### 📊 Resultados")
+            st.markdown("### 📊 Resultados - Edita cantidades")
             
             resultados_editados = []
             
@@ -678,14 +847,14 @@ with tab_cotizacion:
             if st.session_state.no_encontrados:
                 st.markdown("### ⚠️ Productos no encontrados")
                 for item in st.session_state.no_encontrados:
-                    st.warning(f"❌ {item['SKU']}")
+                    st.warning(f"❌ {item['SKU']} - Cantidad: {item['Cantidad']}")
             
             items_validos = [r for r in resultados_editados if r['Solicitado'] > 0 and r['Stock'] >= r['Solicitado'] and r['Precio'] > 0]
             total_cotizacion = sum(r['Total'] for r in items_validos)
             
             col1, col2, col3 = st.columns(3)
-            col1.metric("📦 Válidos", len(items_validos))
-            col2.metric("💰 Total", f"S/. {total_cotizacion:,.2f}")
+            col1.metric("📦 Productos válidos", len(items_validos))
+            col2.metric("💰 Total Cotización", f"S/. {total_cotizacion:,.2f}")
             col3.metric("⚠️ Excluidos", len(resultados_editados) - len(items_validos))
             
             if items_validos:
@@ -719,46 +888,47 @@ with tab_cotizacion:
                     st.session_state.cotizaciones = st.session_state.get("cotizaciones", 0) + 1
                     st.session_state.total_prods = len(items_validos)
                     st.balloons()
-                    st.success("✅ Cotización generada!")
+                    st.success("✅ Cotización generada correctamente!")
 
 # ============================================
 # TAB BÚSQUEDA
 # ============================================
 with tab_busqueda:
-    st.markdown("### 🔍 Buscar productos")
+    st.markdown("### 🔍 Buscar productos en catálogos")
     
     if not st.session_state.catalogos:
-        st.warning("⚠️ Primero carga los catálogos")
+        st.warning("⚠️ Primero carga los catálogos en 'Configuración'")
     else:
-        busqueda = st.text_input("SKU o descripción:")
+        busqueda = st.text_input("Buscar por SKU o descripción:", placeholder="Ej: CN0900009WH8, cargador, cable...")
         
         if busqueda:
-            resultados = []
-            for cat in st.session_state.catalogos:
-                for hoja_nombre, hoja_data in cat['hojas'].items():
+            resultados_busqueda = []
+            for catalogo in st.session_state.catalogos:
+                for hoja_nombre, hoja_data in catalogo['hojas'].items():
                     df = hoja_data['df']
                     col_sku = hoja_data['col_sku']
                     col_desc = hoja_data['col_desc']
                     
-                    mask = (df[col_sku].astype(str).str.contains(busqueda, case=False, na=False) |
-                            df[col_desc].astype(str).str.contains(busqueda, case=False, na=False))
+                    mask_sku = df[col_sku].astype(str).str.contains(busqueda, case=False, na=False)
+                    mask_desc = df[col_desc].astype(str).str.contains(busqueda, case=False, na=False)
                     
-                    for idx, row in df[mask].iterrows():
-                        resultados.append({
+                    for idx, row in df[mask_sku | mask_desc].iterrows():
+                        resultados_busqueda.append({
                             'SKU': str(row[col_sku]),
                             'Descripción': str(row[col_desc])[:80],
-                            'Archivo': cat['nombre'],
+                            'Archivo': catalogo['nombre'],
                             'Hoja': hoja_nombre
                         })
             
-            if resultados:
-                st.success(f"✅ {len(resultados)} resultados")
-                st.dataframe(pd.DataFrame(resultados), use_container_width=True)
+            if resultados_busqueda:
+                st.success(f"✅ {len(resultados_busqueda)} resultados encontrados")
+                df_busqueda = pd.DataFrame(resultados_busqueda)
+                st.dataframe(df_busqueda, use_container_width=True)
                 
-                if st.button("📋 Transferir primeros 20 SKU"):
-                    skus_dict = {r['SKU']: 1 for r in resultados[:20]}
+                if st.button("📋 Transferir primeros 20 SKU a Cotización"):
+                    skus_dict = {r['SKU']: 1 for r in resultados_busqueda[:20]}
                     st.session_state.skus_transferidos = skus_dict
-                    st.success("✅ Transferido! Ve a Cotización")
+                    st.success("✅ Transferido! Ve a la pestaña Cotización")
             else:
                 st.warning("No se encontraron resultados")
 
