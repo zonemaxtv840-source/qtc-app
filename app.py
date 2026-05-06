@@ -30,6 +30,7 @@ COLOR_BOTON_HOVER = "#1E8449"
 COLOR_SELECTBOX_FONDO = "white"
 COLOR_SELECTBOX_TEXTO = "black"
 COLOR_SELECTBOX_BORDE = "#27AE60"
+COLOR_SELECTBOX_LABEL = "#1a1a2e"  # Color de la etiqueta del selectbox
 COLOR_TABS_FONDO = "white"
 COLOR_TAB_INACTIVA_FONDO = "#f0f0f0"
 COLOR_TAB_INACTIVA_TEXTO = "#1a1a2e"
@@ -40,22 +41,71 @@ COLOR_ESTADO_SIN_STOCK = "red"
 COLOR_ESTADO_ADVERTENCIA = "orange"
 COLOR_ESTADO_EXCLUIDO = "gray"
 
-# --- ESTILOS CSS ---
+# --- ESTILOS CSS COMPLETOS ---
 st.markdown(f"""
     <style>
+    /* Fondo general */
     .stApp {{ background-color: {COLOR_FONDO_GENERAL}; }}
+    
+    /* Textos generales */
     h1, h2, h3, h4, p, div, span, label {{ color: {COLOR_TEXTO_PRINCIPAL} !important; }}
     
+    /* SIDEBAR */
     [data-testid="stSidebar"] {{
         background: linear-gradient(180deg, {COLOR_SIDEBAR_FONDO1} 0%, {COLOR_SIDEBAR_FONDO2} 100%);
     }}
     [data-testid="stSidebar"] * {{ color: {COLOR_SIDEBAR_TEXTO} !important; }}
     
+    /* Selectores dentro del SIDEBAR */
     [data-testid="stSidebar"] .stSelectbox > div > div {{
         background-color: {COLOR_SIDEBAR_SELECT_FONDO} !important;
         color: {COLOR_SIDEBAR_SELECT_TEXTO} !important;
+        border: 1px solid {COLOR_SELECTBOX_BORDE} !important;
+    }}
+    [data-testid="stSidebar"] .stSelectbox > div > div > div {{
+        color: {COLOR_SIDEBAR_SELECT_TEXTO} !important;
+    }}
+    [data-testid="stSidebar"] .stSelectbox label {{
+        color: {COLOR_SIDEBAR_TEXTO} !important;
     }}
     
+    /* ========================================== */
+    /* SELECTOR DE PRECIO EN LA PESTAÑA BÚSQUEDA */
+    /* ========================================== */
+    /* Este es el selector que estaba en negro - ahora corregido */
+    div:not([data-testid="stSidebar"]) .stSelectbox > div > div {{
+        background-color: white !important;
+        color: black !important;
+        border: 1px solid {COLOR_SELECTBOX_BORDE} !important;
+        border-radius: 8px !important;
+    }}
+    div:not([data-testid="stSidebar"]) .stSelectbox > div > div > div {{
+        color: black !important;
+    }}
+    div:not([data-testid="stSidebar"]) .stSelectbox label {{
+        color: {COLOR_TEXTO_PRINCIPAL} !important;
+    }}
+    
+    /* Dropdown de opciones del selector de búsqueda */
+    div:not([data-testid="stSidebar"]) div[data-baseweb="select"] ul {{
+        background-color: white !important;
+        border: 1px solid #ccc !important;
+        border-radius: 8px !important;
+    }}
+    div:not([data-testid="stSidebar"]) div[data-baseweb="select"] li {{
+        color: black !important;
+        background-color: white !important;
+        padding: 8px 12px !important;
+    }}
+    div:not([data-testid="stSidebar"]) div[data-baseweb="select"] li:hover {{
+        background-color: #e8f5e9 !important;
+    }}
+    div:not([data-testid="stSidebar"]) div[data-baseweb="select"] li[aria-selected="true"] {{
+        background-color: {COLOR_BOTON_PRIMARIO} !important;
+        color: white !important;
+    }}
+    
+    /* Botones */
     .stButton > button {{
         background: {COLOR_BOTON_PRIMARIO};
         color: white !important;
@@ -64,13 +114,7 @@ st.markdown(f"""
     }}
     .stButton > button:hover {{ background: {COLOR_BOTON_HOVER}; }}
     
-    .stSelectbox > div > div {{
-        background-color: {COLOR_SELECTBOX_FONDO} !important;
-        color: {COLOR_SELECTBOX_TEXTO} !important;
-        border: 1px solid {COLOR_SELECTBOX_BORDE} !important;
-        border-radius: 8px !important;
-    }}
-    
+    /* TABS */
     .stTabs [data-baseweb="tab-list"] {{ background-color: {COLOR_TABS_FONDO} !important; }}
     .stTabs [data-baseweb="tab"] {{
         color: {COLOR_TAB_INACTIVA_TEXTO} !important;
@@ -81,6 +125,7 @@ st.markdown(f"""
         color: {COLOR_TAB_ACTIVA_TEXTO} !important;
     }}
     
+    /* Inputs */
     .stTextInput input, .stTextArea textarea, .stNumberInput input {{
         color: black !important;
         background-color: white !important;
@@ -88,6 +133,7 @@ st.markdown(f"""
         border-radius: 8px !important;
     }}
     
+    /* Metric cards */
     .metric-card {{
         background: white;
         border-radius: 15px;
@@ -98,6 +144,7 @@ st.markdown(f"""
     }}
     .metric-value {{ font-size: 2rem; font-weight: bold; color: {COLOR_BOTON_PRIMARIO} !important; }}
     
+    /* Resultados de búsqueda */
     .search-result {{
         background: white;
         border-radius: 10px;
@@ -264,7 +311,7 @@ def buscar_producto(catalogos, sku_buscar):
 
 def buscar_en_catalogo(catalogos, termino, col_precio_consulta=None):
     """Busca productos sin duplicados por SKU"""
-    resultados_dict = {}  # Usar diccionario para eliminar duplicados por SKU
+    resultados_dict = {}
     
     for cat in catalogos:
         df = cat['df']
@@ -274,12 +321,10 @@ def buscar_en_catalogo(catalogos, termino, col_precio_consulta=None):
         for idx, row in df[mask_sku | mask_desc].iterrows():
             sku = str(row[cat['col_sku']])
             
-            # Calcular precio si se seleccionó una columna
             precio = None
-            if col_precio_consulta:
+            if col_precio_consulta and col_precio_consulta != "(No mostrar precio)":
                 precio = corregir_numero(row[col_precio_consulta]) if col_precio_consulta in df.columns else 0
             
-            # Si el SKU ya existe, no lo agregamos de nuevo (eliminar duplicados)
             if sku not in resultados_dict:
                 resultados_dict[sku] = {
                     'SKU': sku,
@@ -597,7 +642,7 @@ with tab_cotizacion:
                     st.success("✅ Cotización generada!")
 
 # ============================================
-# TAB 2: BUSCAR PRODUCTOS (MEJORADO)
+# TAB 2: BUSCAR PRODUCTOS
 # ============================================
 with tab_buscar:
     st.markdown("### 🔍 Buscar productos en catálogos")
@@ -611,7 +656,7 @@ with tab_buscar:
             busqueda = st.text_input("Escribe SKU o descripción:", placeholder="Ej: cable, cargador, CN0900009WH8...")
         
         with col_filtro2:
-            # Selector de precio para la consulta rápida
+            # Todas las columnas de precio disponibles
             todas_columnas = set()
             for cat in st.session_state.catalogos:
                 for col in cat['columnas_precio']:
@@ -625,14 +670,12 @@ with tab_buscar:
         
         if busqueda and len(busqueda) > 2:
             with st.spinner("Buscando..."):
-                # Pasar la columna de precio seleccionada
                 precio_seleccionado = None if col_precio_consulta == "(No mostrar precio)" else col_precio_consulta
                 resultados = buscar_en_catalogo(st.session_state.catalogos, busqueda, precio_seleccionado)
             
             if resultados:
                 st.success(f"✅ {len(resultados)} resultados encontrados (SKU duplicados eliminados)")
                 
-                # Mostrar resultados en tarjetas
                 for res in resultados:
                     st.markdown(f"""
                     <div class="search-result">
@@ -643,7 +686,6 @@ with tab_buscar:
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # Botón para transferir SKU únicos a cotización
                 if st.button("📋 Transferir SKU a Cotización (1 unidad cada uno)"):
                     skus_dict = {res['SKU']: 1 for res in resultados}
                     st.session_state.skus_transferidos = skus_dict
@@ -717,7 +759,6 @@ with tab_dashboard:
     **3. Revisar resultados:**
     - La tabla muestra Stock, Comprometido, Disponible
     - Puedes editar las cantidades manualmente
-    - Si pones cantidad > stock, se marca advertencia pero igual se incluye
     
     **4. Buscar productos:**
     - Busca por SKU o descripción
