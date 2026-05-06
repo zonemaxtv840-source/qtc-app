@@ -30,7 +30,6 @@ COLOR_BOTON_HOVER = "#1E8449"
 COLOR_SELECTBOX_FONDO = "white"
 COLOR_SELECTBOX_TEXTO = "black"
 COLOR_SELECTBOX_BORDE = "#27AE60"
-COLOR_SELECTBOX_LABEL = "#1a1a2e"  # Color de la etiqueta del selectbox
 COLOR_TABS_FONDO = "white"
 COLOR_TAB_INACTIVA_FONDO = "#f0f0f0"
 COLOR_TAB_INACTIVA_TEXTO = "#1a1a2e"
@@ -40,6 +39,12 @@ COLOR_ESTADO_OK = "green"
 COLOR_ESTADO_SIN_STOCK = "red"
 COLOR_ESTADO_ADVERTENCIA = "orange"
 COLOR_ESTADO_EXCLUIDO = "gray"
+
+# COLORES PARA EL DROPDOWN - TEXTO VERDE
+COLOR_DROPDOWN_TEXTO = "#27AE60"        # ← VERDE para el texto de las opciones
+COLOR_DROPDOWN_FONDO = "#1a472a"        # Fondo verde oscuro
+COLOR_DROPDOWN_HOVER = "#2d5a3f"        # Fondo al pasar mouse
+COLOR_DROPDOWN_SELECCIONADO = "#27AE60" # Fondo cuando seleccionado
 
 # --- ESTILOS CSS COMPLETOS ---
 st.markdown(f"""
@@ -72,7 +77,6 @@ st.markdown(f"""
     /* ========================================== */
     /* SELECTOR DE PRECIO EN LA PESTAÑA BÚSQUEDA */
     /* ========================================== */
-    /* Este es el selector que estaba en negro - ahora corregido */
     div:not([data-testid="stSidebar"]) .stSelectbox > div > div {{
         background-color: white !important;
         color: black !important;
@@ -86,22 +90,32 @@ st.markdown(f"""
         color: {COLOR_TEXTO_PRINCIPAL} !important;
     }}
     
-    /* Dropdown de opciones del selector de búsqueda */
+    /* ========================================== */
+    /* DROPDOWN - MENÚ DESPLEGABLE (OPCIONES) */
+    /* TEXTO EN VERDE COMO SOLICITASTE */
+    /* ========================================== */
     div:not([data-testid="stSidebar"]) div[data-baseweb="select"] ul {{
-        background-color: white !important;
-        border: 1px solid #ccc !important;
+        background-color: {COLOR_DROPDOWN_FONDO} !important;
+        border: 1px solid {COLOR_SELECTBOX_BORDE} !important;
         border-radius: 8px !important;
     }}
+    
+    /* Cada opción del dropdown - TEXTO VERDE */
     div:not([data-testid="stSidebar"]) div[data-baseweb="select"] li {{
-        color: black !important;
-        background-color: white !important;
+        color: {COLOR_DROPDOWN_TEXTO} !important;     /* ← TEXTO VERDE */
+        background-color: {COLOR_DROPDOWN_FONDO} !important;
         padding: 8px 12px !important;
     }}
+    
+    /* Hover sobre una opción */
     div:not([data-testid="stSidebar"]) div[data-baseweb="select"] li:hover {{
-        background-color: #e8f5e9 !important;
+        background-color: {COLOR_DROPDOWN_HOVER} !important;
+        color: {COLOR_DROPDOWN_TEXTO} !important;
     }}
+    
+    /* Opción seleccionada */
     div:not([data-testid="stSidebar"]) div[data-baseweb="select"] li[aria-selected="true"] {{
-        background-color: {COLOR_BOTON_PRIMARIO} !important;
+        background-color: {COLOR_DROPDOWN_SELECCIONADO} !important;
         color: white !important;
     }}
     
@@ -293,10 +307,10 @@ def cargar_stock(archivo):
     except:
         return None
 
-def buscar_producto(catalogos, sku_buscar):
+def buscar_producto_individual(catalogos, sku_buscar):
     for catalogo in catalogos:
         df = catalogo['df']
-        mask = df[catalogo['col_sku']].astype(str).str.contains(sku_buscar, case=False, na=False)
+        mask = df[catalogo['col_sku']].astype(str).str.contains(sku_buscar, case=False, na=False, regex=False)
         if not df[mask].empty:
             row = df[mask].iloc[0]
             return {
@@ -315,8 +329,8 @@ def buscar_en_catalogo(catalogos, termino, col_precio_consulta=None):
     
     for cat in catalogos:
         df = cat['df']
-        mask_sku = df[cat['col_sku']].astype(str).str.contains(termino, case=False, na=False)
-        mask_desc = df[cat['col_desc']].astype(str).str.contains(termino, case=False, na=False)
+        mask_sku = df[cat['col_sku']].astype(str).str.contains(termino, case=False, na=False, regex=False)
+        mask_desc = df[cat['col_desc']].astype(str).str.contains(termino, case=False, na=False, regex=False)
         
         for idx, row in df[mask_sku | mask_desc].iterrows():
             sku = str(row[cat['col_sku']])
@@ -342,7 +356,7 @@ def obtener_precio(row, columnas_precio, col_seleccionada):
 
 def obtener_stock(sku, stocks):
     for stock in stocks:
-        mask = stock['df'][stock['col_sku']].astype(str).str.contains(sku, case=False, na=False)
+        mask = stock['df'][stock['col_sku']].astype(str).str.contains(sku, case=False, na=False, regex=False)
         if not stock['df'][mask].empty:
             row = stock['df'][mask].iloc[0]
             stock_total = int(corregir_numero(row[stock['col_stock']])) if stock['col_stock'] else 0
@@ -414,6 +428,8 @@ if 'cotizaciones' not in st.session_state:
     st.session_state.cotizaciones = 0
 if 'total_prods' not in st.session_state:
     st.session_state.total_prods = 0
+if 'productos_seleccionados' not in st.session_state:
+    st.session_state.productos_seleccionados = {}
 
 tab_cotizacion, tab_buscar, tab_dashboard = st.tabs([
     "📦 Cotización", "🔍 Buscar Productos", "📊 Dashboard"
@@ -501,7 +517,7 @@ with tab_cotizacion:
                     sku = pedido['sku']
                     cant_solicitada = pedido['cantidad']
                     
-                    producto = buscar_producto(st.session_state.catalogos, sku)
+                    producto = buscar_producto_individual(st.session_state.catalogos, sku)
                     
                     if not producto['encontrado']:
                         resultados.append({
@@ -537,7 +553,6 @@ with tab_cotizacion:
         if st.session_state.resultados:
             st.markdown("---")
             st.markdown("### 📊 Resultados (edita cantidades)")
-            st.caption("💡 Puedes escribir cualquier cantidad, incluso si supera el stock disponible")
             
             resultados_editados = []
             
@@ -599,14 +614,12 @@ with tab_cotizacion:
                 st.divider()
             
             items_validos = [r for r in resultados_editados if r['A_Cotizar'] > 0 and r['Precio'] > 0]
-            items_con_advertencia = [r for r in resultados_editados if r['A_Cotizar'] > 0 and r['A_Cotizar'] > r['Disponible'] and r['Disponible'] > 0]
             total_cotizacion = sum(r['Total'] for r in items_validos)
             
-            col1, col2, col3, col4 = st.columns(4)
+            col1, col2, col3 = st.columns(3)
             col1.metric("📦 A cotizar", len(items_validos))
             col2.metric("💰 Total", f"S/. {total_cotizacion:,.2f}")
-            col3.metric("⚠️ Exceden stock", len(items_con_advertencia))
-            col4.metric("⏸️ Excluidos", len(resultados_editados) - len(items_validos))
+            col3.metric("⏸️ Excluidos", len(resultados_editados) - len(items_validos))
             
             if items_validos:
                 st.markdown("---")
@@ -642,133 +655,78 @@ with tab_cotizacion:
                     st.success("✅ Cotización generada!")
 
 # ============================================
-# TAB 2: BUSCAR PRODUCTOS
+# TAB 2: BUSCAR PRODUCTOS (CON BÚSQUEDA MÚLTIPLE)
 # ============================================
 with tab_buscar:
-    st.markdown("### 🔍 Buscar productos en catálogos")
+    st.markdown("### 🔍 Búsqueda Múltiple de Productos")
+    st.caption("💡 Busca productos y agrégalos a la cotización con la cantidad que desees")
     
     if not st.session_state.catalogos:
         st.warning("⚠️ Primero carga catálogos en la pestaña 'Cotización'")
     else:
-        col_filtro1, col_filtro2 = st.columns([2, 1])
+        # Selector de precio para la búsqueda
+        todas_columnas = set()
+        for cat in st.session_state.catalogos:
+            for col in cat['columnas_precio']:
+                todas_columnas.add(col)
         
-        with col_filtro1:
-            busqueda = st.text_input("Escribe SKU o descripción:", placeholder="Ej: cable, cargador, CN0900009WH8...")
+        col_precio_consulta = st.selectbox(
+            "Mostrar precios en columna:",
+            options=["(No mostrar precio)"] + sorted(list(todas_columnas)),
+            help="Selecciona qué columna de precio mostrar en los resultados",
+            key="precio_busqueda"
+        )
         
-        with col_filtro2:
-            # Todas las columnas de precio disponibles
-            todas_columnas = set()
-            for cat in st.session_state.catalogos:
-                for col in cat['columnas_precio']:
-                    todas_columnas.add(col)
-            
-            col_precio_consulta = st.selectbox(
-                "Ver precio en:",
-                options=["(No mostrar precio)"] + sorted(list(todas_columnas)),
-                help="Selecciona qué columna de precio mostrar en los resultados"
-            )
+        # Campo de búsqueda simple
+        busqueda = st.text_input("Buscar productos:", placeholder="Ej: cable, cargador, CN0900009WH8...")
         
-        if busqueda and len(busqueda) > 2:
+        # Resultados de búsqueda
+        if busqueda and len(busqueda) >= 3:
             with st.spinner("Buscando..."):
                 precio_seleccionado = None if col_precio_consulta == "(No mostrar precio)" else col_precio_consulta
-                resultados = buscar_en_catalogo(st.session_state.catalogos, busqueda, precio_seleccionado)
+                resultados_busqueda = buscar_en_catalogo(st.session_state.catalogos, busqueda, precio_seleccionado)
             
-            if resultados:
-                st.success(f"✅ {len(resultados)} resultados encontrados (SKU duplicados eliminados)")
+            if resultados_busqueda:
+                st.success(f"✅ {len(resultados_busqueda)} resultados encontrados")
                 
-                for res in resultados:
-                    st.markdown(f"""
-                    <div class="search-result">
-                        <b>📦 {res['SKU']}</b><br>
-                        <span style="color:#666;">{res['Descripción']}</span><br>
-                        <span style="font-size:0.85rem;">📁 {res['Catálogo']}</span>
-                        {f'<br><span style="color:#27AE60; font-weight:bold;">💰 Precio: S/. {res["Precio"]:,.2f}</span>' if res['Precio'] else ''}
-                    </div>
-                    """, unsafe_allow_html=True)
+                st.markdown("#### 📋 Selecciona productos y cantidades:")
                 
-                if st.button("📋 Transferir SKU a Cotización (1 unidad cada uno)"):
-                    skus_dict = {res['SKU']: 1 for res in resultados}
-                    st.session_state.skus_transferidos = skus_dict
-                    st.success(f"✅ {len(skus_dict)} SKU transferidos! Ve a la pestaña Cotización")
-                    st.info("Los SKU aparecerán en el área de texto con cantidad 1")
-            else:
-                st.warning("No se encontraron productos con ese término")
-
-# ============================================
-# TAB 3: DASHBOARD
-# ============================================
-with tab_dashboard:
-    st.markdown("### 📊 Dashboard de Ventas")
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{st.session_state.get('cotizaciones', 0)}</div>
-            <div class="metric-label">📄 Cotizaciones Generadas</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{st.session_state.get('total_prods', 0)}</div>
-            <div class="metric-label">🌿 Productos Cotizados</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col3:
-        total_catalogos = len(st.session_state.get('catalogos', []))
-        total_stocks = len(st.session_state.get('stocks', []))
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{total_catalogos}</div>
-            <div class="metric-label">📚 Catálogos</div>
-            <div style="font-size:0.8rem;">+ {total_stocks} stocks</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("---")
-    st.markdown("### 📋 Resumen de Catálogos Cargados")
-    
-    if st.session_state.catalogos:
-        for cat in st.session_state.catalogos:
-            st.markdown(f"- **{cat['nombre']}**")
-    else:
-        st.info("No hay catálogos cargados")
-    
-    st.markdown("---")
-    st.markdown("### 📋 Resumen de Stocks Cargados")
-    
-    if st.session_state.stocks:
-        for stock in st.session_state.stocks:
-            st.markdown(f"- **{stock['nombre']}**")
-    else:
-        st.info("No hay stocks cargados")
-    
-    st.markdown("---")
-    st.markdown("### 🎯 Manual del Sistema")
-    st.markdown("""
-    **1. Cargar archivos:**
-    - Sube tus catálogos de precios (Excel)
-    - Sube tus reportes de stock (Excel)
-    - Cada archivo permite elegir qué hoja usar
-    
-    **2. Configurar cotización:**
-    - Selecciona la columna de precio (Caja, VIP, Mayor, etc.)
-    - Ingresa los SKU en formato `SKU:CANTIDAD`
-    
-    **3. Revisar resultados:**
-    - La tabla muestra Stock, Comprometido, Disponible
-    - Puedes editar las cantidades manualmente
-    
-    **4. Buscar productos:**
-    - Busca por SKU o descripción
-    - Selecciona qué columna de precio ver
-    - Los SKU duplicados se muestran una sola vez
-    
-    **5. Generar cotización:**
-    - Ingresa datos del cliente
-    - Descarga Excel con formato profesional
-    """)
-
-st.markdown("---")
-st.markdown("*💚 QTC Smart Sales Pro - Sistema Profesional de Cotización*")
+                # Mostrar cada resultado con opción de cantidad
+                for res in resultados_busqueda:
+                    col1, col2, col3, col4 = st.columns([2, 4, 1, 1.5])
+                    
+                    with col1:
+                        st.markdown(f"**📦 {res['SKU']}**")
+                    with col2:
+                        st.markdown(res['Descripción'])
+                    with col3:
+                        precio_text = f"S/. {res['Precio']:,.2f}" if res['Precio'] else "Sin precio"
+                        st.markdown(f"💰 {precio_text}")
+                    with col4:
+                        cantidad = st.number_input(
+                            "Cant",
+                            min_value=0,
+                            max_value=999,
+                            value=0,
+                            key=f"multi_{res['SKU']}_{hash(res['SKU'])}",
+                            label_visibility="collapsed"
+                        )
+                        if cantidad > 0:
+                            st.session_state.productos_seleccionados[res['SKU']] = cantidad
+                        elif res['SKU'] in st.session_state.productos_seleccionados:
+                            del st.session_state.productos_seleccionados[res['SKU']]
+                    
+                    st.divider()
+                
+                # Mostrar productos seleccionados
+                if st.session_state.productos_seleccionados:
+                    st.markdown("---")
+                    st.markdown(f"### ✅ Productos seleccionados: {len(st.session_state.productos_seleccionados)}")
+                    
+                    df_seleccionados = pd.DataFrame([
+                        {'SKU': sku, 'Cantidad': cant} 
+                        for sku, cant in st.session_state.productos_seleccionados.items()
+                    ])
+                    st.dataframe(df_seleccionados, use_container_width=True)
+                    
+                    if st.button
