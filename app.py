@@ -32,42 +32,50 @@ COLORES = {
 }
 
 # --- ESTILOS CSS ---
-st.markdown(f"""
-    <style>
-    .stApp {{ background-color: {COLORES["fondo_principal"]}; }}
-    .main .block-container {{ padding-top: 1rem; }}
-    h1, h2, h3, h4, p, div, label {{ color: {COLORES["texto_principal"]} !important; }}
+# Agrega estas líneas dentro de la sección de ESTILOS CSS, antes de cerrar el </style>
+
+    /* Arreglar el SELECTBOX (dropdown) */
+    .stSelectbox > div > div {
+        background-color: white !important;
+        color: #1a1a2e !important;
+    }
     
-    [data-testid="stSidebar"] {{
-        background: linear-gradient(180deg, {COLORES["fondo_sidebar"]} 0%, #0d2818 100%);
-    }}
-    [data-testid="stSidebar"] * {{ color: {COLORES["texto_blanco"]} !important; }}
+    .stSelectbox > div > div > div {
+        color: #1a1a2e !important;
+    }
     
-    .stButton > button {{
-        background: {COLORES["primario"]};
-        color: white !important;
-        border-radius: 10px;
-        font-weight: 600;
-        transition: all 0.3s;
-    }}
-    .stButton > button:hover {{
-        background: {COLORES["primario_oscuro"]};
-        transform: translateY(-2px);
-    }}
+    .stSelectbox label {
+        color: #1a1a2e !important;
+    }
     
-    .metric-card {{
-        background: {COLORES["fondo_tarjetas"]};
-        border-radius: 15px;
-        padding: 1.2rem;
-        text-align: center;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        border: 1px solid {COLORES["borde"]};
-    }}
-    .metric-value {{
-        font-size: 2rem;
-        font-weight: bold;
-        color: {COLORES["primario"]} !important;
-    }}
+    /* Arreglar opciones del dropdown */
+    div[data-baseweb="select"] > div {
+        background-color: white !important;
+    }
+    
+    div[data-baseweb="select"] ul {
+        background-color: white !important;
+    }
+    
+    div[data-baseweb="select"] li {
+        color: #1a1a2e !important;
+        background-color: white !important;
+    }
+    
+    div[data-baseweb="select"] li:hover {
+        background-color: #f0f0f0 !important;
+    }
+    
+    /* Arreglar otros inputs */
+    .stTextInput input, .stTextArea textarea, .stNumberInput input {
+        color: #1a1a2e !important;
+        background-color: white !important;
+    }
+    
+    /* Arreglar el placeholder */
+    ::placeholder {
+        color: #999999 !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
