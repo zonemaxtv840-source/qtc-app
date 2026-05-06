@@ -64,17 +64,26 @@ st.markdown(f"""
         color: {COLORES["primario"]} !important;
     }}
     
-    .precio-card {{
-        background: {COLORES["fondo_tarjetas"]};
+    /* Estilo para inputs en la tabla */
+    .cantidad-input {{
+        width: 80px;
+        text-align: center;
         border: 1px solid {COLORES["borde"]};
-        border-radius: 10px;
-        padding: 0.8rem;
-        margin: 0.5rem 0;
+        border-radius: 6px;
+        padding: 4px;
+    }}
+    
+    /* Botón eliminar */
+    .delete-btn {{
+        background-color: #DC3545;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 4px 12px;
         cursor: pointer;
     }}
-    .precio-card:hover {{
-        border-color: {COLORES["primario"]};
-        box-shadow: 0 2px 8px {COLORES["sombra"]};
+    .delete-btn:hover {{
+        background-color: #c82333;
     }}
     </style>
 """, unsafe_allow_html=True)
@@ -250,7 +259,7 @@ def cargar_todas_las_hojas(archivo):
                 df['_origen_hoja'] = hoja
                 df['_origen_sku_col'] = col_sku
                 df['_origen_desc_col'] = col_desc
-                df['_columnas_precio'] = str(cols_precio)  # Guardar columnas de precio
+                df['_columnas_precio'] = str(cols_precio)
                 
                 todas_las_hojas.append(df)
         
@@ -335,7 +344,9 @@ def buscar_sku_en_catalogos(catalogos, sku, col_precio_seleccionada=None):
     
     return {'encontrado': False}
 
-# --- INTERFAZ PRINCIPAL ---
+# ============================================
+# INTERFAZ PRINCIPAL
+# ============================================
 st.title("💚 QTC Smart Sales Pro")
 st.markdown("### 🔍 Busca automáticamente en TODAS las hojas de tus Excel")
 st.markdown("---")
@@ -491,6 +502,7 @@ with tab_pedidos:
                                 stock = int(corregir_numero(st.session_state.df_stock[mask_stock].iloc[0][st.session_state.col_stock_cant]))
                         
                         resultados.append({
+                            'id': sku,  # ID único para el producto
                             'SKU': sku,
                             'Archivo': busqueda['archivo'],
                             'Hoja': busqueda['hoja'],
@@ -503,6 +515,7 @@ with tab_pedidos:
                         })
                     else:
                         resultados.append({
+                            'id': sku,
                             'SKU': sku,
                             'Archivo': '❌ No encontrado',
                             'Hoja': '-',
@@ -514,62 +527,151 @@ with tab_pedidos:
                             'Estado': '❌ No existe'
                         })
                 
-                if resultados:
-                    df_res = pd.DataFrame(resultados)
-                    st.dataframe(df_res, use_container_width=True)
-                    
-                    total_ok = sum(r['Total'] for r in resultados if r['Estado'] == '✅ OK')
-                    productos_ok = len([r for r in resultados if r['Estado'] == '✅ OK'])
-                    
-                    col1, col2, col3 = st.columns(3)
-                    col1.metric("💰 Total Cotización", f"S/. {total_ok:,.2f}")
-                    col2.metric("✅ Con Stock", productos_ok)
-                    col3.metric("❌ Sin Stock/Novencontrado", len(resultados) - productos_ok)
-                    
-                    with st.expander("📥 Generar Cotización", expanded=True):
-                        col_cli1, col_cli2 = st.columns(2)
-                        with col_cli1:
-                            cliente = st.text_input("🏢 Cliente", "CLIENTE NUEVO")
-                        with col_cli2:
-                            ruc = st.text_input("📋 RUC/DNI", "-")
+                # Guardar resultados en session_state para editarlos
+                st.session_state.resultados_actuales = resultados
+            
+            # Mostrar resultados editables
+            if 'resultados_actuales' in st.session_state:
+                resultados = st.session_state.resultados_actuales
+                
+                st.subheader("📊 Resultados - Puedes editar las cantidades")
+                st.caption("💡 Modifica las cantidades directamente en los campos numéricos")
+                
+                # Tabla editable con columnas
+                resultados_editados = []
+                
+                # Crear columnas para la tabla
+                cols = st.columns([2, 4, 2, 1, 1.5, 1, 1.5, 1])
+                cols[0].markdown("**SKU**")
+                cols[1].markdown("**Descripción**")
+                cols[2].markdown("**Ubicación**")
+                cols[3].markdown("**Precio**")
+                cols[4].markdown("**Cantidad**")
+                cols[5].markdown("**Stock**")
+                cols[6].markdown("**Total**")
+                cols[7].markdown("**Estado**")
+                
+                st.markdown("---")
+                
+                for i, item in enumerate(resultados):
+                    with st.container():
+                        col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([2, 4, 2, 1, 1.5, 1, 1.5, 1])
                         
-                        items_ok = [r for r in resultados if r['Estado'] == '✅ OK']
+                        col1.markdown(f"`{item['SKU']}`")
+                        col2.markdown(item['Descripción'][:50])
+                        col3.markdown(f"{item['Archivo']}\n*{item['Hoja']}*" if item['Archivo'] != '❌ No encontrado' else "❌")
+                        col4.markdown(f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "-")
                         
-                        if items_ok:
-                            # Formato para la cotización original
-                            items_cotizacion = [{
-                                'sku': r['SKU'],
-                                'desc': r['Descripción'],
-                                'cant': r['Solicitado'],
-                                'p_u': r['Precio'],
-                                'total': r['Total']
-                            } for r in items_ok]
+                        # Input editable para cantidad
+                        nueva_cantidad = col5.number_input(
+                            "Cant",
+                            min_value=0,
+                            max_value=999,
+                            value=int(item['Solicitado']),
+                            key=f"cant_{item['id']}_{i}",
+                            label_visibility="collapsed"
+                        )
+                        
+                        col6.markdown(f"{item['Stock']}" if item['Stock'] > 0 else "0")
+                        
+                        # Recalcular total con nueva cantidad
+                        nuevo_total = item['Precio'] * nueva_cantidad
+                        col7.markdown(f"S/. {nuevo_total:,.2f}" if nuevo_total > 0 else "-")
+                        
+                        # Estado actualizado
+                        if item['Archivo'] == '❌ No encontrado':
+                            estado = "❌ No existe"
+                            color_estado = "red"
+                        elif nueva_cantidad > 0 and item['Stock'] >= nueva_cantidad:
+                            estado = "✅ OK"
+                            color_estado = "green"
+                        elif nueva_cantidad > 0 and item['Stock'] < nueva_cantidad:
+                            estado = f"⚠️ Stock insuficiente (máx {item['Stock']})"
+                            color_estado = "orange"
+                        elif nueva_cantidad == 0:
+                            estado = "⏸️ Excluido"
+                            color_estado = "gray"
+                        else:
+                            estado = item['Estado']
+                            color_estado = "orange"
+                        
+                        col8.markdown(f"<span style='color:{color_estado}'>{estado}</span>", unsafe_allow_html=True)
+                        
+                        # Botón eliminar (opcional)
+                        if col8.button("🗑️", key=f"del_{item['id']}_{i}"):
+                            nueva_cantidad = 0
+                            st.rerun()
+                        
+                        # Guardar el item editado
+                        item_editado = item.copy()
+                        item_editado['Solicitado'] = nueva_cantidad
+                        item_editado['Total'] = nuevo_total
+                        resultados_editados.append(item_editado)
+                        
+                        st.markdown("---")
+                
+                # Actualizar session_state con los resultados editados
+                st.session_state.resultados_editados = resultados_editados
+                
+                # Resumen de selección
+                items_seleccionados = [r for r in resultados_editados if r['Solicitado'] > 0 and r['Archivo'] != '❌ No encontrado']
+                items_con_stock = [r for r in items_seleccionados if r['Stock'] >= r['Solicitado']]
+                
+                total_seleccionado = sum(r['Total'] for r in items_seleccionados if r['Stock'] >= r['Solicitado'])
+                
+                col1, col2, col3, col4 = st.columns(4)
+                col1.metric("📦 Productos seleccionados", len(items_seleccionados))
+                col2.metric("✅ Con stock suficiente", len(items_con_stock))
+                col3.metric("💰 Total a cotizar", f"S/. {total_seleccionado:,.2f}")
+                col4.metric("⚠️ Sin stock/Excluidos", len([r for r in resultados if r['Solicitado'] == 0 or r['Archivo'] == '❌ No encontrado']))
+                
+                # Botones de acción
+                col_btn1, col_btn2 = st.columns(2)
+                
+                with col_btn1:
+                    if st.button("🔄 Actualizar selección", use_container_width=True):
+                        st.rerun()
+                
+                with col_btn2:
+                    if items_con_stock and st.button("📥 Generar Cotización", use_container_width=True, type="primary"):
+                        # Preparar datos para la cotización
+                        items_cotizacion = [{
+                            'sku': r['SKU'],
+                            'desc': r['Descripción'],
+                            'cant': r['Solicitado'],
+                            'p_u': r['Precio'],
+                            'total': r['Total']
+                        } for r in items_con_stock]
+                        
+                        # Mostrar modal de datos del cliente
+                        with st.expander("📝 Datos del Cliente", expanded=True):
+                            col_cli1, col_cli2 = st.columns(2)
+                            with col_cli1:
+                                cliente = st.text_input("🏢 Cliente", "CLIENTE NUEVO")
+                            with col_cli2:
+                                ruc = st.text_input("📋 RUC/DNI", "-")
                             
-                            st.markdown(f"""
-                            <div style="background: #d4edda; padding: 1rem; border-radius: 10px; margin: 1rem 0;">
-                                <strong>📄 Resumen de Cotización:</strong><br>
-                                Cliente: {cliente}<br>
-                                Productos: {len(items_ok)}<br>
-                                Total: S/. {total_ok:,.2f}
-                            </div>
-                            """, unsafe_allow_html=True)
-                            
-                            if st.button("📥 Descargar Cotización en Excel", use_container_width=True):
+                            if st.button("✅ Confirmar y Descargar Excel", use_container_width=True):
                                 excel_data = generar_excel_cotizacion(items_cotizacion, cliente, ruc)
                                 st.download_button(
-                                    label="💾 Guardar archivo",
+                                    label="💾 Descargar Cotización",
                                     data=excel_data,
                                     file_name=f"Cotizacion_{cliente}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
                                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                     use_container_width=True
                                 )
                                 st.session_state.cotizaciones = st.session_state.get("cotizaciones", 0) + 1
-                                st.session_state.total_prods = len(items_ok)
+                                st.session_state.total_prods = len(items_con_stock)
                                 st.balloons()
-                        else:
-                            st.warning("No hay productos con stock disponible para cotizar")
     else:
         st.info("📂 Sube tus catálogos en la barra lateral izquierda")
+        st.markdown("""
+        ### 💡 Tips:
+        - Puedes subir varios archivos Excel
+        - El sistema buscará en **TODAS las hojas** automáticamente
+        - **Edita las cantidades** directamente en la tabla de resultados
+        - Excluye productos que no quieras poniendo cantidad 0
+        """)
 
 # ============================================
 # TAB 2: BÚSQUEDA MÚLTIPLE
@@ -594,7 +696,6 @@ with tab_busqueda:
                     mask = df['_desc_unificado'].astype(str).str.contains(termino, case=False, na=False)
                 
                 for idx, row in df[mask].iterrows():
-                    # Obtener precio
                     precio = 0
                     col_precio = st.session_state.get('col_precio_seleccionada')
                     if col_precio and col_precio in df.columns:
@@ -612,6 +713,14 @@ with tab_busqueda:
                 st.success(f"✅ {len(resultados)} resultados encontrados")
                 df_busq = pd.DataFrame(resultados)
                 st.dataframe(df_busq, use_container_width=True)
+                
+                # Botón para transferir los SKU encontrados
+                if st.button("📋 Transferir SKU a Pedidos"):
+                    skus_transferir = {}
+                    for res in resultados:
+                        skus_transferir[res['SKU']] = 1
+                    st.session_state.skus_transferidos = skus_transferir
+                    st.success(f"✅ {len(skus_transferir)} SKUs transferidos a la pestaña Pedidos")
             else:
                 st.warning("No se encontraron resultados")
     else:
@@ -678,47 +787,4 @@ with tab_imagen:
             skus_manual[sku.upper()] = cant
     
     if skus_manual and st.button("📋 Transferir Manual"):
-        st.session_state.skus_transferidos = skus_manual
-        st.success(f"✅ {len(skus_manual)} SKUs transferidos")
-
-# ============================================
-# TAB 4: DASHBOARD
-# ============================================
-with tab_dashboard:
-    st.markdown("### 📊 Dashboard")
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{st.session_state.get("cotizaciones", 0)}</div>
-            <div class="metric-label">Cotizaciones</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        total_hojas = sum(len(cat.get('hojas', [])) for cat in st.session_state.get('catalogos', []))
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{len(st.session_state.get('catalogos', []))}</div>
-            <div class="metric-label">Archivos</div>
-            <div class="metric-label" style="font-size:0.7rem;">({total_hojas} hojas)</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col3:
-        total_productos = sum(cat.get('total_filas', 0) for cat in st.session_state.get('catalogos', []))
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{total_productos:,}</div>
-            <div class="metric-label">Productos Indexados</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("---")
-    st.markdown("### 💰 Columna de Precio Seleccionada")
-    if st.session_state.get('col_precio_seleccionada'):
-        st.success(f"**{st.session_state.col_precio_seleccionada}**")
-    else:
-        st.info("No se ha seleccionado ninguna columna de precio aún")
-
-st.markdown("---")
-st.markdown("*💚 QTC Smart Sales - Búsqueda Automática en TODAS las hojas con selección de precio*")
+        st.session
