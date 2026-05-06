@@ -14,194 +14,164 @@ try:
 except:
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon="💼", layout="wide")
 
-# ============================================
-# COLORES CORPORATIVOS
-# ============================================
-COLORES = {
-    "fondo_principal": "#F0F2F6",
-    "fondo_tarjetas": "#FFFFFF",
-    "fondo_sidebar": "#1a472a",
-    "texto_principal": "#1a1a2e",
-    "texto_secundario": "#666666",
-    "texto_blanco": "#FFFFFF",
-    "primario": "#27AE60",
-    "primario_oscuro": "#1E8449",
-    "peligro": "#e74c3c",
-    "advertencia": "#f39c12",
-    "borde": "#E0E0E0",
-}
-
-# --- ESTILOS CSS CORREGIDOS ---
-st.markdown(f"""
+# --- ESTILOS CSS CORREGIDOS (sin f-strings) ---
+st.markdown("""
     <style>
     /* Fondo general */
-    .stApp {{ background-color: {COLORES["fondo_principal"]}; }}
-    .main .block-container {{ padding-top: 1rem; }}
+    .stApp {
+        background-color: #F0F2F6;
+    }
+    .main .block-container {
+        padding-top: 1rem;
+    }
     
     /* Textos generales */
-    h1, h2, h3, h4, p, div, label {{ color: {COLORES["texto_principal"]} !important; }}
+    h1, h2, h3, h4, p, div, label {
+        color: #1a1a2e !important;
+    }
     
     /* Sidebar */
-    [data-testid="stSidebar"] {{
-        background: linear-gradient(180deg, {COLORES["fondo_sidebar"]} 0%, #0d2818 100%);
-    }}
-    [data-testid="stSidebar"] * {{ color: {COLORES["texto_blanco"]} !important; }}
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #1a472a 0%, #0d2818 100%);
+    }
+    [data-testid="stSidebar"] * {
+        color: #FFFFFF !important;
+    }
     
     /* Botones */
-    .stButton > button {{
-        background: {COLORES["primario"]};
+    .stButton > button {
+        background: #27AE60;
         color: white !important;
         border-radius: 10px;
         font-weight: 600;
         transition: all 0.3s;
-    }}
-    .stButton > button:hover {{
-        background: {COLORES["primario_oscuro"]};
+    }
+    .stButton > button:hover {
+        background: #1E8449;
         transform: translateY(-2px);
-    }}
-    
-    /* ========================================== */
-    /* FIX: FILE UPLOADER (cuadro de subida de archivos) */
-    /* ========================================== */
-    .stFileUploader > div > div {{
-        background-color: white !important;
-        border: 1px dashed {COLORES["primario"]} !important;
-        border-radius: 10px !important;
-    }}
-    
-    .stFileUploader > div > div > div {{
-        color: {COLORES["texto_principal"]} !important;
-    }}
-    
-    .stFileUploader button {{
-        background-color: {COLORES["primario"]} !important;
-        color: white !important;
-    }}
-    
-    /* ========================================== */
-    /* FIX: SELECTBOX (desplegables) */
-    /* ========================================== */
-    .stSelectbox > div > div {{
-        background-color: white !important;
-        color: {COLORES["texto_principal"]} !important;
-        border: 1px solid {COLORES["borde"]} !important;
-        border-radius: 8px !important;
-    }}
-    
-    .stSelectbox > div > div > div {{
-        color: {COLORES["texto_principal"]} !important;
-    }}
-    
-    .stSelectbox label {{
-        color: {COLORES["texto_principal"]} !important;
-    }}
-    
-    /* Dropdown menu options */
-    div[data-baseweb="select"] > div {{
-        background-color: white !important;
-    }}
-    
-    div[data-baseweb="select"] ul {{
-        background-color: white !important;
-        border: 1px solid {COLORES["borde"]} !important;
-        border-radius: 8px !important;
-    }}
-    
-    div[data-baseweb="select"] li {{
-        color: {COLORES["texto_principal"]} !important;
-        background-color: white !important;
-        padding: 8px 12px !important;
-    }}
-    
-    div[data-baseweb="select"] li:hover {{
-        background-color: #e8f5e9 !important;
-    }}
-    
-    div[data-baseweb="select"] li[aria-selected="true"] {{
-        background-color: {COLORES["primario"]} !important;
-        color: white !important;
-    }}
-    
-    /* ========================================== */
-    /* FIX: TEXT INPUT (campos de texto) */
-    /* ========================================== */
-    .stTextInput input, .stTextArea textarea, .stNumberInput input {{
-        color: {COLORES["texto_principal"]} !important;
-        background-color: white !important;
-        border: 1px solid {COLORES["borde"]} !important;
-        border-radius: 8px !important;
-    }}
-    
-    .stTextInput input:focus, .stTextArea textarea:focus {{
-        border-color: {COLORES["primario"]} !important;
-        box-shadow: 0 0 0 2px rgba(39,174,96,0.2) !important;
-    }}
-    
-    /* Placeholder */
-    ::placeholder {{
-        color: #999999 !important;
-    }}
-    
-    /* ========================================== */
-    /* FIX: CHECKBOX y RADIO */
-    /* ========================================== */
-    .stCheckbox label, .stRadio label {{
-        color: {COLORES["texto_principal"]} !important;
     }
     
-    /* ========================================== */
-    /* FIX: METRIC CARDS */
-    /* ========================================== */
-    .metric-card {{
-        background: {COLORES["fondo_tarjetas"]};
+    /* FILE UPLOADER */
+    .stFileUploader > div > div {
+        background-color: white !important;
+        border: 1px dashed #27AE60 !important;
+        border-radius: 10px !important;
+    }
+    .stFileUploader > div > div > div {
+        color: #1a1a2e !important;
+    }
+    .stFileUploader button {
+        background-color: #27AE60 !important;
+        color: white !important;
+    }
+    
+    /* SELECTBOX */
+    .stSelectbox > div > div {
+        background-color: white !important;
+        color: #1a1a2e !important;
+        border: 1px solid #E0E0E0 !important;
+        border-radius: 8px !important;
+    }
+    .stSelectbox > div > div > div {
+        color: #1a1a2e !important;
+    }
+    .stSelectbox label {
+        color: #1a1a2e !important;
+    }
+    
+    /* Dropdown menu */
+    div[data-baseweb="select"] > div {
+        background-color: white !important;
+    }
+    div[data-baseweb="select"] ul {
+        background-color: white !important;
+        border: 1px solid #E0E0E0 !important;
+        border-radius: 8px !important;
+    }
+    div[data-baseweb="select"] li {
+        color: #1a1a2e !important;
+        background-color: white !important;
+        padding: 8px 12px !important;
+    }
+    div[data-baseweb="select"] li:hover {
+        background-color: #e8f5e9 !important;
+    }
+    div[data-baseweb="select"] li[aria-selected="true"] {
+        background-color: #27AE60 !important;
+        color: white !important;
+    }
+    
+    /* TEXT INPUT */
+    .stTextInput input, .stTextArea textarea, .stNumberInput input {
+        color: #1a1a2e !important;
+        background-color: white !important;
+        border: 1px solid #E0E0E0 !important;
+        border-radius: 8px !important;
+    }
+    .stTextInput input:focus, .stTextArea textarea:focus {
+        border-color: #27AE60 !important;
+        box-shadow: 0 0 0 2px rgba(39,174,96,0.2) !important;
+    }
+    
+    /* Placeholder */
+    ::placeholder {
+        color: #999999 !important;
+    }
+    
+    /* CHECKBOX y RADIO */
+    .stCheckbox label, .stRadio label {
+        color: #1a1a2e !important;
+    }
+    
+    /* METRIC CARDS */
+    .metric-card {
+        background: #FFFFFF;
         border-radius: 15px;
         padding: 1.2rem;
         text-align: center;
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        border: 1px solid {COLORES["borde"]};
-    }}
-    .metric-value {{
+        border: 1px solid #E0E0E0;
+    }
+    .metric-value {
         font-size: 2rem;
         font-weight: bold;
-        color: {COLORES["primario"]} !important;
-    }}
+        color: #27AE60 !important;
+    }
     
     /* Dataframe */
-    .stDataFrame {{
+    .stDataFrame {
         background-color: white !important;
         border-radius: 10px !important;
-    }}
+    }
     
     /* Expander */
-    .streamlit-expanderHeader {{
+    .streamlit-expanderHeader {
         background-color: white !important;
-        color: {COLORES["texto_principal"]} !important;
+        color: #1a1a2e !important;
         border-radius: 10px !important;
-    }}
+    }
     
     /* Alertas */
-    .stAlert {{
+    .stAlert {
         background-color: white !important;
         border-radius: 10px !important;
-    }}
+    }
     
     /* Tabs */
-    .stTabs [data-baseweb="tab-list"] {{
+    .stTabs [data-baseweb="tab-list"] {
         background-color: white !important;
         border-radius: 10px !important;
         padding: 4px !important;
-    }}
-    
-    .stTabs [data-baseweb="tab"] {{
-        color: {COLORES["texto_principal"]} !important;
+    }
+    .stTabs [data-baseweb="tab"] {
+        color: #1a1a2e !important;
         background-color: #f0f0f0 !important;
         border-radius: 8px !important;
-    }}
-    
-    .stTabs [aria-selected="true"] {{
-        background-color: {COLORES["primario"]} !important;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #27AE60 !important;
         color: white !important;
-    }}
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -225,9 +195,9 @@ if "auth" not in st.session_state:
 if not st.session_state.auth:
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
-        st.markdown(f"""
+        st.markdown("""
         <div style="background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
-            <h1 style="text-align: center; color: {COLORES['primario']};">💚 QTC Smart Sales</h1>
+            <h1 style="text-align: center; color: #27AE60;">💚 QTC Smart Sales</h1>
             <p style="text-align: center;">Sistema Profesional de Cotización</p>
         </div>
         """, unsafe_allow_html=True)
@@ -242,7 +212,7 @@ if not st.session_state.auth:
     st.stop()
 
 # ============================================
-# FUNCIONES PRINCIPALES
+# FUNCIONES PRINCIPALES (mantener igual)
 # ============================================
 
 def corregir_numero(valor):
@@ -272,11 +242,9 @@ def limpiar_cabeceras(df):
     return df
 
 def cargar_archivo_datos(archivo):
-    """Carga archivo Excel o CSV automáticamente"""
     try:
         nombre = archivo.name.lower()
         if nombre.endswith('.csv'):
-            # Intentar diferentes codificaciones para CSV
             try:
                 df = pd.read_csv(archivo, encoding='utf-8')
             except:
@@ -286,7 +254,6 @@ def cargar_archivo_datos(archivo):
                     df = pd.read_csv(archivo, encoding='iso-8859-1')
         else:
             df = pd.read_excel(archivo)
-        
         df = limpiar_cabeceras(df)
         return df
     except Exception as e:
@@ -296,13 +263,11 @@ def cargar_excel_completo(archivo):
     try:
         nombre = archivo.name.lower()
         
-        # Manejar CSV
         if nombre.endswith('.csv'):
             df = cargar_archivo_datos(archivo)
             if df is None:
                 return None
             
-            # Detectar columnas
             col_sku = None
             col_desc = None
             columnas_precio = []
@@ -336,7 +301,6 @@ def cargar_excel_completo(archivo):
                 'total_hojas': 1
             }
         
-        # Manejar Excel
         xls = pd.ExcelFile(archivo)
         hojas_data = {}
         
@@ -394,7 +358,6 @@ def cargar_stock(archivo):
     try:
         nombre = archivo.name.lower()
         
-        # Manejar CSV
         if nombre.endswith('.csv'):
             df = cargar_archivo_datos(archivo)
             if df is None:
@@ -424,7 +387,6 @@ def cargar_stock(archivo):
                 'col_cant': col_cant
             }
         
-        # Manejar Excel
         xls = pd.ExcelFile(archivo)
         dfs_stock = []
         
@@ -472,15 +434,12 @@ def cargar_stock(archivo):
 
 def buscar_producto(catalogos, sku_buscar):
     resultados = []
-    
     for catalogo in catalogos:
         for hoja_nombre, hoja_data in catalogo['hojas'].items():
             df = hoja_data['df']
             col_sku = hoja_data['col_sku']
             col_desc = hoja_data['col_desc']
-            
             mask = df[col_sku].astype(str).str.contains(sku_buscar, case=False, na=False)
-            
             for idx, row in df[mask].iterrows():
                 resultados.append({
                     'archivo': catalogo['nombre'],
@@ -490,7 +449,6 @@ def buscar_producto(catalogos, sku_buscar):
                     'col_precios': hoja_data['columnas_precio'],
                     'row': row
                 })
-    
     return resultados
 
 def obtener_precio(row, columnas_precio, col_seleccionada):
@@ -501,10 +459,8 @@ def obtener_precio(row, columnas_precio, col_seleccionada):
 def obtener_stock_xiaomi(sku, stocks):
     stock_total = 0
     origenes = []
-    
     if not stocks:
         return 0, []
-    
     for stock in stocks:
         if 'apri004' in stock['nombre'].lower() or 'yessica' in stock['nombre'].lower():
             mask = stock['df'][stock['col_sku']].astype(str).str.contains(sku, case=False, na=False)
@@ -512,16 +468,13 @@ def obtener_stock_xiaomi(sku, stocks):
                 cantidad = corregir_numero(stock['df'][mask].iloc[0][stock['col_cant']])
                 stock_total += int(cantidad)
                 origenes.append(f"{stock['nombre']}: {int(cantidad)}")
-    
     return stock_total, origenes
 
 def obtener_stock_general(sku, stocks):
     stock_total = 0
     origenes = []
-    
     if not stocks:
         return 0, []
-    
     for stock in stocks:
         if 'apri1' in stock['nombre'].lower():
             mask = stock['df'][stock['col_sku']].astype(str).str.contains(sku, case=False, na=False)
@@ -529,7 +482,6 @@ def obtener_stock_general(sku, stocks):
                 cantidad = corregir_numero(stock['df'][mask].iloc[0][stock['col_cant']])
                 stock_total += int(cantidad)
                 origenes.append(f"{stock['nombre']}: {int(cantidad)}")
-    
     return stock_total, origenes
 
 def generar_excel_cotizacion(items, cliente, ruc):
@@ -541,20 +493,10 @@ def generar_excel_cotizacion(items, cliente, ruc):
     ws = writer.sheets['Cotizacion']
     
     fmt_header = workbook.add_format({
-        'bg_color': '#F79646', 
-        'bold': True, 
-        'border': 1, 
-        'align': 'center',
-        'font_color': 'white',
-        'font_size': 11
+        'bg_color': '#F79646', 'bold': True, 'border': 1, 'align': 'center',
+        'font_color': 'white', 'font_size': 11
     })
-    
-    fmt_money = workbook.add_format({
-        'num_format': '"S/." #,##0.00',
-        'border': 1,
-        'align': 'right'
-    })
-    
+    fmt_money = workbook.add_format({'num_format': '"S/." #,##0.00', 'border': 1, 'align': 'right'})
     fmt_border = workbook.add_format({'border': 1})
     fmt_bold = workbook.add_format({'bold': True, 'font_size': 11})
     
@@ -581,9 +523,7 @@ def generar_excel_cotizacion(items, cliente, ruc):
         ws.write(5, i, header, fmt_header)
     
     for row_idx, item in enumerate(items):
-        ws.write_row(row_idx + 6, 0, [
-            item['sku'], item['desc'], item['cant'], item['p_u'], item['total']
-        ], fmt_border)
+        ws.write_row(row_idx + 6, 0, [item['sku'], item['desc'], item['cant'], item['p_u'], item['total']], fmt_border)
         ws.write(row_idx + 6, 3, item['p_u'], fmt_money)
         ws.write(row_idx + 6, 4, item['total'], fmt_money)
     
@@ -668,7 +608,6 @@ with tab_config:
         if stocks_cargados:
             st.session_state.stocks = stocks_cargados
     
-    # Mostrar resumen
     if st.session_state.catalogos:
         st.markdown("---")
         st.markdown("#### ✅ Catálogos Cargados")
@@ -724,62 +663,40 @@ with tab_cotizacion:
                 linea = linea.strip()
                 if not linea:
                     continue
-                
                 es_promo = linea.startswith('*')
                 if es_promo:
                     linea = linea[1:]
-                
                 if ':' in linea:
                     sku, cant = linea.split(':')
                     try:
                         cantidad = int(cant.strip())
                         if cantidad > 0:
-                            pedidos.append({
-                                'sku': sku.strip().upper(),
-                                'cantidad': cantidad,
-                                'es_promo': es_promo
-                            })
+                            pedidos.append({'sku': sku.strip().upper(), 'cantidad': cantidad, 'es_promo': es_promo})
                     except:
                         pass
                 elif linea:
-                    pedidos.append({
-                        'sku': linea.strip().upper(),
-                        'cantidad': 1,
-                        'es_promo': False
-                    })
+                    pedidos.append({'sku': linea.strip().upper(), 'cantidad': 1, 'es_promo': False})
         
         if st.button("🚀 PROCESAR COTIZACIÓN", use_container_width=True, type="primary") and pedidos:
-            with st.spinner("Buscando productos en todos los catálogos..."):
+            with st.spinner("Buscando productos..."):
                 resultados = []
                 no_encontrados = []
-                
                 for pedido in pedidos:
                     sku = pedido['sku']
                     cantidad_solicitada = pedido['cantidad']
-                    
                     coincidencias = buscar_producto(st.session_state.catalogos, sku)
-                    
                     if not coincidencias:
                         no_encontrados.append({'SKU': sku, 'Cantidad': cantidad_solicitada})
                         continue
-                    
                     producto_elegido = coincidencias[0]
-                    
                     precio = 0
                     if col_precio_seleccionada:
-                        precio = obtener_precio(
-                            producto_elegido['row'],
-                            producto_elegido['col_precios'],
-                            col_precio_seleccionada
-                        )
-                    
+                        precio = obtener_precio(producto_elegido['row'], producto_elegido['col_precios'], col_precio_seleccionada)
                     es_xiaomi = 'xiaomi' in producto_elegido['archivo'].lower() or 'xiaomi' in producto_elegido['descripcion'].lower()
-                    
                     if es_xiaomi:
                         stock, origen_stock = obtener_stock_xiaomi(sku, st.session_state.stocks)
                     else:
                         stock, origen_stock = obtener_stock_general(sku, st.session_state.stocks)
-                    
                     if precio == 0:
                         estado = "⚠️ Sin precio"
                         color_estado = "orange"
@@ -792,56 +709,33 @@ with tab_cotizacion:
                     else:
                         estado = "❌ Sin stock"
                         color_estado = "red"
-                    
                     resultados.append({
-                        'id': sku,
-                        'SKU': sku,
-                        'Descripción': producto_elegido['descripcion'][:80],
-                        'Archivo': producto_elegido['archivo'],
-                        'Hoja': producto_elegido['hoja'],
-                        'Precio': precio,
-                        'Solicitado': cantidad_solicitada,
-                        'Stock': stock,
-                        'Total': precio * cantidad_solicitada,
-                        'Estado': estado,
-                        'Color_Estado': color_estado
+                        'id': sku, 'SKU': sku, 'Descripción': producto_elegido['descripcion'][:80],
+                        'Archivo': producto_elegido['archivo'], 'Hoja': producto_elegido['hoja'],
+                        'Precio': precio, 'Solicitado': cantidad_solicitada, 'Stock': stock,
+                        'Total': precio * cantidad_solicitada, 'Estado': estado, 'Color_Estado': color_estado
                     })
-                
                 st.session_state.resultados = resultados
                 st.session_state.no_encontrados = no_encontrados
         
         if st.session_state.resultados:
             st.markdown("---")
             st.markdown("### 📊 Resultados - Edita cantidades")
-            
             resultados_editados = []
-            
             for i, item in enumerate(st.session_state.resultados):
                 col1, col2, col3, col4, col5, col6, col7 = st.columns([2, 3, 1.2, 1, 1.2, 1.2, 1.5])
-                
                 col1.markdown(f"**{item['SKU']}**")
                 col2.markdown(item['Descripción'])
                 col3.markdown(f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio")
-                
-                nueva_cant = col4.number_input(
-                    "Cant",
-                    min_value=0,
-                    max_value=999,
-                    value=int(item['Solicitado']),
-                    key=f"edit_{item['id']}_{i}",
-                    label_visibility="collapsed"
-                )
-                
+                nueva_cant = col4.number_input("Cant", min_value=0, max_value=999, value=int(item['Solicitado']), key=f"edit_{item['id']}_{i}", label_visibility="collapsed")
                 col5.markdown(str(item['Stock']))
                 nuevo_total = item['Precio'] * nueva_cant
                 col6.markdown(f"S/. {nuevo_total:,.2f}")
                 col7.markdown(f"<span style='color:{item['Color_Estado']}'>{item['Estado']}</span>", unsafe_allow_html=True)
-                
                 item_editado = item.copy()
                 item_editado['Solicitado'] = nueva_cant
                 item_editado['Total'] = nuevo_total
                 resultados_editados.append(item_editado)
-                
                 st.divider()
             
             if st.session_state.no_encontrados:
@@ -851,7 +745,6 @@ with tab_cotizacion:
             
             items_validos = [r for r in resultados_editados if r['Solicitado'] > 0 and r['Stock'] >= r['Solicitado'] and r['Precio'] > 0]
             total_cotizacion = sum(r['Total'] for r in items_validos)
-            
             col1, col2, col3 = st.columns(3)
             col1.metric("📦 Productos válidos", len(items_validos))
             col2.metric("💰 Total Cotización", f"S/. {total_cotizacion:,.2f}")
@@ -860,31 +753,15 @@ with tab_cotizacion:
             if items_validos:
                 st.markdown("---")
                 st.markdown("### 📥 Generar Cotización")
-                
                 col_cli1, col_cli2 = st.columns(2)
                 with col_cli1:
                     cliente = st.text_input("🏢 Cliente", "CLIENTE NUEVO")
                 with col_cli2:
                     ruc_cliente = st.text_input("📋 RUC/DNI", "-")
-                
                 if st.button("📥 GENERAR COTIZACIÓN", use_container_width=True, type="primary"):
-                    items_excel = [{
-                        'sku': r['SKU'],
-                        'desc': r['Descripción'],
-                        'cant': r['Solicitado'],
-                        'p_u': r['Precio'],
-                        'total': r['Total']
-                    } for r in items_validos]
-                    
+                    items_excel = [{'sku': r['SKU'], 'desc': r['Descripción'], 'cant': r['Solicitado'], 'p_u': r['Precio'], 'total': r['Total']} for r in items_validos]
                     excel_data = generar_excel_cotizacion(items_excel, cliente, ruc_cliente)
-                    
-                    st.download_button(
-                        label="💾 DESCARGAR EXCEL",
-                        data=excel_data,
-                        file_name=f"Cotizacion_{cliente}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
-                        use_container_width=True
-                    )
-                    
+                    st.download_button(label="💾 DESCARGAR EXCEL", data=excel_data, file_name=f"Cotizacion_{cliente}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx", use_container_width=True)
                     st.session_state.cotizaciones = st.session_state.get("cotizaciones", 0) + 1
                     st.session_state.total_prods = len(items_validos)
                     st.balloons()
@@ -895,12 +772,10 @@ with tab_cotizacion:
 # ============================================
 with tab_busqueda:
     st.markdown("### 🔍 Buscar productos en catálogos")
-    
     if not st.session_state.catalogos:
         st.warning("⚠️ Primero carga los catálogos en 'Configuración'")
     else:
         busqueda = st.text_input("Buscar por SKU o descripción:", placeholder="Ej: CN0900009WH8, cargador, cable...")
-        
         if busqueda:
             resultados_busqueda = []
             for catalogo in st.session_state.catalogos:
@@ -908,23 +783,13 @@ with tab_busqueda:
                     df = hoja_data['df']
                     col_sku = hoja_data['col_sku']
                     col_desc = hoja_data['col_desc']
-                    
                     mask_sku = df[col_sku].astype(str).str.contains(busqueda, case=False, na=False)
                     mask_desc = df[col_desc].astype(str).str.contains(busqueda, case=False, na=False)
-                    
                     for idx, row in df[mask_sku | mask_desc].iterrows():
-                        resultados_busqueda.append({
-                            'SKU': str(row[col_sku]),
-                            'Descripción': str(row[col_desc])[:80],
-                            'Archivo': catalogo['nombre'],
-                            'Hoja': hoja_nombre
-                        })
-            
+                        resultados_busqueda.append({'SKU': str(row[col_sku]), 'Descripción': str(row[col_desc])[:80], 'Archivo': catalogo['nombre'], 'Hoja': hoja_nombre})
             if resultados_busqueda:
                 st.success(f"✅ {len(resultados_busqueda)} resultados encontrados")
-                df_busqueda = pd.DataFrame(resultados_busqueda)
-                st.dataframe(df_busqueda, use_container_width=True)
-                
+                st.dataframe(pd.DataFrame(resultados_busqueda), use_container_width=True)
                 if st.button("📋 Transferir primeros 20 SKU a Cotización"):
                     skus_dict = {r['SKU']: 1 for r in resultados_busqueda[:20]}
                     st.session_state.skus_transferidos = skus_dict
