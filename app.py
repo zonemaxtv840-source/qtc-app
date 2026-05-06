@@ -729,4 +729,83 @@ with tab_buscar:
                     ])
                     st.dataframe(df_seleccionados, use_container_width=True)
                     
-                    if st.button
+                    if st.button("📋 Transferir a Cotización", use_container_width=True, type="primary"):
+                        # Transferir a cotización
+                        st.session_state.skus_transferidos = st.session_state.productos_seleccionados.copy()
+                        st.session_state.productos_seleccionados = {}
+                        st.success(f"✅ {len(st.session_state.skus_transferidos)} productos transferidos!")
+                        st.info("👉 Ve a la pestaña 'Cotización' y haz clic en PROCESAR")
+                else:
+                    st.info("Selecciona una cantidad (>0) para agregar productos")
+            else:
+                st.warning("No se encontraron productos con ese término")
+
+# ============================================
+# TAB 3: DASHBOARD
+# ============================================
+with tab_dashboard:
+    st.markdown("### 📊 Dashboard de Ventas")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{st.session_state.get('cotizaciones', 0)}</div>
+            <div class="metric-label">📄 Cotizaciones Generadas</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{st.session_state.get('total_prods', 0)}</div>
+            <div class="metric-label">🌿 Productos Cotizados</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        total_catalogos = len(st.session_state.get('catalogos', []))
+        total_stocks = len(st.session_state.get('stocks', []))
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{total_catalogos}</div>
+            <div class="metric-label">📚 Catálogos</div>
+            <div style="font-size:0.8rem;">+ {total_stocks} stocks</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    st.markdown("### 📋 Resumen de Catálogos Cargados")
+    if st.session_state.catalogos:
+        for cat in st.session_state.catalogos:
+            st.markdown(f"- **{cat['nombre']}**")
+    else:
+        st.info("No hay catálogos cargados")
+    
+    st.markdown("---")
+    st.markdown("### 🎯 Manual del Sistema")
+    st.markdown("""
+    **1. Cargar archivos:**
+    - Sube tus catálogos de precios (Excel)
+    - Sube tus reportes de stock (Excel)
+    - Cada archivo permite elegir qué hoja usar
+    
+    **2. Configurar cotización:**
+    - Selecciona la columna de precio (Caja, VIP, Mayor, etc.)
+    - Ingresa los SKU en formato `SKU:CANTIDAD`
+    
+    **3. Búsqueda múltiple de productos:**
+    - Busca productos por SKU o descripción
+    - Selecciona la cantidad deseada para cada producto
+    - Los productos seleccionados se acumulan
+    - Transfiere todo a la cotización
+    
+    **4. Revisar y editar:**
+    - Edita cantidades directamente
+    - Excluye productos que no necesites
+    
+    **5. Generar cotización:**
+    - Ingresa datos del cliente
+    - Descarga Excel con formato profesional
+    """)
+
+st.markdown("---")
+st.markdown("*💚 QTC Smart Sales Pro - Sistema Profesional de Cotización con Búsqueda Múltiple*")
