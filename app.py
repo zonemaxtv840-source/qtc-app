@@ -14,20 +14,55 @@ try:
 except:
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon="💼", layout="wide")
 
-# --- ESTILOS CSS COMPLETO CON SELECTBOX CORREGIDO ---
+# --- ESTILOS CSS CORREGIDOS (TEXTO BLANCO EN FONDO OSCURO DEL DROPDOWN) ---
 st.markdown("""
     <style>
     /* Fondo general */
     .stApp {
         background-color: #F0F2F6;
     }
-    .main .block-container {
-        padding-top: 1rem;
+    
+    /* SELECTBOX - FONDO BLANCO CON TEXTO NEGRO */
+    .stSelectbox > div > div {
+        background-color: white !important;
+        color: black !important;
+        border: 1px solid #27AE60 !important;
+        border-radius: 8px !important;
     }
     
-    /* Textos generales */
-    h1, h2, h3, h4, p, div, label {
+    .stSelectbox > div > div > div {
+        color: black !important;
+    }
+    
+    .stSelectbox label {
         color: #1a1a2e !important;
+    }
+    
+    /* DROPDOWN MENU - FONDO BLANCO, TEXTO NEGRO */
+    div[data-baseweb="select"] > div {
+        background-color: white !important;
+    }
+    
+    div[data-baseweb="select"] ul {
+        background-color: white !important;
+        border: 1px solid #ccc !important;
+        border-radius: 8px !important;
+    }
+    
+    div[data-baseweb="select"] li {
+        color: black !important;
+        background-color: white !important;
+        padding: 8px 12px !important;
+    }
+    
+    div[data-baseweb="select"] li:hover {
+        background-color: #e8f5e9 !important;
+        color: black !important;
+    }
+    
+    div[data-baseweb="select"] li[aria-selected="true"] {
+        background-color: #27AE60 !important;
+        color: white !important;
     }
     
     /* Sidebar */
@@ -35,7 +70,7 @@ st.markdown("""
         background: linear-gradient(180deg, #1a472a 0%, #0d2818 100%);
     }
     [data-testid="stSidebar"] * {
-        color: #FFFFFF !important;
+        color: white !important;
     }
     
     /* Botones */
@@ -44,125 +79,14 @@ st.markdown("""
         color: white !important;
         border-radius: 10px;
         font-weight: 600;
-        transition: all 0.3s;
-    }
-    .stButton > button:hover {
-        background: #1E8449;
-        transform: translateY(-2px);
     }
     
-    /* FILE UPLOADER */
-    .stFileUploader > div > div {
-        background-color: white !important;
-        border: 1px dashed #27AE60 !important;
-        border-radius: 10px !important;
-    }
-    .stFileUploader > div > div > div {
-        color: #1a1a2e !important;
-    }
-    .stFileUploader button {
-        background-color: #27AE60 !important;
-        color: white !important;
-    }
-    
-    /* ========================================== */
-    /* SELECTBOX - CORREGIDO (fondo blanco, texto oscuro) */
-    /* ========================================== */
-    .stSelectbox > div > div {
-        background-color: white !important;
-        color: #1a1a2e !important;
-        border: 1px solid #27AE60 !important;
-        border-radius: 8px !important;
-    }
-    
-    .stSelectbox > div > div > div {
-        color: #1a1a2e !important;
-    }
-    
-    .stSelectbox label {
-        color: #1a1a2e !important;
-    }
-    
-    /* Dropdown menu (opciones desplegables) */
-    div[data-baseweb="select"] > div {
-        background-color: white !important;
-    }
-    
-    div[data-baseweb="select"] ul {
-        background-color: white !important;
-        border: 1px solid #E0E0E0 !important;
-        border-radius: 8px !important;
-    }
-    
-    div[data-baseweb="select"] li {
-        color: #1a1a2e !important;
-        background-color: white !important;
-        padding: 8px 12px !important;
-    }
-    
-    div[data-baseweb="select"] li:hover {
-        background-color: #e8f5e9 !important;
-    }
-    
-    div[data-baseweb="select"] li[aria-selected="true"] {
-        background-color: #27AE60 !important;
-        color: white !important;
-    }
-    
-    /* TEXT INPUT */
+    /* Inputs */
     .stTextInput input, .stTextArea textarea, .stNumberInput input {
-        color: #1a1a2e !important;
+        color: black !important;
         background-color: white !important;
-        border: 1px solid #E0E0E0 !important;
+        border: 1px solid #ccc !important;
         border-radius: 8px !important;
-    }
-    .stTextInput input:focus, .stTextArea textarea:focus {
-        border-color: #27AE60 !important;
-        box-shadow: 0 0 0 2px rgba(39,174,96,0.2) !important;
-    }
-    
-    /* Placeholder */
-    ::placeholder {
-        color: #999999 !important;
-    }
-    
-    /* CHECKBOX y RADIO */
-    .stCheckbox label, .stRadio label {
-        color: #1a1a2e !important;
-    }
-    
-    /* METRIC CARDS */
-    .metric-card {
-        background: #FFFFFF;
-        border-radius: 15px;
-        padding: 1.2rem;
-        text-align: center;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        border: 1px solid #E0E0E0;
-    }
-    .metric-value {
-        font-size: 2rem;
-        font-weight: bold;
-        color: #27AE60 !important;
-    }
-    
-    /* Dataframe */
-    .stDataFrame {
-        background-color: white !important;
-        border-radius: 10px !important;
-    }
-    
-    /* Expander */
-    .streamlit-expanderHeader {
-        background-color: white !important;
-        color: #1a1a2e !important;
-        border-radius: 10px !important;
-    }
-    
-    /* Alertas */
-    .stAlert {
-        background-color: white !important;
-        border-radius: 10px !important;
     }
     
     /* Tabs */
@@ -180,6 +104,21 @@ st.markdown("""
         background-color: #27AE60 !important;
         color: white !important;
     }
+    
+    /* Metric cards */
+    .metric-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.2rem;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border: 1px solid #ddd;
+    }
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #27AE60 !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -190,11 +129,6 @@ with st.sidebar:
     if "cotizaciones" in st.session_state:
         st.metric("📄 Cotizaciones", st.session_state.get("cotizaciones", 0))
         st.metric("📦 Productos", st.session_state.get("total_prods", 0))
-    st.markdown("---")
-    st.markdown("### 🎯 Reglas")
-    st.caption("• Xiaomi → Stock: apri004 + yessica")
-    st.caption("• Otras marcas → Stock: apri1")
-    st.caption("• SKU con * → Buscar en promociones")
 
 # --- LOGIN ---
 if "auth" not in st.session_state:
@@ -204,7 +138,7 @@ if not st.session_state.auth:
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
         st.markdown("""
-        <div style="background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+        <div style="background: white; padding: 2rem; border-radius: 20px;">
             <h1 style="text-align: center; color: #27AE60;">💚 QTC Smart Sales</h1>
             <p style="text-align: center;">Sistema Profesional de Cotización</p>
         </div>
@@ -249,248 +183,146 @@ def limpiar_cabeceras(df):
             return df.iloc[i+1:].reset_index(drop=True)
     return df
 
-def cargar_archivo_datos(archivo):
+def cargar_catalogo_con_hojas(archivo):
+    """Carga todas las hojas de un Excel y permite seleccionar cuál usar"""
     try:
-        nombre = archivo.name.lower()
-        if nombre.endswith('.csv'):
-            try:
-                df = pd.read_csv(archivo, encoding='utf-8')
-            except:
-                try:
-                    df = pd.read_csv(archivo, encoding='latin-1')
-                except:
-                    df = pd.read_csv(archivo, encoding='iso-8859-1')
-        else:
-            df = pd.read_excel(archivo)
+        xls = pd.ExcelFile(archivo)
+        hojas = xls.sheet_names
+        
+        # Mostrar selector de hoja en sidebar
+        hoja_seleccionada = st.sidebar.selectbox(
+            f"Hoja de {archivo.name}:",
+            hojas,
+            key=f"hoja_{archivo.name}"
+        )
+        
+        df = pd.read_excel(archivo, sheet_name=hoja_seleccionada)
         df = limpiar_cabeceras(df)
-        return df
+        
+        # Detectar columnas
+        col_sku = None
+        col_desc = None
+        columnas_precio = []
+        
+        for c in df.columns:
+            c_str = str(c).upper()
+            if any(p in c_str for p in ['SKU', 'COD', 'SAP', 'NUMERO', 'ARTICULO']):
+                if col_sku is None:
+                    col_sku = c
+            if any(p in c_str for p in ['DESC', 'NOMBRE', 'PRODUCTO']):
+                if col_desc is None:
+                    col_desc = c
+            if any(p in c_str for p in ['PRECIO', 'CAJA', 'VIP', 'MAYOR', 'IR', 'BOX', 'SUGERIDO']):
+                columnas_precio.append(c)
+        
+        if col_sku is None and len(df.columns) > 0:
+            col_sku = df.columns[0]
+        if col_desc is None and len(df.columns) > 1:
+            col_desc = df.columns[1]
+        
+        return {
+            'nombre': f"{archivo.name} - {hoja_seleccionada}",
+            'df': df,
+            'col_sku': col_sku,
+            'col_desc': col_desc,
+            'columnas_precio': columnas_precio,
+            'hoja_original': hoja_seleccionada
+        }
     except Exception as e:
+        st.error(f"Error en {archivo.name}: {str(e)}")
         return None
 
-def cargar_excel_completo(archivo):
+def cargar_stock_con_hojas(archivo):
+    """Carga stock permitiendo elegir la hoja"""
     try:
-        nombre = archivo.name.lower()
-        
-        if nombre.endswith('.csv'):
-            df = cargar_archivo_datos(archivo)
-            if df is None:
-                return None
-            
-            col_sku = None
-            col_desc = None
-            columnas_precio = []
-            
-            for c in df.columns:
-                c_str = str(c).upper()
-                if any(p in c_str for p in ['SKU', 'COD', 'SAP', 'NUMERO']):
-                    if col_sku is None:
-                        col_sku = c
-                if any(p in c_str for p in ['DESC', 'NOMBRE', 'PRODUCTO']):
-                    if col_desc is None:
-                        col_desc = c
-                if any(p in c_str for p in ['PRECIO', 'CAJA', 'VIP', 'MAYOR', 'IR', 'BOX', 'SUGERIDO']):
-                    columnas_precio.append(c)
-            
-            if col_sku is None and len(df.columns) > 0:
-                col_sku = df.columns[0]
-            if col_desc is None and len(df.columns) > 1:
-                col_desc = df.columns[1]
-            if not columnas_precio and len(df.columns) > 2:
-                columnas_precio = [df.columns[2]]
-            
-            return {
-                'nombre': archivo.name,
-                'hojas': {'CSV': {
-                    'df': df,
-                    'col_sku': col_sku,
-                    'col_desc': col_desc,
-                    'columnas_precio': columnas_precio
-                }},
-                'total_hojas': 1
-            }
-        
         xls = pd.ExcelFile(archivo)
-        hojas_data = {}
+        hojas = xls.sheet_names
         
-        for hoja in xls.sheet_names:
-            try:
-                df = pd.read_excel(archivo, sheet_name=hoja)
-                df = limpiar_cabeceras(df)
-                
-                if df.empty or len(df.columns) < 2:
-                    continue
-                
-                col_sku = None
-                col_desc = None
-                columnas_precio = []
-                
-                for c in df.columns:
-                    c_str = str(c).upper()
-                    if any(p in c_str for p in ['SKU', 'COD', 'SAP', 'NUMERO']):
-                        if col_sku is None:
-                            col_sku = c
-                    if any(p in c_str for p in ['DESC', 'NOMBRE', 'PRODUCTO']):
-                        if col_desc is None:
-                            col_desc = c
-                    if any(p in c_str for p in ['PRECIO', 'CAJA', 'VIP', 'MAYOR', 'IR', 'BOX', 'SUGERIDO']):
-                        columnas_precio.append(c)
-                
-                if col_sku is None and len(df.columns) > 0:
-                    col_sku = df.columns[0]
-                if col_desc is None and len(df.columns) > 1:
-                    col_desc = df.columns[1]
-                if not columnas_precio and len(df.columns) > 2:
-                    columnas_precio = [df.columns[2]]
-                
-                if col_sku and col_desc:
-                    hojas_data[hoja] = {
-                        'df': df,
-                        'col_sku': col_sku,
-                        'col_desc': col_desc,
-                        'columnas_precio': columnas_precio
-                    }
-            except:
-                continue
+        hoja_seleccionada = st.sidebar.selectbox(
+            f"Hoja de stock {archivo.name}:",
+            hojas,
+            key=f"stock_hoja_{archivo.name}"
+        )
         
-        if hojas_data:
-            return {
-                'nombre': archivo.name,
-                'hojas': hojas_data,
-                'total_hojas': len(hojas_data)
-            }
-        return None
-    except:
-        return None
-
-def cargar_stock(archivo):
-    try:
-        nombre = archivo.name.lower()
+        df = pd.read_excel(archivo, sheet_name=hoja_seleccionada)
+        df = limpiar_cabeceras(df)
         
-        if nombre.endswith('.csv'):
-            df = cargar_archivo_datos(archivo)
-            if df is None:
-                return None
-            
-            col_sku = None
-            col_cant = None
-            
-            for c in df.columns:
-                c_str = str(c).upper()
-                if any(p in c_str for p in ['SKU', 'COD', 'SAP', 'NUMERO']):
-                    if col_sku is None:
-                        col_sku = c
-                if any(p in c_str for p in ['DISP', 'STOCK', 'CANT', 'SALDO']):
-                    if col_cant is None:
-                        col_cant = c
-            
-            if col_sku is None and len(df.columns) > 0:
-                col_sku = df.columns[0]
-            if col_cant is None and len(df.columns) > 1:
-                col_cant = df.columns[1]
-            
-            return {
-                'nombre': archivo.name,
-                'df': df,
-                'col_sku': col_sku,
-                'col_cant': col_cant
-            }
+        # Detectar columnas
+        col_sku = None
+        col_stock = None
+        col_comprometido = None
+        col_solicitado = None
         
-        xls = pd.ExcelFile(archivo)
-        dfs_stock = []
+        for c in df.columns:
+            c_str = str(c).upper()
+            if any(p in c_str for p in ['SKU', 'COD', 'NUMERO', 'ARTICULO']):
+                if col_sku is None:
+                    col_sku = c
+            if 'STOCK' in c_str or 'DISPONIBLE' in c_str or 'EN STOCK' in c_str:
+                col_stock = c
+            if 'COMPROMET' in c_str:
+                col_comprometido = c
+            if 'SOLICIT' in c_str:
+                col_solicitado = c
         
-        for hoja in xls.sheet_names:
-            try:
-                df = pd.read_excel(archivo, sheet_name=hoja)
-                df = limpiar_cabeceras(df)
-                
-                if df.empty:
-                    continue
-                
-                col_sku = None
-                col_cant = None
-                
-                for c in df.columns:
-                    c_str = str(c).upper()
-                    if any(p in c_str for p in ['SKU', 'COD', 'SAP', 'NUMERO']):
-                        if col_sku is None:
-                            col_sku = c
-                    if any(p in c_str for p in ['DISP', 'STOCK', 'CANT', 'SALDO']):
-                        if col_cant is None:
-                            col_cant = c
-                
-                if col_sku is None and len(df.columns) > 0:
-                    col_sku = df.columns[0]
-                if col_cant is None and len(df.columns) > 1:
-                    col_cant = df.columns[1]
-                
-                df['_origen_hoja'] = hoja
-                dfs_stock.append(df)
-            except:
-                continue
+        if col_sku is None and len(df.columns) > 0:
+            col_sku = df.columns[0]
+        if col_stock is None and len(df.columns) > 1:
+            col_stock = df.columns[1]
         
-        if dfs_stock:
-            df_unificado = pd.concat(dfs_stock, ignore_index=True)
-            return {
-                'nombre': archivo.name,
-                'df': df_unificado,
-                'col_sku': col_sku,
-                'col_cant': col_cant
-            }
-        return None
-    except:
+        return {
+            'nombre': f"{archivo.name} - {hoja_seleccionada}",
+            'df': df,
+            'col_sku': col_sku,
+            'col_stock': col_stock,
+            'col_comprometido': col_comprometido,
+            'col_solicitado': col_solicitado
+        }
+    except Exception as e:
+        st.error(f"Error en stock {archivo.name}: {str(e)}")
         return None
 
 def buscar_producto(catalogos, sku_buscar):
-    resultados = []
     for catalogo in catalogos:
-        for hoja_nombre, hoja_data in catalogo['hojas'].items():
-            df = hoja_data['df']
-            col_sku = hoja_data['col_sku']
-            col_desc = hoja_data['col_desc']
-            mask = df[col_sku].astype(str).str.contains(sku_buscar, case=False, na=False)
-            for idx, row in df[mask].iterrows():
-                resultados.append({
-                    'archivo': catalogo['nombre'],
-                    'hoja': hoja_nombre,
-                    'sku': str(row[col_sku]),
-                    'descripcion': str(row[col_desc]),
-                    'col_precios': hoja_data['columnas_precio'],
-                    'row': row
-                })
-    return resultados
+        df = catalogo['df']
+        col_sku = catalogo['col_sku']
+        mask = df[col_sku].astype(str).str.contains(sku_buscar, case=False, na=False)
+        if not df[mask].empty:
+            row = df[mask].iloc[0]
+            return {
+                'encontrado': True,
+                'catalogo': catalogo['nombre'],
+                'sku': str(row[col_sku]),
+                'descripcion': str(row[catalogo['col_desc']]),
+                'row': row,
+                'columnas_precio': catalogo['columnas_precio']
+            }
+    return {'encontrado': False}
 
 def obtener_precio(row, columnas_precio, col_seleccionada):
     if col_seleccionada in columnas_precio and col_seleccionada in row.index:
         return corregir_numero(row[col_seleccionada])
     return 0.0
 
-def obtener_stock_xiaomi(sku, stocks):
+def obtener_stock(sku, stocks):
     stock_total = 0
-    origenes = []
-    if not stocks:
-        return 0, []
+    comprometido = 0
+    solicitado = 0
+    origen = ""
+    
     for stock in stocks:
-        if 'apri004' in stock['nombre'].lower() or 'yessica' in stock['nombre'].lower():
-            mask = stock['df'][stock['col_sku']].astype(str).str.contains(sku, case=False, na=False)
-            if not stock['df'][mask].empty:
-                cantidad = corregir_numero(stock['df'][mask].iloc[0][stock['col_cant']])
-                stock_total += int(cantidad)
-                origenes.append(f"{stock['nombre']}: {int(cantidad)}")
-    return stock_total, origenes
-
-def obtener_stock_general(sku, stocks):
-    stock_total = 0
-    origenes = []
-    if not stocks:
-        return 0, []
-    for stock in stocks:
-        if 'apri1' in stock['nombre'].lower():
-            mask = stock['df'][stock['col_sku']].astype(str).str.contains(sku, case=False, na=False)
-            if not stock['df'][mask].empty:
-                cantidad = corregir_numero(stock['df'][mask].iloc[0][stock['col_cant']])
-                stock_total += int(cantidad)
-                origenes.append(f"{stock['nombre']}: {int(cantidad)}")
-    return stock_total, origenes
+        mask = stock['df'][stock['col_sku']].astype(str).str.contains(sku, case=False, na=False)
+        if not stock['df'][mask].empty:
+            row = stock['df'][mask].iloc[0]
+            stock_total += int(corregir_numero(row[stock['col_stock']])) if stock['col_stock'] else 0
+            if stock['col_comprometido']:
+                comprometido += int(corregir_numero(row[stock['col_comprometido']])) if stock['col_comprometido'] in row.index else 0
+            if stock['col_solicitado']:
+                solicitado += int(corregir_numero(row[stock['col_solicitado']])) if stock['col_solicitado'] in row.index else 0
+            origen = stock['nombre']
+            break
+    
+    return stock_total, comprometido, solicitado, origen
 
 def generar_excel_cotizacion(items, cliente, ruc):
     output = io.BytesIO()
@@ -500,13 +332,10 @@ def generar_excel_cotizacion(items, cliente, ruc):
     workbook = writer.book
     ws = writer.sheets['Cotizacion']
     
-    fmt_header = workbook.add_format({
-        'bg_color': '#F79646', 'bold': True, 'border': 1, 'align': 'center',
-        'font_color': 'white', 'font_size': 11
-    })
+    fmt_header = workbook.add_format({'bg_color': '#F79646', 'bold': True, 'border': 1, 'align': 'center', 'font_color': 'white'})
     fmt_money = workbook.add_format({'num_format': '"S/." #,##0.00', 'border': 1, 'align': 'right'})
     fmt_border = workbook.add_format({'border': 1})
-    fmt_bold = workbook.add_format({'bold': True, 'font_size': 11})
+    fmt_bold = workbook.add_format({'bold': True})
     
     ws.set_column('A:A', 20)
     ws.set_column('B:B', 75)
@@ -524,7 +353,6 @@ def generar_excel_cotizacion(items, cliente, ruc):
     ws.merge_range('F1:H1', 'DATOS BANCARIOS', fmt_header)
     ws.write('F2', 'BBVA SOLES:', workbook.add_format({'font_color': 'red', 'bold': True, 'border': 1}))
     ws.write('G2', '0011-0616-0100012617', fmt_border)
-    ws.write('H2', 'CCI: 011-616-0100012617-11', fmt_border)
     
     headers = ['Código SAP', 'Descripción', 'Cantidad', 'Precio Unit.', 'Total']
     for i, header in enumerate(headers):
@@ -546,7 +374,6 @@ def generar_excel_cotizacion(items, cliente, ruc):
 # INTERFAZ PRINCIPAL
 # ============================================
 st.title("💚 QTC Smart Sales Pro")
-st.markdown("### Sistema Inteligente de Cotización con Múltiples Catálogos")
 st.markdown("---")
 
 # Inicializar session state
@@ -556,62 +383,50 @@ if 'stocks' not in st.session_state:
     st.session_state.stocks = []
 if 'resultados' not in st.session_state:
     st.session_state.resultados = None
-if 'no_encontrados' not in st.session_state:
-    st.session_state.no_encontrados = []
 
-tab_cotizacion, tab_busqueda, tab_config = st.tabs([
-    "📦 Cotización", "🔍 Buscar Productos", "⚙️ Configuración"
-])
+tab_cotizacion, tab_config = st.tabs(["📦 Cotización", "⚙️ Configuración"])
 
 # ============================================
 # TAB CONFIGURACIÓN
 # ============================================
 with tab_config:
     st.markdown("### 📂 Carga de Archivos")
-    st.info("📄 Soporta archivos: Excel (.xlsx, .xls) y CSV (.csv)")
     
     col1, col2 = st.columns(2)
     
     with col1:
         st.markdown("#### 📚 Catálogos de Precios")
         archivos_catalogos = st.file_uploader(
-            "Sube uno o más archivos",
-            type=['xlsx', 'xls', 'csv'],
+            "Sube catálogos (Excel)",
+            type=['xlsx', 'xls'],
             accept_multiple_files=True,
             key="catalogos_upload"
         )
+        
+        if archivos_catalogos:
+            for archivo in archivos_catalogos:
+                resultado = cargar_catalogo_con_hojas(archivo)
+                if resultado:
+                    st.session_state.catalogos.append(resultado)
+                    st.success(f"✅ {resultado['nombre']}")
     
     with col2:
         st.markdown("#### 📦 Reportes de Stock")
-        st.caption("• apri1.xlsx → Stock general")
-        st.caption("• apri004.xlsx + yessica.xlsx → Stock Xiaomi")
+        st.caption("Selecciona qué hoja usar para cada archivo")
         
         archivos_stock = st.file_uploader(
-            "Sube tus archivos de stock",
-            type=['xlsx', 'xls', 'csv'],
+            "Sube stocks (Excel)",
+            type=['xlsx', 'xls'],
             accept_multiple_files=True,
             key="stocks_upload"
         )
-    
-    if archivos_catalogos:
-        catalogos_cargados = []
-        for archivo in archivos_catalogos:
-            resultado = cargar_excel_completo(archivo)
-            if resultado and resultado['total_hojas'] > 0:
-                catalogos_cargados.append(resultado)
-                st.success(f"✅ {archivo.name}: {resultado['total_hojas']} hojas")
-        if catalogos_cargados:
-            st.session_state.catalogos = catalogos_cargados
-    
-    if archivos_stock:
-        stocks_cargados = []
-        for archivo in archivos_stock:
-            resultado = cargar_stock(archivo)
-            if resultado:
-                stocks_cargados.append(resultado)
-                st.success(f"✅ {archivo.name}: {len(resultado['df'])} productos")
-        if stocks_cargados:
-            st.session_state.stocks = stocks_cargados
+        
+        if archivos_stock:
+            for archivo in archivos_stock:
+                resultado = cargar_stock_con_hojas(archivo)
+                if resultado:
+                    st.session_state.stocks.append(resultado)
+                    st.success(f"✅ {resultado['nombre']}")
 
 # ============================================
 # TAB COTIZACIÓN
@@ -620,168 +435,104 @@ with tab_cotizacion:
     if not st.session_state.catalogos:
         st.warning("⚠️ Primero carga los catálogos en 'Configuración'")
     else:
-        st.markdown("### 💰 Configuración de Precios")
+        # Selección de precio
+        st.markdown("### 💰 Precio a usar")
         
         todas_columnas_precio = set()
         for cat in st.session_state.catalogos:
-            for hoja_data in cat['hojas'].values():
-                for col in hoja_data['columnas_precio']:
-                    todas_columnas_precio.add(col)
+            for col in cat['columnas_precio']:
+                todas_columnas_precio.add(col)
         
         if todas_columnas_precio:
-            col_precio_seleccionada = st.selectbox(
-                "Selecciona el tipo de precio para TODA la cotización:",
-                sorted(list(todas_columnas_precio))
+            col_precio = st.selectbox(
+                "Selecciona la columna de precio:",
+                options=sorted(list(todas_columnas_precio)),
+                help="Todos los productos usarán esta columna"
             )
         else:
-            col_precio_seleccionada = None
+            col_precio = None
             st.warning("No se detectaron columnas de precio")
         
         st.markdown("---")
         st.markdown("### 📝 Ingresa los productos")
-        st.caption("💡 Usa * al inicio del SKU para buscar en promociones")
+        st.caption("Formato: SKU : CANTIDAD (uno por línea)")
         
-        if 'skus_transferidos' in st.session_state:
-            texto_defecto = "\n".join([f"{sku}:{cant}" for sku, cant in st.session_state.skus_transferidos.items()])
-            del st.session_state.skus_transferidos
-        else:
-            texto_defecto = ""
-        
+        # Text area para SKUs
         texto_skus = st.text_area(
-            "SKU:CANTIDAD (uno por línea)",
+            "SKU:CANTIDAD",
             height=150,
-            value=texto_defecto,
-            placeholder="Ejemplo:\nCN0900009WH8:5\n*CN0900509NA8:2"
+            placeholder="Ejemplo:\nCG0900004CLR8:5\nCN0900009WH8:2"
         )
         
         pedidos = []
         if texto_skus:
-            for linea in texto_skus.split('\n'):
-                linea = linea.strip()
-                if not linea:
-                    continue
-                es_promo = linea.startswith('*')
-                if es_promo:
-                    linea = linea[1:]
-                if ':' in linea:
-                    sku, cant = linea.split(':')
+            for line in texto_skus.split('\n'):
+                line = line.strip()
+                if ':' in line:
+                    sku, cant = line.split(':')
                     try:
-                        cantidad = int(cant.strip())
-                        if cantidad > 0:
-                            pedidos.append({'sku': sku.strip().upper(), 'cantidad': cantidad})
+                        pedidos.append({'sku': sku.strip().upper(), 'cantidad': int(cant.strip())})
                     except:
                         pass
-                elif linea:
-                    pedidos.append({'sku': linea.strip().upper(), 'cantidad': 1})
+                elif line:
+                    pedidos.append({'sku': line.strip().upper(), 'cantidad': 1})
         
-        if st.button("🚀 PROCESAR COTIZACIÓN", use_container_width=True, type="primary") and pedidos:
-            with st.spinner("Buscando productos..."):
+        if st.button("🚀 PROCESAR", use_container_width=True, type="primary") and pedidos:
+            with st.spinner("Procesando..."):
                 resultados = []
-                no_encontrados = []
+                
                 for pedido in pedidos:
                     sku = pedido['sku']
-                    cantidad_solicitada = pedido['cantidad']
-                    coincidencias = buscar_producto(st.session_state.catalogos, sku)
-                    if not coincidencias:
-                        no_encontrados.append({'SKU': sku, 'Cantidad': cantidad_solicitada})
+                    cant_solicitada = pedido['cantidad']
+                    
+                    # Buscar en catálogos
+                    producto = buscar_producto(st.session_state.catalogos, sku)
+                    
+                    if not producto['encontrado']:
+                        resultados.append({
+                            'SKU': sku,
+                            'Descripción': 'NO ENCONTRADO',
+                            'Precio': 0,
+                            'Solicitado': cant_solicitada,
+                            'Stock': 0,
+                            'Comprometido': 0,
+                            'Disponible': 0,
+                            'Total': 0,
+                            'Estado': '❌ No encontrado'
+                        })
                         continue
-                    producto_elegido = coincidencias[0]
-                    precio = 0
-                    if col_precio_seleccionada:
-                        precio = obtener_precio(producto_elegido['row'], producto_elegido['col_precios'], col_precio_seleccionada)
-                    es_xiaomi = 'xiaomi' in producto_elegido['archivo'].lower() or 'xiaomi' in producto_elegido['descripcion'].lower()
-                    if es_xiaomi:
-                        stock, _ = obtener_stock_xiaomi(sku, st.session_state.stocks)
-                    else:
-                        stock, _ = obtener_stock_general(sku, st.session_state.stocks)
+                    
+                    # Obtener precio
+                    precio = obtener_precio(producto['row'], producto['columnas_precio'], col_precio) if col_precio else 0
+                    
+                    # Obtener stock
+                    stock, comprometido, solicitado, origen_stock = obtener_stock(sku, st.session_state.stocks)
+                    disponible = stock - comprometido - solicitado
+                    
+                    # Estado
                     if precio == 0:
                         estado = "⚠️ Sin precio"
-                        color_estado = "orange"
-                    elif stock >= cantidad_solicitada:
+                    elif disponible >= cant_solicitada:
                         estado = "✅ OK"
-                        color_estado = "green"
-                    elif stock > 0:
-                        estado = f"⚠️ Stock insuficiente ({stock})"
-                        color_estado = "orange"
+                    elif disponible > 0:
+                        estado = f"⚠️ Stock insuficiente (disp: {disponible})"
                     else:
                         estado = "❌ Sin stock"
-                        color_estado = "red"
+                    
                     resultados.append({
-                        'id': sku, 'SKU': sku, 'Descripción': producto_elegido['descripcion'][:80],
-                        'Precio': precio, 'Solicitado': cantidad_solicitada, 'Stock': stock,
-                        'Total': precio * cantidad_solicitada, 'Estado': estado, 'Color_Estado': color_estado
+                        'SKU': sku,
+                        'Descripción': producto['descripcion'][:80],
+                        'Catálogo': producto['catalogo'],
+                        'Precio': precio,
+                        'Solicitado': cant_solicitada,
+                        'Stock': stock,
+                        'Comprometido': comprometido,
+                        'Disponible': disponible,
+                        'Total': precio * min(cant_solicitada, disponible) if disponible > 0 else 0,
+                        'Estado': estado,
+                        'Origen_Stock': origen_stock
                     })
+                
                 st.session_state.resultados = resultados
-                st.session_state.no_encontrados = no_encontrados
         
-        if st.session_state.resultados:
-            st.markdown("---")
-            st.markdown("### 📊 Resultados")
-            resultados_editados = []
-            for i, item in enumerate(st.session_state.resultados):
-                col1, col2, col3, col4, col5, col6, col7 = st.columns([2, 3, 1.2, 1, 1.2, 1.2, 1.5])
-                col1.markdown(f"**{item['SKU']}**")
-                col2.markdown(item['Descripción'])
-                col3.markdown(f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio")
-                nueva_cant = col4.number_input("Cant", min_value=0, max_value=999, value=int(item['Solicitado']), key=f"edit_{i}", label_visibility="collapsed")
-                col5.markdown(str(item['Stock']))
-                nuevo_total = item['Precio'] * nueva_cant
-                col6.markdown(f"S/. {nuevo_total:,.2f}")
-                col7.markdown(f"<span style='color:{item['Color_Estado']}'>{item['Estado']}</span>", unsafe_allow_html=True)
-                item_editado = item.copy()
-                item_editado['Solicitado'] = nueva_cant
-                item_editado['Total'] = nuevo_total
-                resultados_editados.append(item_editado)
-                st.divider()
-            
-            items_validos = [r for r in resultados_editados if r['Solicitado'] > 0 and r['Stock'] >= r['Solicitado'] and r['Precio'] > 0]
-            total_cotizacion = sum(r['Total'] for r in items_validos)
-            
-            col1, col2, col3 = st.columns(3)
-            col1.metric("📦 Válidos", len(items_validos))
-            col2.metric("💰 Total", f"S/. {total_cotizacion:,.2f}")
-            col3.metric("⚠️ Excluidos", len(resultados_editados) - len(items_validos))
-            
-            if items_validos:
-                st.markdown("---")
-                st.markdown("### 📥 Generar Cotización")
-                cliente = st.text_input("🏢 Cliente", "CLIENTE NUEVO")
-                ruc_cliente = st.text_input("📋 RUC/DNI", "-")
-                if st.button("📥 GENERAR COTIZACIÓN", use_container_width=True, type="primary"):
-                    items_excel = [{'sku': r['SKU'], 'desc': r['Descripción'], 'cant': r['Solicitado'], 'p_u': r['Precio'], 'total': r['Total']} for r in items_validos]
-                    excel_data = generar_excel_cotizacion(items_excel, cliente, ruc_cliente)
-                    st.download_button(label="💾 DESCARGAR", data=excel_data, file_name=f"Cotizacion_{cliente}.xlsx", use_container_width=True)
-                    st.session_state.cotizaciones = st.session_state.get("cotizaciones", 0) + 1
-                    st.session_state.total_prods = len(items_validos)
-                    st.balloons()
-                    st.success("✅ Cotización generada!")
-
-# ============================================
-# TAB BÚSQUEDA
-# ============================================
-with tab_busqueda:
-    st.markdown("### 🔍 Buscar productos")
-    if not st.session_state.catalogos:
-        st.warning("⚠️ Primero carga los catálogos")
-    else:
-        busqueda = st.text_input("SKU o descripción:")
-        if busqueda:
-            resultados = []
-            for cat in st.session_state.catalogos:
-                for hoja_nombre, hoja_data in cat['hojas'].items():
-                    df = hoja_data['df']
-                    col_sku = hoja_data['col_sku']
-                    col_desc = hoja_data['col_desc']
-                    mask = df[col_sku].astype(str).str.contains(busqueda, case=False, na=False) | df[col_desc].astype(str).str.contains(busqueda, case=False, na=False)
-                    for idx, row in df[mask].iterrows():
-                        resultados.append({'SKU': str(row[col_sku]), 'Descripción': str(row[col_desc])[:80], 'Archivo': cat['nombre'], 'Hoja': hoja_nombre})
-            if resultados:
-                st.success(f"✅ {len(resultados)} resultados")
-                st.dataframe(pd.DataFrame(resultados), use_container_width=True)
-                if st.button("📋 Transferir SKU"):
-                    skus_dict = {r['SKU']: 1 for r in resultados[:20]}
-                    st.session_state.skus_transferidos = skus_dict
-                    st.success("✅ Transferido!")
-
-st.markdown("---")
-st.markdown("*💚 QTC Smart Sales Pro*")
+        # Mostrar resultados ed
