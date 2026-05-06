@@ -729,4 +729,18 @@ with tab_dashboard:
     
     **2. Configurar cotización:**
     - Selecciona la columna de precio (Caja, VIP, Mayor, etc.)
-    - Ingresa los SKU en formato
+    - Ingresa los SKU en formato `SKU:CANTIDAD`
+    
+    **3. Revisar resultados:**
+    - La tabla muestra Stock, Comprometido, Disponible
+    - Puedes editar las cantidades manualmente
+    - Si pones cantidad > stock, se marca advertencia pero igual se incluye
+    
+    **4. Generar cotización:**
+    - Ingresa datos del cliente
+    - Descarga Excel con formato profesional
+    - Incluye logo, datos bancarios y totales
+    """)
+
+st.markdown("---")
+st.markdown("*💚 QTC Smart Sales Pro - Sistema Profesional de Cotización*")
