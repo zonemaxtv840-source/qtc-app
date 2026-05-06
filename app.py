@@ -16,83 +16,46 @@ except:
 
 # ============================================
 # ========== SECCIÓN DE COLORES =============
-# ========== MODIFICA AQUÍ LOS HEX ==========
 # ============================================
 
-# COLORES PRINCIPALES
-COLOR_FONDO_GENERAL = "#F0F2F6"        # Fondo gris muy claro
-COLOR_TEXTO_PRINCIPAL = "#1a1a2e"      # Texto principal oscuro
-
-# COLORES SIDEBAR
-COLOR_SIDEBAR_FONDO1 = "#1a472a"       # Verde oscuro
-COLOR_SIDEBAR_FONDO2 = "#0d2818"       # Verde muy oscuro
-COLOR_SIDEBAR_TEXTO = "white"          # Texto blanco en sidebar
-COLOR_SIDEBAR_SELECT_FONDO = "#2d5a3f"  # Fondo del select en sidebar (verde más claro)
-COLOR_SIDEBAR_SELECT_TEXTO = "white"    # Texto del select en sidebar
-
-# COLORES BOTONES
-COLOR_BOTON_PRIMARIO = "#27AE60"       # Verde
-COLOR_BOTON_HOVER = "#1E8449"          # Verde oscuro
-
-# COLORES SELECTBOX (menú desplegable de precios)
-COLOR_SELECTBOX_FONDO = "white"        # Fondo blanco
-COLOR_SELECTBOX_TEXTO = "black"        # Texto negro
-COLOR_SELECTBOX_BORDE = "#27AE60"      # Borde verde
-COLOR_SELECTBOX_LABEL = "#1a1a2e"      # Label oscuro
-
-# COLORES DROPDOWN
-COLOR_DROPDOWN_FONDO = "white"         # Fondo blanco
-COLOR_DROPDOWN_TEXTO = "black"         # Texto negro
-COLOR_DROPDOWN_HOVER = "#e8f5e9"       # Verde claro
-COLOR_DROPDOWN_SELECCIONADO = "#27AE60" # Verde
-COLOR_DROPDOWN_SELECCIONADO_TEXTO = "white"
-
-# COLORES TABS
+COLOR_FONDO_GENERAL = "#F0F2F6"
+COLOR_TEXTO_PRINCIPAL = "#1a1a2e"
+COLOR_SIDEBAR_FONDO1 = "#1a472a"
+COLOR_SIDEBAR_FONDO2 = "#0d2818"
+COLOR_SIDEBAR_TEXTO = "white"
+COLOR_SIDEBAR_SELECT_FONDO = "#2d5a3f"
+COLOR_SIDEBAR_SELECT_TEXTO = "white"
+COLOR_BOTON_PRIMARIO = "#27AE60"
+COLOR_BOTON_HOVER = "#1E8449"
+COLOR_SELECTBOX_FONDO = "white"
+COLOR_SELECTBOX_TEXTO = "black"
+COLOR_SELECTBOX_BORDE = "#27AE60"
 COLOR_TABS_FONDO = "white"
 COLOR_TAB_INACTIVA_FONDO = "#f0f0f0"
 COLOR_TAB_INACTIVA_TEXTO = "#1a1a2e"
 COLOR_TAB_ACTIVA_FONDO = "#27AE60"
 COLOR_TAB_ACTIVA_TEXTO = "white"
-
-# COLORES ESTADOS
 COLOR_ESTADO_OK = "green"
 COLOR_ESTADO_SIN_STOCK = "red"
 COLOR_ESTADO_ADVERTENCIA = "orange"
 COLOR_ESTADO_EXCLUIDO = "gray"
 
-# ============================================
-# ========== FIN COLORES ====================
-# ============================================
-
 # --- ESTILOS CSS ---
 st.markdown(f"""
     <style>
-    /* Fondo general */
     .stApp {{ background-color: {COLOR_FONDO_GENERAL}; }}
-    
-    /* Textos generales */
     h1, h2, h3, h4, p, div, span, label {{ color: {COLOR_TEXTO_PRINCIPAL} !important; }}
     
-    /* SIDEBAR - fondo y texto */
     [data-testid="stSidebar"] {{
         background: linear-gradient(180deg, {COLOR_SIDEBAR_FONDO1} 0%, {COLOR_SIDEBAR_FONDO2} 100%);
     }}
     [data-testid="stSidebar"] * {{ color: {COLOR_SIDEBAR_TEXTO} !important; }}
     
-    /* SELECTBOX dentro del SIDEBAR (color corregido) */
     [data-testid="stSidebar"] .stSelectbox > div > div {{
         background-color: {COLOR_SIDEBAR_SELECT_FONDO} !important;
         color: {COLOR_SIDEBAR_SELECT_TEXTO} !important;
-        border: 1px solid {COLOR_SELECTBOX_BORDE} !important;
-    }}
-    [data-testid="stSidebar"] .stSelectbox > div > div > div {{
-        color: {COLOR_SIDEBAR_SELECT_TEXTO} !important;
-    }}
-    [data-testid="stSidebar"] .stSelectbox label {{
-        color: {COLOR_SIDEBAR_TEXTO} !important;
     }}
     
-    /* Botones */
     .stButton > button {{
         background: {COLOR_BOTON_PRIMARIO};
         color: white !important;
@@ -101,28 +64,13 @@ st.markdown(f"""
     }}
     .stButton > button:hover {{ background: {COLOR_BOTON_HOVER}; }}
     
-    /* SELECTBOX principal */
     .stSelectbox > div > div {{
         background-color: {COLOR_SELECTBOX_FONDO} !important;
         color: {COLOR_SELECTBOX_TEXTO} !important;
         border: 1px solid {COLOR_SELECTBOX_BORDE} !important;
         border-radius: 8px !important;
     }}
-    .stSelectbox label {{ color: {COLOR_SELECTBOX_LABEL} !important; }}
     
-    /* DROPDOWN */
-    div[data-baseweb="select"] ul {{ background-color: {COLOR_DROPDOWN_FONDO} !important; }}
-    div[data-baseweb="select"] li {{
-        color: {COLOR_DROPDOWN_TEXTO} !important;
-        background-color: {COLOR_DROPDOWN_FONDO} !important;
-    }}
-    div[data-baseweb="select"] li:hover {{ background-color: {COLOR_DROPDOWN_HOVER} !important; }}
-    div[data-baseweb="select"] li[aria-selected="true"] {{
-        background-color: {COLOR_DROPDOWN_SELECCIONADO} !important;
-        color: {COLOR_DROPDOWN_SELECCIONADO_TEXTO} !important;
-    }}
-    
-    /* TABS */
     .stTabs [data-baseweb="tab-list"] {{ background-color: {COLOR_TABS_FONDO} !important; }}
     .stTabs [data-baseweb="tab"] {{
         color: {COLOR_TAB_INACTIVA_TEXTO} !important;
@@ -133,7 +81,6 @@ st.markdown(f"""
         color: {COLOR_TAB_ACTIVA_TEXTO} !important;
     }}
     
-    /* Inputs */
     .stTextInput input, .stTextArea textarea, .stNumberInput input {{
         color: black !important;
         background-color: white !important;
@@ -141,7 +88,6 @@ st.markdown(f"""
         border-radius: 8px !important;
     }}
     
-    /* Metric cards */
     .metric-card {{
         background: white;
         border-radius: 15px;
@@ -151,6 +97,15 @@ st.markdown(f"""
         border: 1px solid #ddd;
     }}
     .metric-value {{ font-size: 2rem; font-weight: bold; color: {COLOR_BOTON_PRIMARIO} !important; }}
+    
+    .search-result {{
+        background: white;
+        border-radius: 10px;
+        padding: 0.8rem;
+        margin-bottom: 0.5rem;
+        border-left: 4px solid {COLOR_BOTON_PRIMARIO};
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -307,6 +262,34 @@ def buscar_producto(catalogos, sku_buscar):
             }
     return {'encontrado': False}
 
+def buscar_en_catalogo(catalogos, termino, col_precio_consulta=None):
+    """Busca productos sin duplicados por SKU"""
+    resultados_dict = {}  # Usar diccionario para eliminar duplicados por SKU
+    
+    for cat in catalogos:
+        df = cat['df']
+        mask_sku = df[cat['col_sku']].astype(str).str.contains(termino, case=False, na=False)
+        mask_desc = df[cat['col_desc']].astype(str).str.contains(termino, case=False, na=False)
+        
+        for idx, row in df[mask_sku | mask_desc].iterrows():
+            sku = str(row[cat['col_sku']])
+            
+            # Calcular precio si se seleccionó una columna
+            precio = None
+            if col_precio_consulta:
+                precio = corregir_numero(row[col_precio_consulta]) if col_precio_consulta in df.columns else 0
+            
+            # Si el SKU ya existe, no lo agregamos de nuevo (eliminar duplicados)
+            if sku not in resultados_dict:
+                resultados_dict[sku] = {
+                    'SKU': sku,
+                    'Descripción': str(row[cat['col_desc']])[:80],
+                    'Catálogo': cat['nombre'],
+                    'Precio': precio
+                }
+    
+    return list(resultados_dict.values())
+
 def obtener_precio(row, columnas_precio, col_seleccionada):
     if col_seleccionada and col_seleccionada in columnas_precio and col_seleccionada in row.index:
         return corregir_numero(row[col_seleccionada])
@@ -322,20 +305,6 @@ def obtener_stock(sku, stocks):
             disponible = stock_total - comprometido
             return stock_total, comprometido, disponible, stock['nombre']
     return 0, 0, 0, "Sin stock"
-
-def buscar_en_catalogo(catalogos, termino):
-    resultados = []
-    for cat in catalogos:
-        df = cat['df']
-        mask_sku = df[cat['col_sku']].astype(str).str.contains(termino, case=False, na=False)
-        mask_desc = df[cat['col_desc']].astype(str).str.contains(termino, case=False, na=False)
-        for idx, row in df[mask_sku | mask_desc].iterrows():
-            resultados.append({
-                'SKU': str(row[cat['col_sku']]),
-                'Descripción': str(row[cat['col_desc']])[:80],
-                'Catálogo': cat['nombre']
-            })
-    return resultados
 
 def generar_excel_cotizacion(items, cliente, ruc):
     output = io.BytesIO()
@@ -401,7 +370,6 @@ if 'cotizaciones' not in st.session_state:
 if 'total_prods' not in st.session_state:
     st.session_state.total_prods = 0
 
-# Crear 3 tabs: Cotización, Buscar Productos, Dashboard
 tab_cotizacion, tab_buscar, tab_dashboard = st.tabs([
     "📦 Cotización", "🔍 Buscar Productos", "📊 Dashboard"
 ])
@@ -410,11 +378,9 @@ tab_cotizacion, tab_buscar, tab_dashboard = st.tabs([
 # TAB 1: COTIZACIÓN
 # ============================================
 with tab_cotizacion:
-    # Configuración en sidebar
     with st.sidebar:
         st.markdown("### 📂 Archivos")
         
-        # Catálogos
         st.markdown("**📚 Catálogos**")
         archivos_catalogos = st.file_uploader(
             "Sube catálogos",
@@ -429,7 +395,6 @@ with tab_cotizacion:
                     st.session_state.catalogos.append(resultado)
                     st.success(f"✅ {resultado['nombre']}")
         
-        # Stocks
         st.markdown("**📦 Stocks**")
         archivos_stock = st.file_uploader(
             "Sube stocks",
@@ -451,7 +416,6 @@ with tab_cotizacion:
             for cat in st.session_state.catalogos:
                 st.caption(f"• {cat['nombre']}")
         
-        # Precio
         st.markdown("### 💰 Precio")
         todas_columnas_precio = set()
         for cat in st.session_state.catalogos:
@@ -525,7 +489,6 @@ with tab_cotizacion:
                 
                 st.session_state.resultados = resultados
         
-        # Mostrar resultados editables
         if st.session_state.resultados:
             st.markdown("---")
             st.markdown("### 📊 Resultados (edita cantidades)")
@@ -533,7 +496,6 @@ with tab_cotizacion:
             
             resultados_editados = []
             
-            # Encabezados
             cols = st.columns([2, 3, 1, 1, 1, 1, 1.2, 1.2, 1.5])
             cols[0].markdown("**SKU**")
             cols[1].markdown("**Descripción**")
@@ -557,20 +519,17 @@ with tab_cotizacion:
                 col6.markdown(str(item['Comprometido']))
                 col7.markdown(str(item['Disponible']))
                 
-                # Input EDITABLE - permite poner cualquier cantidad manualmente
                 nueva_cantidad = col8.number_input(
                     "Cant",
                     min_value=0,
-                    max_value=9999,  # Límite alto para permitir cualquier valor manual
+                    max_value=9999,
                     value=int(item['A_Cotizar']),
                     key=f"cant_{item['id']}_{i}",
                     label_visibility="collapsed"
                 )
                 
-                # Recalcular total
                 nuevo_total = item['Precio'] * nueva_cantidad
                 
-                # Determinar estado (ahora más flexible)
                 if nueva_cantidad == 0:
                     estado_texto = "⏸️ Excluido"
                     color_estado = COLOR_ESTADO_EXCLUIDO
@@ -586,7 +545,6 @@ with tab_cotizacion:
                 
                 col9.markdown(f"<span style='color:{color_estado}'>{estado_texto}</span>", unsafe_allow_html=True)
                 
-                # Guardar
                 item_editado = item.copy()
                 item_editado['A_Cotizar'] = nueva_cantidad
                 item_editado['Total'] = nuevo_total
@@ -595,7 +553,6 @@ with tab_cotizacion:
                 
                 st.divider()
             
-            # Resumen
             items_validos = [r for r in resultados_editados if r['A_Cotizar'] > 0 and r['Precio'] > 0]
             items_con_advertencia = [r for r in resultados_editados if r['A_Cotizar'] > 0 and r['A_Cotizar'] > r['Disponible'] and r['Disponible'] > 0]
             total_cotizacion = sum(r['Total'] for r in items_validos)
@@ -606,7 +563,6 @@ with tab_cotizacion:
             col3.metric("⚠️ Exceden stock", len(items_con_advertencia))
             col4.metric("⏸️ Excluidos", len(resultados_editados) - len(items_validos))
             
-            # Generar cotización
             if items_validos:
                 st.markdown("---")
                 st.markdown("### 📥 Cotización")
@@ -641,7 +597,7 @@ with tab_cotizacion:
                     st.success("✅ Cotización generada!")
 
 # ============================================
-# TAB 2: BUSCAR PRODUCTOS
+# TAB 2: BUSCAR PRODUCTOS (MEJORADO)
 # ============================================
 with tab_buscar:
     st.markdown("### 🔍 Buscar productos en catálogos")
@@ -649,22 +605,49 @@ with tab_buscar:
     if not st.session_state.catalogos:
         st.warning("⚠️ Primero carga catálogos en la pestaña 'Cotización'")
     else:
-        busqueda = st.text_input("Escribe SKU o descripción:", placeholder="Ej: cable, cargador, CN0900009WH8...")
+        col_filtro1, col_filtro2 = st.columns([2, 1])
+        
+        with col_filtro1:
+            busqueda = st.text_input("Escribe SKU o descripción:", placeholder="Ej: cable, cargador, CN0900009WH8...")
+        
+        with col_filtro2:
+            # Selector de precio para la consulta rápida
+            todas_columnas = set()
+            for cat in st.session_state.catalogos:
+                for col in cat['columnas_precio']:
+                    todas_columnas.add(col)
+            
+            col_precio_consulta = st.selectbox(
+                "Ver precio en:",
+                options=["(No mostrar precio)"] + sorted(list(todas_columnas)),
+                help="Selecciona qué columna de precio mostrar en los resultados"
+            )
         
         if busqueda and len(busqueda) > 2:
             with st.spinner("Buscando..."):
-                resultados = buscar_en_catalogo(st.session_state.catalogos, busqueda)
+                # Pasar la columna de precio seleccionada
+                precio_seleccionado = None if col_precio_consulta == "(No mostrar precio)" else col_precio_consulta
+                resultados = buscar_en_catalogo(st.session_state.catalogos, busqueda, precio_seleccionado)
             
             if resultados:
-                st.success(f"✅ {len(resultados)} resultados encontrados")
-                df_resultados = pd.DataFrame(resultados)
-                st.dataframe(df_resultados, use_container_width=True)
+                st.success(f"✅ {len(resultados)} resultados encontrados (SKU duplicados eliminados)")
                 
-                # Botón para transferir los primeros 10 SKU a cotización
-                if st.button("📋 Transferir primeros 10 SKU a Cotización"):
-                    skus_dict = {r['SKU']: 1 for r in resultados[:10]}
+                # Mostrar resultados en tarjetas
+                for res in resultados:
+                    st.markdown(f"""
+                    <div class="search-result">
+                        <b>📦 {res['SKU']}</b><br>
+                        <span style="color:#666;">{res['Descripción']}</span><br>
+                        <span style="font-size:0.85rem;">📁 {res['Catálogo']}</span>
+                        {f'<br><span style="color:#27AE60; font-weight:bold;">💰 Precio: S/. {res["Precio"]:,.2f}</span>' if res['Precio'] else ''}
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # Botón para transferir SKU únicos a cotización
+                if st.button("📋 Transferir SKU a Cotización (1 unidad cada uno)"):
+                    skus_dict = {res['SKU']: 1 for res in resultados}
                     st.session_state.skus_transferidos = skus_dict
-                    st.success("✅ Transferido! Ve a la pestaña Cotización")
+                    st.success(f"✅ {len(skus_dict)} SKU transferidos! Ve a la pestaña Cotización")
                     st.info("Los SKU aparecerán en el área de texto con cantidad 1")
             else:
                 st.warning("No se encontraron productos con ese término")
@@ -736,10 +719,14 @@ with tab_dashboard:
     - Puedes editar las cantidades manualmente
     - Si pones cantidad > stock, se marca advertencia pero igual se incluye
     
-    **4. Generar cotización:**
+    **4. Buscar productos:**
+    - Busca por SKU o descripción
+    - Selecciona qué columna de precio ver
+    - Los SKU duplicados se muestran una sola vez
+    
+    **5. Generar cotización:**
     - Ingresa datos del cliente
     - Descarga Excel con formato profesional
-    - Incluye logo, datos bancarios y totales
     """)
 
 st.markdown("---")
