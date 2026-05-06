@@ -572,10 +572,11 @@ with tab_cotizacion:
                     st.success("✅ Cotización generada!")
 
 # ============================================
-# TAB 2: BUSCAR PRODUCTOS (CON BÚSQUEDA MÚLTIPLE MEJORADA)
+# TAB 2: BUSCAR PRODUCTOS (CON DETALLE DE STOCK)
 # ============================================
 with tab_buscar:
     st.markdown("### 🔍 Buscar y Agregar Productos")
+    st.caption("💡 Busca productos por descripción o SKU. Muestra stock disponible en tiempo real")
     
     if not st.session_state.catalogos:
         st.warning("⚠️ Primero carga catálogos en la pestaña 'Cotización'")
@@ -593,9 +594,9 @@ with tab_buscar:
         )
         
         # ==========================================
-        # MÉTODO 1: Búsqueda por texto (múltiples términos)
+        # BÚSQUEDA MÚLTIPLE
         # ==========================================
-        st.markdown("#### 🔎 Buscar por descripción")
+        st.markdown("#### 🔎 Buscar por descripción o SKU")
         st.caption("💡 Puedes buscar varios productos separados por comas o espacios")
         
         busqueda_multiple = st.text_input(
@@ -604,13 +605,12 @@ with tab_buscar:
         )
         
         if busqueda_multiple and len(busqueda_multiple) >= 2:
-            # Dividir la búsqueda por comas o espacios
             terminos = re.split(r'[, ]+', busqueda_multiple)
             terminos = [t.strip() for t in terminos if len(t.strip()) >= 2]
             
             st.caption(f"🔍 Buscando {len(terminos)} término(s): {', '.join(terminos[:5])}{'...' if len(terminos) > 5 else ''}")
             
-            with st.spinner("Buscando..."):
+            with st.spinner("Buscando productos y consultando stock..."):
                 precio_seleccionado = None if col_precio_consulta == "(No mostrar precio)" else col_precio_consulta
                 todos_resultados = []
                 skus_vistos = set()
@@ -620,35 +620,93 @@ with tab_buscar:
                     for res in resultados:
                         if res['SKU'] not in skus_vistos:
                             skus_vistos.add(res['SKU'])
-                            todos_resultados.append(res)
+                            
+                            # Obtener stock para este SKU
+                            stock_total, comprometido, disponible, origen_stock = obtener_stock(res['SKU'], st.session_state.stocks)
+                            
+                            todos_resultados.append({
+                                'SKU': res['SKU'],
+                                'Descripción': res['Descripción'],
+                                'Catálogo': res['Catálogo'],
+                                'Precio': res['Precio'],
+                                'Stock_Total': stock_total,
+                                'Comprometido': comprometido,
+                                'Disponible': disponible,
+                                'Origen_Stock': origen_stock
+                            })
             
             if todos_resultados:
                 st.success(f"✅ {len(todos_resultados)} resultados encontrados (duplicados eliminados)")
                 
-                # Mostrar resultados con opción de seleccionar cantidad
+                # Mostrar resultados con stock detallado
                 for res in todos_resultados:
-                    col1, col2, col3, col4 = st.columns([2, 4, 1, 1.5])
-                    with col1:
-                        st.markdown(f"**📦 {res['SKU']}**")
-                    with col2:
-                        st.markdown(res['Descripción'][:60])
-                    with col3:
-                        precio_text = f"S/. {res['Precio']:,.2f}" if res['Precio'] else "Sin precio"
-                        st.markdown(f"💰 {precio_text}")
-                    with col4:
+                    # Determinar color del stock
+                    if res['Disponible'] <= 0:
+                        stock_color = "red"
+                        stock_icon = "❌"
+                    elif res['Disponible'] < 10:
+                        stock_color = "orange"
+                        stock_icon = "⚠️"
+                    else:
+                        stock_color = "green"
+                        stock_icon = "✅"
+                    
+                    with st.container():
+                        st.markdown(f"""
+                        <div style="background: white; border-radius: 10px; padding: 0.8rem; margin-bottom: 0.8rem; border-left: 4px solid {COLOR_BOTON_PRIMARIO}; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div>
+                                    <b style="font-size: 1rem;">📦 {res['SKU']}</b><br>
+                                    <span style="color: #666; font-size: 0.85rem;">{res['Descripción']}</span><br>
+                                    <span style="font-size: 0.75rem; color: #888;">📁 {res['Catálogo']} | 🏭 {res['Origen_Stock']}</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="color: {COLOR_BOTON_PRIMARIO}; font-weight: bold;">💰 {f'S/. {res["Precio"]:,.2f}' if res['Precio'] else 'Sin precio'}</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 1rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #eee;">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 0.7rem; color: #888;">STOCK TOTAL</div>
+                                    <div style="font-weight: bold; font-size: 1.1rem;">{res['Stock_Total']}</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: 0.7rem; color: #888;">COMPROMETIDO</div>
+                                    <div style="font-weight: bold; font-size: 1.1rem;">{res['Comprometido']}</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: 0.7rem; color: #888;">DISPONIBLE</div>
+                                    <div style="font-weight: bold; font-size: 1.1rem; color: {stock_color};">{res['Disponible']}</div>
+                                </div>
+                                <div style="flex: 1; text-align: right;">
+                                    <div style="font-size: 0.7rem; color: #888;">CANTIDAD A COTIZAR</div>
+                                    <div style="width: 100px; display: inline-block;">
+                        """, unsafe_allow_html=True)
+                        
                         cantidad = st.number_input(
-                            "Cant", min_value=0, max_value=999, value=0,
-                            key=f"multi_{res['SKU']}_{hash(res['SKU'])}",
+                            "Cant",
+                            min_value=0,
+                            max_value=max(res['Disponible'], 999) if res['Disponible'] > 0 else 999,
+                            value=0,
+                            key=f"stock_{res['SKU']}",
                             label_visibility="collapsed"
                         )
+                        
+                        st.markdown(f"""
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
                         if cantidad > 0:
                             st.session_state.productos_seleccionados[res['SKU']] = st.session_state.productos_seleccionados.get(res['SKU'], 0) + cantidad
+                    
                     st.divider()
             else:
                 st.warning("No se encontraron productos con esos términos")
         
         # ==========================================
-        # MÉTODO 2: Agregar múltiples SKU manualmente (con cantidades)
+        # AGREGAR MÚLTIPLES SKU MANUALMENTE
         # ==========================================
         st.markdown("---")
         st.markdown("#### 📝 Agregar SKU específicos con cantidades")
@@ -689,7 +747,7 @@ with tab_buscar:
                 st.warning("No se agregaron productos. Usa formato SKU:CANTIDAD")
         
         # ==========================================
-        # Mostrar productos seleccionados
+        # PRODUCTOS SELECCIONADOS
         # ==========================================
         if st.session_state.productos_seleccionados:
             st.markdown("---")
@@ -698,7 +756,7 @@ with tab_buscar:
             # Mostrar tabla editable
             seleccionados_editables = []
             for sku, cant in list(st.session_state.productos_seleccionados.items()):
-                col1, col2, col3 = st.columns([3, 1, 1])
+                col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
                 with col1:
                     st.markdown(f"`{sku}`")
                 with col2:
@@ -708,6 +766,9 @@ with tab_buscar:
                         label_visibility="collapsed"
                     )
                 with col3:
+                    if st.button("✅ OK", key=f"ok_sel_{sku}"):
+                        nueva_cant = cant
+                with col4:
                     if st.button("🗑️", key=f"del_sel_{sku}"):
                         nueva_cant = 0
                 
@@ -715,15 +776,28 @@ with tab_buscar:
                     seleccionados_editables.append({'SKU': sku, 'Cantidad': nueva_cant})
                 st.divider()
             
-            # Actualizar
+            # Actualizar seleccionados
             st.session_state.productos_seleccionados = {item['SKU']: item['Cantidad'] for item in seleccionados_editables}
             
             if st.session_state.productos_seleccionados:
-                df_seleccionados = pd.DataFrame([
-                    {'SKU': sku, 'Cantidad': cant} 
-                    for sku, cant in st.session_state.productos_seleccionados.items()
-                ])
-                st.dataframe(df_seleccionados, use_container_width=True)
+                # Resumen de stocks para los seleccionados
+                st.markdown("#### 📊 Resumen de stock para productos seleccionados:")
+                
+                resumen_stock = []
+                for sku, cant in st.session_state.productos_seleccionados.items():
+                    stock_total, comprometido, disponible, origen = obtener_stock(sku, st.session_state.stocks)
+                    resumen_stock.append({
+                        'SKU': sku,
+                        'Cantidad a Cotizar': cant,
+                        'Stock Total': stock_total,
+                        'Comprometido': comprometido,
+                        'Disponible': disponible,
+                        'Origen': origen,
+                        'Estado': '✅ OK' if disponible >= cant else '⚠️ Stock insuficiente' if disponible > 0 else '❌ Sin stock'
+                    })
+                
+                df_resumen = pd.DataFrame(resumen_stock)
+                st.dataframe(df_resumen, use_container_width=True)
                 
                 col1, col2 = st.columns(2)
                 with col1:
@@ -738,7 +812,6 @@ with tab_buscar:
                         st.info("👉 Ve a la pestaña 'Cotización' y haz clic en PROCESAR")
             else:
                 st.info("Todos los productos han sido eliminados")
-
 # ============================================
 # TAB 3: DASHBOARD
 # ============================================
