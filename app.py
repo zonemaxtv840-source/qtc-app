@@ -721,56 +721,40 @@ with tab_cotizacion:
                 }
             )
             
-            # Edición por separado (inputs individuales más compactos)
-            st.markdown("#### Ajustar cantidades individualmente")
+                        # TABLA EDITABLE CON DATA_EDITOR
+            st.markdown("### 📊 Resultados (editable)")
             
-            resultados_editados = []
-            cols = st.columns([2, 3, 1, 1, 1])
-            cols[0].markdown("**SKU**")
-            cols[1].markdown("**Descripción**")
-            cols[2].markdown("**Stock**")
-            cols[3].markdown("**A Cotizar**")
-            cols[4].markdown("**Total**")
-            st.divider()
+            # Preparar datos
+            df_editable = pd.DataFrame([{
+                'SKU': item['SKU'],
+                'Descripción': item['Descripción'][:60],
+                'Precio': item['Precio'],
+                'Solicitado': item['Solicitado'],
+                'Stock': item['Stock'],
+                'A Cotizar': item['A Cotizar'],
+            } for item in st.session_state.resultados])
             
+            # Editor
+            edited_df = st.data_editor(
+                df_editable,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "SKU": st.column_config.TextColumn("SKU", disabled=True),
+                    "Descripción": st.column_config.TextColumn("Descripción", disabled=True),
+                    "Precio": st.column_config.NumberColumn("Precio", disabled=True),
+                    "Solicitado": st.column_config.NumberColumn("Solicitado", disabled=True),
+                    "Stock": st.column_config.NumberColumn("Stock", disabled=True),
+                    "A Cotizar": st.column_config.NumberColumn("A Cotizar", min_value=0, max_value=9999, step=1),
+                },
+                num_rows="fixed"
+            )
+            
+            # Actualizar cantidades
             for i, item in enumerate(st.session_state.resultados):
-                col1, col2, col3, col4, col5 = st.columns([2, 3, 1, 1, 1])
-                
-                with col1:
-                    st.markdown(f"`{item['SKU']}`")
-                with col2:
-                    st.markdown(item['Descripción'][:50])
-                    if st.session_state.tipo_cotizacion == "XIAOMI":
-                        if item['Stock_APRI004'] > 0 and item['Stock_YESSICA'] > 0:
-                            st.caption(f"📦 APRI.004: {item['Stock_APRI004']} | 📋 YESSICA: {item['Stock_YESSICA']}")
-                with col3:
-                    st.markdown(str(item['Stock']))
-                with col4:
-                    if item['Precio'] > 0:
-                        nueva_cant = st.number_input(
-                            "Cant",
-                            min_value=0,
-                            max_value=item['Stock'] if item['Stock'] > 0 else 9999,
-                            value=item['A Cotizar'],
-                            key=f"cant_{i}",
-                            label_visibility="collapsed"
-                        )
-                    else:
-                        nueva_cant = 0
-                        st.markdown("0")
-                with col5:
-                    if item['Precio'] > 0 and nueva_cant > 0:
-                        nuevo_total = item['Precio'] * nueva_cant
-                        st.markdown(f"S/. {nuevo_total:,.2f}")
-                        item['A Cotizar'] = nueva_cant
-                        item['Total'] = nuevo_total
-                    else:
-                        st.markdown("S/. 0.00")
-                        item['A Cotizar'] = 0
-                        item['Total'] = 0
-                
-                resultados_editados.append(item)
-                st.divider()
+                nueva_cant = edited_df.iloc[i]['A Cotizar']
+                item['A Cotizar'] = nueva_cant
+                item['Total'] = item['Precio'] * nueva_cant
             items_validos = [r for r in st.session_state.resultados if r['A Cotizar'] > 0 and r['Precio'] > 0]
             total_general = sum(r['Total'] for r in items_validos)
             
