@@ -112,45 +112,64 @@ def cargar_catalogo(archivo):
     try:
         nombre = archivo.name.lower()
         
-        # Leer el archivo completo sin asumir cabecera
         if nombre.endswith('.csv'):
+            # Manejar BOM y codificaciones para CSV
+            contenido = archivo.getvalue()
+            if contenido.startswith(b'\xef\xbb\xbf'):
+                contenido = contenido[3:]
+            
+            from io import BytesIO
             try:
-                df_raw = pd.read_csv(archivo, encoding='utf-8', header=None)
+                df_raw = pd.read_csv(BytesIO(contenido), encoding='utf-8', header=None, on_bad_lines='skip')
             except:
                 try:
-                    df_raw = pd.read_csv(archivo, encoding='latin-1', header=None)
+                    df_raw = pd.read_csv(BytesIO(contenido), encoding='latin-1', header=None, on_bad_lines='skip')
                 except:
-                    df_raw = pd.read_csv(archivo, encoding='iso-8859-1', header=None)
+                    try:
+                        df_raw = pd.read_csv(BytesIO(contenido), encoding='iso-8859-1', header=None, on_bad_lines='skip')
+                    except:
+                        df_raw = pd.read_csv(BytesIO(contenido), encoding='cp1252', header=None, on_bad_lines='skip')
+            
             hoja_nombre = "CSV"
         else:
-            # Excel
             xls = pd.ExcelFile(archivo)
             hojas = xls.sheet_names
             hoja_nombre = st.sidebar.selectbox(f"📗 Hoja {archivo.name}:", hojas, key=f"cat_{archivo.name}")
             df_raw = pd.read_excel(archivo, sheet_name=hoja_nombre, header=None)
         
-        # Buscar la fila que contiene "SKU" (cabecera)
+        if df_raw.empty:
+            st.error(f"El archivo {archivo.name} está vacío")
+            return None
+        
+        # Buscar fila de cabecera
         header_row = None
-        for i in range(min(50, len(df_raw))):
+        for i in range(min(100, len(df_raw))):
             for cell in df_raw.iloc[i].values:
-                if pd.notna(cell) and 'SKU' in str(cell).upper():
-                    header_row = i
-                    break
+                if pd.notna(cell):
+                    cell_str = str(cell).upper()
+                    if 'SKU' in cell_str or ('COD' in cell_str and 'SAP' in cell_str):
+                        header_row = i
+                        break
             if header_row is not None:
                 break
         
         if header_row is None:
             st.error(f"No se encontró fila de cabecera con SKU en {archivo.name}")
+            if st.session_state.debug_mode:
+                st.write("Primeras 10 filas:")
+                st.write(df_raw.head(10))
             return None
         
         # Establecer cabecera
-        df_raw.columns = df_raw.iloc[header_row]
+        nuevas_columnas = [str(c).strip() if pd.notna(c) else f"Col_{i}" for i, c in enumerate(df_raw.iloc[header_row].values)]
+        df_raw.columns = nuevas_columnas
         df = df_raw.iloc[header_row + 1:].reset_index(drop=True)
-        df = limpiar_cabeceras(df)
+        df = df.dropna(axis=1, how='all')
+        df = df.fillna('')
         
         # Identificar columnas SKU y descripción
         posibles_skus = ['SKU', 'COD', 'CODIGO', 'SAP', 'NUMERO', 'ARTICULO', 'COD SAP']
-        posibles_desc = ['DESC', 'DESCRIPCION', 'NOMBRE', 'PRODUCTO', 'GOODS DESCRITPION', 'GOODS']
+        posibles_desc = ['DESC', 'DESCRIPCION', 'NOMBRE', 'PRODUCTO', 'GOODS', 'GOODS DESCRITPION']
         
         col_sku = None
         for c in df.columns:
@@ -171,35 +190,27 @@ def cargar_catalogo(archivo):
         # Mapear columnas de precio
         columnas_precio = {}
         
-        # Mapear "Mayor" → "P. IR"
         for c in df.columns:
-            if 'MAYOR' in str(c).upper():
+            c_upper = str(c).upper()
+            if 'MAYOR' in c_upper or 'MAYORISTA' in c_upper:
                 columnas_precio['P. IR'] = c
-                break
-        
-        # Mapear "Caja" → "P. BOX"
-        for c in df.columns:
-            if 'CAJA' in str(c).upper():
+            if 'CAJA' in c_upper or 'BOX' in c_upper:
                 columnas_precio['P. BOX'] = c
-                break
-        
-        # Mapear "Vip" → "P. VIP"
-        for c in df.columns:
-            if 'VIP' in str(c).upper():
+            if 'VIP' in c_upper:
                 columnas_precio['P. VIP'] = c
-                break
         
-        # Si no encontró con los nombres específicos, buscar cualquier columna de precio
         if not columnas_precio:
             for c in df.columns:
-                if any(p in str(c).upper() for p in ['PRECIO', 'PRICE']):
+                if any(p in str(c).upper() for p in ['PRECIO', 'PRICE', 'COSTO']):
                     columnas_precio['PRECIO'] = c
                     break
         
-        with st.sidebar.expander(f"📋 {archivo.name[:25]}..."):
+        with st.sidebar.expander(f"📋 {archivo.name[:30]}..."):
             st.caption(f"📌 SKU: {col_sku}")
-            st.caption(f"📌 Descripción: {col_desc}")
-            st.caption(f"💰 Precios detectados: {', '.join(columnas_precio.keys()) if columnas_precio else 'No detectados'}")
+            st.caption(f"📌 Desc: {col_desc}")
+            st.caption(f"💰 Precios: {', '.join(columnas_precio.keys()) if columnas_precio else 'No detectados'}")
+            if st.session_state.debug_mode:
+                st.caption(f"📊 Filas: {len(df)} | Columnas: {len(df.columns)}")
         
         return {
             'nombre': f"{archivo.name} [{hoja_nombre}]",
@@ -209,7 +220,9 @@ def cargar_catalogo(archivo):
             'columnas_precio': columnas_precio
         }
     except Exception as e:
-        st.error(f"Error en {archivo.name}: {str(e)[:100]}")
+        st.error(f"Error en {archivo.name}: {str(e)[:200]}")
+        if st.session_state.debug_mode:
+            st.exception(e)
         return None
 
 def cargar_stock_completo(archivo):
@@ -218,18 +231,23 @@ def cargar_stock_completo(archivo):
         nombre = archivo.name.lower()
         
         if nombre.endswith('.csv'):
+            contenido = archivo.getvalue()
+            if contenido.startswith(b'\xef\xbb\xbf'):
+                contenido = contenido[3:]
+            
+            from io import BytesIO
             try:
-                df = pd.read_csv(archivo, encoding='utf-8')
+                df = pd.read_csv(BytesIO(contenido), encoding='utf-8', on_bad_lines='skip')
             except:
                 try:
-                    df = pd.read_csv(archivo, encoding='latin-1')
+                    df = pd.read_csv(BytesIO(contenido), encoding='latin-1', on_bad_lines='skip')
                 except:
-                    df = pd.read_csv(archivo, encoding='iso-8859-1')
+                    df = pd.read_csv(BytesIO(contenido), encoding='iso-8859-1', on_bad_lines='skip')
             
             df = limpiar_cabeceras(df)
             
-            posibles_skus = ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO']
-            posibles_stock = ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO', 'EN STOCK']
+            posibles_skus = ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO']
+            posibles_stock = ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO']
             
             col_sku = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_skus)), df.columns[0])
             col_stock = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_stock)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
@@ -247,8 +265,8 @@ def cargar_stock_completo(archivo):
                 df = pd.read_excel(archivo, sheet_name=hoja)
                 df = limpiar_cabeceras(df)
                 
-                posibles_skus = ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO']
-                posibles_stock = ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO', 'EN STOCK']
+                posibles_skus = ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO']
+                posibles_stock = ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO']
                 
                 col_sku = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_skus)), df.columns[0])
                 col_stock = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_stock)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
@@ -308,7 +326,7 @@ def buscar_precio(catalogos, stocks, sku, col_precio_seleccionada, tipo_cotizaci
                 if not stock['df'][mask].empty:
                     row = stock['df'][mask].iloc[0]
                     for col in stock['df'].columns:
-                        if any(p in str(col).upper() for p in ['DESC', 'NOMBRE', 'PRODUCTO', 'DESCRIPCION']):
+                        if any(p in str(col).upper() for p in ['DESC', 'NOMBRE', 'PRODUCTO']):
                             return {'encontrado': False, 'precio': 0, 'descripcion': str(row[col])[:80]}
                     return {'encontrado': False, 'precio': 0, 'descripcion': f"SKU: {sku}"}
         else:
@@ -317,7 +335,7 @@ def buscar_precio(catalogos, stocks, sku, col_precio_seleccionada, tipo_cotizaci
                 if not stock['df'][mask].empty:
                     row = stock['df'][mask].iloc[0]
                     for col in stock['df'].columns:
-                        if any(p in str(col).upper() for p in ['DESC', 'NOMBRE', 'PRODUCTO', 'DESCRIPCION']):
+                        if any(p in str(col).upper() for p in ['DESC', 'NOMBRE', 'PRODUCTO']):
                             return {'encontrado': False, 'precio': 0, 'descripcion': str(row[col])[:80]}
                     return {'encontrado': False, 'precio': 0, 'descripcion': f"SKU: {sku}"}
     
@@ -328,8 +346,6 @@ def buscar_stock_xiaomi(stocks, sku):
     stock_total = 0
     stock_apri004 = 0
     stock_yessica = 0
-    origen_apri004 = ""
-    origen_yessica = ""
     
     for stock in stocks:
         hoja = stock['hoja'].upper()
@@ -338,13 +354,11 @@ def buscar_stock_xiaomi(stocks, sku):
             if not stock['df'][mask].empty:
                 row = stock['df'][mask].iloc[0]
                 stock_apri004 = int(corregir_numero(row[stock['col_stock']]))
-                origen_apri004 = stock['nombre']
         elif 'YESSICA' in hoja:
             mask = stock['df'][stock['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
             if not stock['df'][mask].empty:
                 row = stock['df'][mask].iloc[0]
                 stock_yessica = int(corregir_numero(row[stock['col_stock']]))
-                origen_yessica = stock['nombre']
     
     stock_total = stock_apri004 + stock_yessica
     return stock_total, stock_apri004, stock_yessica
@@ -611,7 +625,7 @@ with tab_cotizacion:
             html += '<th style="padding: 10px; text-align: center;">A Cotizar</th>'
             html += '<th style="padding: 10px; text-align: center;">Total</th>'
             html += '<th style="padding: 10px; text-align: center;">Estado</th>'
-            html += '</table></thead><tbody>'
+            html += '<tr></thead><tbody>'
             
             for item in st.session_state.resultados:
                 precio_str = f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio"
@@ -635,7 +649,6 @@ with tab_cotizacion:
             st.markdown("---")
             st.markdown("### ✏️ Ajustar cantidades")
             
-            # Preparar datos para el editor
             df_ajuste = pd.DataFrame([{
                 'SKU': item['SKU'],
                 'Descripción': item['Descripción'][:50],
@@ -662,7 +675,6 @@ with tab_cotizacion:
                 item['A Cotizar'] = edited_df.iloc[i]['A Cotizar']
                 item['Total'] = item['Precio'] * item['A Cotizar']
             
-            # Resumen
             items_validos = [r for r in st.session_state.resultados if r['A Cotizar'] > 0 and r['Precio'] > 0]
             total_general = sum(r['Total'] for r in items_validos)
             
@@ -688,7 +700,6 @@ with tab_cotizacion:
                 if st.session_state.resultados:
                     st.success("✅ Todos los productos tienen precio registrado")
             
-            # Generar cotización
             if items_validos:
                 st.markdown("---")
                 st.markdown("### 📥 Generar Cotización")
