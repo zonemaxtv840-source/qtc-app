@@ -56,6 +56,33 @@ with st.sidebar:
     if "cotizaciones" in st.session_state:
         st.metric("📄 Cotizaciones", st.session_state.get("cotizaciones", 0))
         st.metric("📦 Productos", st.session_state.get("total_prods", 0))
+    
+    st.markdown("---")
+    
+    # ============================================
+    # BOTONES PARA CAMBIAR DE MODO (NUEVO)
+    # ============================================
+    st.markdown("### 🎯 Modo de Cotización")
+    col_modo1, col_modo2 = st.columns(2)
+    with col_modo1:
+        if st.button("🔋 XIAOMI", use_container_width=True):
+            st.session_state.tipo_cotizacion = "XIAOMI"
+            st.rerun()
+    with col_modo2:
+        if st.button("💼 GENERAL", use_container_width=True):
+            st.session_state.tipo_cotizacion = "GENERAL"
+            st.rerun()
+    
+    if st.session_state.get("tipo_cotizacion") == "XIAOMI":
+        st.success("🔋 Modo XIAOMI")
+        st.caption("Stock: APRI.004 + YESSICA")
+    else:
+        st.info("💼 Modo GENERAL")
+        st.caption("Stock: APRI.001")
+    # ============================================
+    
+    st.markdown("---")
+    
     if "debug_mode" not in st.session_state:
         st.session_state.debug_mode = False
     st.session_state.debug_mode = st.checkbox("🔧 Modo Depuración", value=st.session_state.debug_mode)
@@ -127,11 +154,54 @@ def mapear_columna_precio(columnas, nombre_buscar):
 
 def cargar_catalogo(archivo):
     try:
-        xls = pd.ExcelFile(archivo)
-        hojas = xls.sheet_names
-        hoja_seleccionada = st.sidebar.selectbox(f"📗 Hoja {archivo.name}:", hojas, key=f"cat_{archivo.name}")
-        df = pd.read_excel(archivo, sheet_name=hoja_seleccionada)
-        df = limpiar_cabeceras(df)
+        nombre = archivo.name.lower()
+        
+        # ============================================
+        # SOPORTE PARA CSV (NUEVO)
+        # ============================================
+        if nombre.endswith('.csv'):
+            contenido = archivo.getvalue()
+            if contenido.startswith(b'\xef\xbb\xbf'):
+                contenido = contenido[3:]
+            
+            from io import BytesIO
+            try:
+                df_raw = pd.read_csv(BytesIO(contenido), encoding='utf-8', header=None, on_bad_lines='skip')
+            except:
+                try:
+                    df_raw = pd.read_csv(BytesIO(contenido), encoding='latin-1', header=None, on_bad_lines='skip')
+                except:
+                    df_raw = pd.read_csv(BytesIO(contenido), encoding='iso-8859-1', header=None, on_bad_lines='skip')
+            
+            # Buscar fila de cabecera
+            header_row = None
+            for i in range(min(100, len(df_raw))):
+                for cell in df_raw.iloc[i].values:
+                    if pd.notna(cell) and 'SKU' in str(cell).upper():
+                        header_row = i
+                        break
+                if header_row is not None:
+                    break
+            
+            if header_row is None:
+                st.error(f"No se encontró cabecera con SKU en {archivo.name}")
+                return None
+            
+            nuevas_columnas = [str(c).strip() if pd.notna(c) else f"Col_{i}" for i, c in enumerate(df_raw.iloc[header_row].values)]
+            df_raw.columns = nuevas_columnas
+            df = df_raw.iloc[header_row + 1:].reset_index(drop=True)
+            df = df.dropna(axis=1, how='all')
+            df = df.fillna('')
+            hoja_nombre = "CSV"
+        else:
+            # EXCEL
+            xls = pd.ExcelFile(archivo)
+            hojas = xls.sheet_names
+            hoja_seleccionada = st.sidebar.selectbox(f"📗 Hoja {archivo.name}:", hojas, key=f"cat_{archivo.name}")
+            df = pd.read_excel(archivo, sheet_name=hoja_seleccionada)
+            df = limpiar_cabeceras(df)
+            hoja_nombre = hoja_seleccionada
+        # ============================================
         
         posibles_skus = ['SKU', 'COD', 'CODIGO', 'SAP', 'NUMERO', 'ARTICULO', 'COD SAP']
         posibles_desc = ['DESC', 'DESCRIPCION', 'NOMBRE', 'PRODUCTO', 'NOMBRE PRODUCTO']
@@ -160,7 +230,7 @@ def cargar_catalogo(archivo):
             st.caption(f"Precios: {', '.join(columnas_precio.keys()) if columnas_precio else 'No detectados'}")
         
         return {
-            'nombre': f"{archivo.name} [{hoja_seleccionada}]",
+            'nombre': f"{archivo.name} [{hoja_nombre}]",
             'df': df,
             'col_sku': col_sku,
             'col_desc': col_desc,
@@ -171,13 +241,27 @@ def cargar_catalogo(archivo):
         return None
 
 def cargar_stock_completo(archivo):
-    """Carga TODAS las hojas del archivo de stock"""
     try:
-        xls = pd.ExcelFile(archivo)
         todas_hojas = []
+        nombre = archivo.name.lower()
         
-        for hoja in xls.sheet_names:
-            df = pd.read_excel(archivo, sheet_name=hoja)
+        # ============================================
+        # SOPORTE PARA CSV (NUEVO)
+        # ============================================
+        if nombre.endswith('.csv'):
+            contenido = archivo.getvalue()
+            if contenido.startswith(b'\xef\xbb\xbf'):
+                contenido = contenido[3:]
+            
+            from io import BytesIO
+            try:
+                df = pd.read_csv(BytesIO(contenido), encoding='utf-8', on_bad_lines='skip')
+            except:
+                try:
+                    df = pd.read_csv(BytesIO(contenido), encoding='latin-1', on_bad_lines='skip')
+                except:
+                    df = pd.read_csv(BytesIO(contenido), encoding='iso-8859-1', on_bad_lines='skip')
+            
             df = limpiar_cabeceras(df)
             
             posibles_skus = ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO']
@@ -187,12 +271,33 @@ def cargar_stock_completo(archivo):
             col_stock = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_stock)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
             
             todas_hojas.append({
-                'nombre': f"{archivo.name} [{hoja}]",
+                'nombre': f"{archivo.name} [CSV]",
                 'df': df,
                 'col_sku': col_sku,
                 'col_stock': col_stock,
-                'hoja': hoja
+                'hoja': "CSV"
             })
+        else:
+            # EXCEL
+            xls = pd.ExcelFile(archivo)
+            for hoja in xls.sheet_names:
+                df = pd.read_excel(archivo, sheet_name=hoja)
+                df = limpiar_cabeceras(df)
+                
+                posibles_skus = ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO']
+                posibles_stock = ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO', 'EN STOCK']
+                
+                col_sku = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_skus)), df.columns[0])
+                col_stock = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_stock)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
+                
+                todas_hojas.append({
+                    'nombre': f"{archivo.name} [{hoja}]",
+                    'df': df,
+                    'col_sku': col_sku,
+                    'col_stock': col_stock,
+                    'hoja': hoja
+                })
+        # ============================================
         
         return todas_hojas
     except Exception as e:
@@ -234,7 +339,6 @@ def buscar_precio(catalogos, sku, col_precio_seleccionada):
     return {'encontrado': False, 'precio': 0, 'descripcion': ''}
 
 def buscar_stock_xiaomi(stocks, sku):
-    """Busca stock en APRI.004 y YESSICA SEPARADO simultáneamente"""
     sku_limpio = sku.strip().upper()
     stock_total = 0
     stock_apri004 = 0
@@ -268,7 +372,6 @@ def buscar_stock_xiaomi(stocks, sku):
     return stock_total, detalles, stock_apri004, stock_yessica
 
 def buscar_stock_general(stocks, sku):
-    """Busca stock en APRI.001"""
     sku_limpio = sku.strip().upper()
     stock_total = 0
     detalles = {}
@@ -393,21 +496,13 @@ except:
 
 st.markdown("---")
 
+# ============================================
+# ELIMINADO EL SELECTOR INICIAL (AHORA ESTÁ EN SIDEBAR)
+# El modo se maneja con los botones del sidebar
+# Por defecto, si no hay modo, se pone XIAOMI
+# ============================================
 if 'tipo_cotizacion' not in st.session_state:
-    st.session_state.tipo_cotizacion = None
-
-if st.session_state.tipo_cotizacion is None:
-    st.markdown("### 🎯 ¿Qué vas a cotizar hoy?")
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🔋 XIAOMI", use_container_width=True):
-            st.session_state.tipo_cotizacion = "XIAOMI"
-            st.rerun()
-    with col2:
-        if st.button("💼 GENERAL", use_container_width=True):
-            st.session_state.tipo_cotizacion = "GENERAL"
-            st.rerun()
-    st.stop()
+    st.session_state.tipo_cotizacion = "XIAOMI"
 
 if st.session_state.tipo_cotizacion == "XIAOMI":
     st.success("🔋 **Modo XIAOMI** - Buscará stock en: **APRI.004** y **YESSICA SEPARADO** (suma ambas)")
@@ -436,7 +531,11 @@ with tab_cotizacion:
         st.markdown("### 📂 Archivos")
         
         st.markdown("**📚 Catálogos de Precios**")
-        archivos_catalogos = st.file_uploader("Sube catálogos", type=['xlsx', 'xls'], accept_multiple_files=True, key="cat_upload")
+        # ============================================
+        # AGREGADO CSV A LOS TIPOS (NUEVO)
+        # ============================================
+        archivos_catalogos = st.file_uploader("Sube catálogos", type=['xlsx', 'xls', 'csv'], accept_multiple_files=True, key="cat_upload")
+        # ============================================
         if archivos_catalogos:
             st.session_state.catalogos = []
             for archivo in archivos_catalogos:
@@ -447,7 +546,11 @@ with tab_cotizacion:
         
         st.markdown("**📦 Reportes de Stock**")
         st.caption("💡 El sistema cargará TODAS las hojas automáticamente")
-        archivos_stock = st.file_uploader("Sube stocks", type=['xlsx', 'xls'], accept_multiple_files=True, key="stock_upload")
+        # ============================================
+        # AGREGADO CSV A LOS TIPOS (NUEVO)
+        # ============================================
+        archivos_stock = st.file_uploader("Sube stocks", type=['xlsx', 'xls', 'csv'], accept_multiple_files=True, key="stock_upload")
+        # ============================================
         if archivos_stock:
             st.session_state.stocks = []
             for archivo in archivos_stock:
@@ -525,7 +628,6 @@ with tab_cotizacion:
                     
                     icono = "🔋" if st.session_state.tipo_cotizacion == "XIAOMI" else "💼"
                     
-                    # Crear texto de origen
                     if st.session_state.tipo_cotizacion == "XIAOMI":
                         if stock_apri004 > 0 and stock_yessica > 0:
                             origen_texto = f"📦 APRI.004: {stock_apri004} | 📋 YESSICA: {stock_yessica}"
@@ -673,6 +775,23 @@ with tab_cotizacion:
             col1.metric("✅ A cotizar", len(items_validos))
             col2.metric("💰 Total", f"S/. {total_general:,.2f}")
             col3.metric("⚠️ Excluidos", len(st.session_state.resultados) - len(items_validos))
+            
+            # Reporte de productos sin precio
+            sin_precio = [r for r in st.session_state.resultados if r['Estado'] == "⚠️ Sin precio" and r['Stock'] > 0]
+            
+            if sin_precio:
+                st.markdown("---")
+                for sp in sin_precio:
+                    st.markdown(f"""
+                    <div style="background: #FFF8E1; border-left: 4px solid #FFC107; padding: 0.8rem; margin: 0.5rem 0; border-radius: 8px;">
+                        <b>📦 {sp['SKU']}</b><br>
+                        {sp['Descripción']}<br>
+                        <span style="color: #E65100;">🚫 Motivo: Sin precio registrado en el catálogo</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                if st.session_state.resultados:
+                    st.success("✅ Todos los productos tienen precio registrado")
             
             if items_validos:
                 st.markdown("---")
