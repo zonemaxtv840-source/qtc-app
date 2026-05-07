@@ -688,43 +688,64 @@ with tab_cotizacion:
                 if st.session_state.resultados:
                     st.success("✅ Todos los productos tienen precio registrado en el catálogo")
                    
-                       # AJUSTE DE CANTIDADES - TABLA DINÁMICA COMPACTA
+                                   # AJUSTE DE CANTIDADES - DATA EDITOR CON FILTROS
             st.markdown("---")
             st.markdown("### ✏️ Ajustar cantidades")
             
-            # Cabeceras
-            cols = st.columns([2, 3.5, 1.2, 1, 1.2, 1.5])
-            cols[0].markdown("**SKU**")
-            cols[1].markdown("**Descripción**")
-            cols[2].markdown("**Precio**")
-            cols[3].markdown("**Stock**")
-            cols[4].markdown("**A Cotizar**")
-            cols[5].markdown("**Total**")
-            st.divider()
+            # Preparar datos para el editor
+            df_ajuste = pd.DataFrame([{
+                'SKU': item['SKU'],
+                'Descripción': item['Descripción'][:60],
+                'Precio': f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio",
+                'Stock_APRI004': item['Stock_APRI004'] if st.session_state.tipo_cotizacion == "XIAOMI" else None,
+                'Stock_YESSICA': item['Stock_YESSICA'] if st.session_state.tipo_cotizacion == "XIAOMI" else None,
+                'Stock': item['Stock'],
+                'A Cotizar': item['A Cotizar'],
+                'Total': f"S/. {item['Total']:,.2f}"
+            } for item in st.session_state.resultados])
+            
+            # Mostrar tabla con filtros (solo lectura para evitar complejidad)
+            st.dataframe(
+                df_ajuste,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "SKU": st.column_config.TextColumn("SKU", width="small"),
+                    "Descripción": st.column_config.TextColumn("Descripción", width="large"),
+                    "Precio": st.column_config.TextColumn("Precio", width="small"),
+                    "Stock_APRI004": st.column_config.NumberColumn("APRI.004", width="small"),
+                    "Stock_YESSICA": st.column_config.NumberColumn("YESSICA", width="small"),
+                    "Stock": st.column_config.NumberColumn("Stock Total", width="small"),
+                    "A Cotizar": st.column_config.NumberColumn("A Cotizar", width="small"),
+                    "Total": st.column_config.TextColumn("Total", width="small"),
+                }
+            )
+            
+            # Edición por separado (inputs individuales más compactos)
+            st.markdown("#### Ajustar cantidades individualmente")
             
             resultados_editados = []
+            cols = st.columns([2, 3, 1, 1, 1])
+            cols[0].markdown("**SKU**")
+            cols[1].markdown("**Descripción**")
+            cols[2].markdown("**Stock**")
+            cols[3].markdown("**A Cotizar**")
+            cols[4].markdown("**Total**")
+            st.divider()
+            
             for i, item in enumerate(st.session_state.resultados):
-                col1, col2, col3, col4, col5, col6 = st.columns([2, 3.5, 1.2, 1, 1.2, 1.5])
+                col1, col2, col3, col4, col5 = st.columns([2, 3, 1, 1, 1])
                 
                 with col1:
-                    st.markdown(f"<span style='font-family: monospace; font-size: 1rem; font-weight: bold;'>📦 {item['SKU']}</span>", unsafe_allow_html=True)
+                    st.markdown(f"`{item['SKU']}`")
                 with col2:
-                    st.markdown(f"<span style='font-size: 0.9rem;'>{item['Descripción'][:60]}</span>", unsafe_allow_html=True)
+                    st.markdown(item['Descripción'][:50])
                     if st.session_state.tipo_cotizacion == "XIAOMI":
                         if item['Stock_APRI004'] > 0 and item['Stock_YESSICA'] > 0:
                             st.caption(f"📦 APRI.004: {item['Stock_APRI004']} | 📋 YESSICA: {item['Stock_YESSICA']}")
-                        elif item['Stock_APRI004'] > 0:
-                            st.caption(f"📦 APRI.004: {item['Stock_APRI004']}")
-                        elif item['Stock_YESSICA'] > 0:
-                            st.caption(f"📋 YESSICA: {item['Stock_YESSICA']}")
                 with col3:
-                    if item['Precio'] > 0:
-                        st.markdown(f"<span style='font-size: 0.9rem;'>S/. {item['Precio']:,.2f}</span>", unsafe_allow_html=True)
-                    else:
-                        st.markdown("<span style='font-size: 0.8rem; color: #E65100;'>Sin precio</span>", unsafe_allow_html=True)
+                    st.markdown(str(item['Stock']))
                 with col4:
-                    st.markdown(f"<span style='font-size: 0.9rem; font-weight: bold;'>{item['Stock']}</span>", unsafe_allow_html=True)
-                with col5:
                     if item['Precio'] > 0:
                         nueva_cant = st.number_input(
                             "Cant",
@@ -737,20 +758,19 @@ with tab_cotizacion:
                     else:
                         nueva_cant = 0
                         st.markdown("0")
-                with col6:
+                with col5:
                     if item['Precio'] > 0 and nueva_cant > 0:
                         nuevo_total = item['Precio'] * nueva_cant
-                        st.markdown(f"<span style='font-size: 0.9rem; font-weight: bold; color: #2E7D32;'>S/. {nuevo_total:,.2f}</span>", unsafe_allow_html=True)
+                        st.markdown(f"S/. {nuevo_total:,.2f}")
                         item['A Cotizar'] = nueva_cant
                         item['Total'] = nuevo_total
                     else:
-                        st.markdown("<span style='font-size: 0.9rem;'>S/. 0.00</span>", unsafe_allow_html=True)
+                        st.markdown("S/. 0.00")
                         item['A Cotizar'] = 0
                         item['Total'] = 0
                 
                 resultados_editados.append(item)
                 st.divider()
-            
             items_validos = [r for r in st.session_state.resultados if r['A Cotizar'] > 0 and r['Precio'] > 0]
             total_general = sum(r['Total'] for r in items_validos)
             
