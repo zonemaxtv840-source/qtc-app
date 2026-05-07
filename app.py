@@ -14,63 +14,102 @@ try:
 except:
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon="💼", layout="wide")
 
-# --- ESTILOS CSS ---
+# --- ESTILOS CSS - NARANJA CORPORATIVO ---
 st.markdown("""
     <style>
-    .stApp { background-color: #F0F2F6; }
+    /* Fondo general claro */
+    .stApp { background-color: #F5F7FA; }
     .main .block-container { color: #1a1a2e !important; }
-    h1, h2, h3, h4, p, div, span, label { color: #1a1a2e !important; }
     
+    /* Todos los textos oscuros para legibilidad */
+    h1, h2, h3, h4, h5, h6, p, div, span, label, .stMarkdown {
+        color: #1a1a2e !important;
+    }
+    
+    /* Sidebar oscuro con texto blanco */
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, #1a472a 0%, #0d2818 100%);
     }
     [data-testid="stSidebar"] * { color: white !important; }
     
+    /* Botones naranja corporativo */
     .stButton > button {
-        background: #27AE60;
+        background: #F79646 !important;
         color: white !important;
         border-radius: 10px;
         font-weight: 600;
+        border: none;
     }
-    .stButton > button:hover { background: #1E8449; }
+    .stButton > button:hover {
+        background: #e67e22 !important;
+        transform: translateY(-2px);
+        transition: all 0.3s;
+    }
     
+    /* Selectbox */
     .stSelectbox > div > div {
         background-color: white !important;
         color: black !important;
-        border: 1px solid #27AE60 !important;
+        border: 1px solid #F79646 !important;
         border-radius: 8px !important;
     }
     .stSelectbox label { color: #1a1a2e !important; }
     
+    /* Dropdown */
     div[data-baseweb="select"] ul { background-color: white !important; }
     div[data-baseweb="select"] li { color: black !important; background-color: white !important; }
-    div[data-baseweb="select"] li:hover { background-color: #e8f5e9 !important; }
-    div[data-baseweb="select"] li[aria-selected="true"] { background-color: #27AE60 !important; color: white !important; }
+    div[data-baseweb="select"] li:hover { background-color: #FFF3E0 !important; }
+    div[data-baseweb="select"] li[aria-selected="true"] { background-color: #F79646 !important; color: white !important; }
     
+    /* Inputs */
     .stTextInput input, .stTextArea textarea, .stNumberInput input {
         color: black !important;
         background-color: white !important;
-        border: 1px solid #ccc !important;
+        border: 1px solid #ddd !important;
         border-radius: 8px !important;
     }
     
+    /* Tabs naranja */
+    .stTabs [data-baseweb="tab-list"] { background-color: white !important; border-radius: 10px !important; padding: 4px !important; gap: 8px !important; }
+    .stTabs [data-baseweb="tab"] { color: #1a1a2e !important; background-color: #f0f0f0 !important; border-radius: 8px !important; padding: 8px 16px !important; }
+    .stTabs [aria-selected="true"] { background-color: #F79646 !important; color: white !important; }
+    
+    /* Tarjeta de producto */
+    .product-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border: 1px solid #eee;
+    }
+    
+    /* Badges de stock */
+    .stock-badge {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-right: 8px;
+        margin-bottom: 6px;
+    }
+    .stock-good { background-color: #e8f5e9; color: #2e7d32 !important; border: 1px solid #a5d6a7; }
+    .stock-low { background-color: #fff3e0; color: #e65100 !important; border: 1px solid #ffcc80; }
+    .stock-none { background-color: #ffebee; color: #c62828 !important; border: 1px solid #ef9a9a; }
+    .stock-selected { background-color: #F79646; color: white !important; border: 1px solid #e67e22; }
+    
+    /* Metric cards dashboard */
     .metric-card {
         background: white;
-        border-radius: 15px;
-        padding: 1.2rem;
+        border-radius: 16px;
+        padding: 1.5rem;
         text-align: center;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        border: 1px solid #ddd;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        border-top: 4px solid #F79646;
     }
-    .metric-value { font-size: 2rem; font-weight: bold; color: #27AE60 !important; }
-    
-    .stock-card {
-        background: white;
-        border-radius: 10px;
-        padding: 0.5rem;
-        margin: 0.3rem 0;
-        border-left: 3px solid #27AE60;
-    }
+    .metric-value { font-size: 2.2rem; font-weight: bold; color: #F79646 !important; }
+    .metric-label { font-size: 0.9rem; color: #666 !important; margin-top: 0.5rem; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -90,8 +129,8 @@ if not st.session_state.auth:
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
         st.markdown("""
-        <div style="background: white; padding: 2rem; border-radius: 20px;">
-            <h1 style="text-align: center; color: #27AE60;">💚 QTC Smart Sales</h1>
+        <div style="background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+            <h1 style="text-align: center; color: #F79646;">💚 QTC Smart Sales</h1>
             <p style="text-align: center;">Sistema Profesional de Cotización</p>
         </div>
         """, unsafe_allow_html=True)
@@ -106,7 +145,7 @@ if not st.session_state.auth:
     st.stop()
 
 # ============================================
-# FUNCIONES PRINCIPALES
+# FUNCIONES
 # ============================================
 
 def corregir_numero(valor):
@@ -225,9 +264,17 @@ def obtener_stock_todas_hojas(sku, stock_data):
             resultados.append({
                 'hoja': hoja_nombre,
                 'stock': cantidad,
-                'origen': f"{stock_data['nombre']} → {hoja_nombre}"
+                'origen': f"{hoja_nombre}"
+            })
+        else:
+            resultados.append({
+                'hoja': hoja_nombre,
+                'stock': 0,
+                'origen': f"{hoja_nombre}"
             })
     
+    # Ordenar por stock descendente para preseleccionar la que más tiene
+    resultados.sort(key=lambda x: x['stock'], reverse=True)
     return resultados
 
 def buscar_producto(catalogos, sku_buscar):
@@ -258,14 +305,11 @@ def buscar_en_catalogos(catalogos, termino, col_precio_consulta=None):
             if col_precio_consulta and col_precio_consulta != "(No mostrar precio)":
                 precio = corregir_numero(row[col_precio_consulta]) if col_precio_consulta in df.columns else 0
             if sku not in resultados_dict:
-                # Obtener stock de todas las hojas para este SKU
-                stocks_disponibles = obtener_stock_todas_hojas(sku, st.session_state.stock_data) if st.session_state.stock_data else []
                 resultados_dict[sku] = {
                     'SKU': sku,
                     'Descripción': str(row[cat['col_desc']])[:80],
                     'Catálogo': cat['nombre'],
-                    'Precio': precio,
-                    'Stocks': stocks_disponibles
+                    'Precio': precio
                 }
     return list(resultados_dict.values())
 
@@ -365,9 +409,9 @@ with tab_cotizacion:
                     st.session_state.catalogos.append(resultado)
                     st.success(f"✅ {resultado['nombre']}")
         
-        st.markdown("**📦 Reporte de Stock (único archivo con múltiples hojas)**")
+        st.markdown("**📦 Reporte de Stock**")
         archivo_stock = st.file_uploader(
-            "Sube el archivo de stock",
+            "Sube el archivo de stock (con hojas: APRI.001, APRI.004, YESSICA SEPARADO)",
             type=['xlsx', 'xls'],
             key="stock_upload"
         )
@@ -376,16 +420,7 @@ with tab_cotizacion:
             if resultado:
                 st.session_state.stock_data = resultado
                 st.success(f"✅ {resultado['nombre']}: {len(resultado['hojas'])} hojas")
-        
-        st.markdown("---")
-        st.markdown("### 🎯 Tipo de Cotización")
-        
-        tipo_cotizacion = st.radio(
-            "¿Qué tipo de productos vas a cotizar?",
-            ["📱 XIAOMI", "💼 GENERALES"],
-            help="XIAOMI: Sugiere stock de APRI.004/YESSICA\nGENERALES: Sugiere stock de APRI.001"
-        )
-        st.session_state.es_xiaomi = (tipo_cotizacion == "📱 XIAOMI")
+                st.caption(f"Hojas: {', '.join(resultado['hojas'].keys())}")
     
     if not st.session_state.catalogos:
         st.warning("⚠️ Carga catálogos en el panel izquierdo")
@@ -442,141 +477,211 @@ with tab_cotizacion:
                     
                     if not producto['encontrado']:
                         resultados.append({
-                            'id': sku, 'SKU': sku, 'Descripción': '❌ NO ENCONTRADO',
-                            'Precio': 0, 'Solicitado': cant_solicitada,
-                            'Stock_Seleccionado': 0, 'Origen_Stock': '-',
-                            'A_Cotizar': 0, 'Total': 0,
-                            'Estado': '❌ No encontrado', 'Color_Estado': 'red',
-                            'Opciones_Stock': []
+                            'id': sku,
+                            'SKU': sku,
+                            'Descripción': '❌ NO ENCONTRADO',
+                            'Precio': 0,
+                            'Solicitado': cant_solicitada,
+                            'OpcionesStock': [],
+                            'StockSeleccionado': 0,
+                            'OrigenSeleccionado': '-',
+                            'A_Cotizar': 0,
+                            'Total': 0,
+                            'Error': True
                         })
                         continue
                     
                     precio = obtener_precio(producto['row'], producto['columnas_precio'], col_precio)
                     
-                    # Obtener stock de TODAS las hojas
+                    # Obtener stock de TODAS las hojas (ordenado por mayor stock)
                     opciones_stock = obtener_stock_todas_hojas(sku, st.session_state.stock_data)
                     
-                    # Determinar stock sugerido según el tipo
-                    stock_sugerido = 0
-                    origen_sugerido = "-"
-                    for opt in opciones_stock:
-                        if st.session_state.es_xiaomi:
-                            if 'APRI.004' in opt['hoja'].upper() or 'YESSICA' in opt['hoja'].upper():
-                                stock_sugerido = opt['stock']
-                                origen_sugerido = opt['origen']
-                                break
-                        else:
-                            if 'APRI.001' in opt['hoja'].upper():
-                                stock_sugerido = opt['stock']
-                                origen_sugerido = opt['origen']
-                                break
+                    # Seleccionar automáticamente la hoja con más stock
+                    mejor_opcion = opciones_stock[0] if opciones_stock else None
+                    stock_seleccionado = mejor_opcion['stock'] if mejor_opcion else 0
+                    origen_seleccionado = mejor_opcion['hoja'] if mejor_opcion else "-"
                     
                     resultados.append({
                         'id': sku,
                         'SKU': sku,
-                        'Descripción': producto['descripcion'][:80],
+                        'Descripción': producto['descripcion'][:100],
                         'Precio': precio,
                         'Solicitado': cant_solicitada,
-                        'Stock_Seleccionado': stock_sugerido,
-                        'Origen_Stock': origen_sugerido,
-                        'Opciones_Stock': opciones_stock,
-                        'A_Cotizar': 0,
-                        'Total': 0,
-                        'Estado': 'Pendiente',
-                        'Color_Estado': 'orange'
+                        'OpcionesStock': opciones_stock,
+                        'StockSeleccionado': stock_seleccionado,
+                        'OrigenSeleccionado': origen_seleccionado,
+                        'A_Cotizar': min(cant_solicitada, stock_seleccionado) if stock_seleccionado > 0 else 0,
+                        'Total': precio * min(cant_solicitada, stock_seleccionado) if stock_seleccionado > 0 and precio > 0 else 0,
+                        'Error': False
                     })
                 
                 st.session_state.resultados = resultados
         
+        # Mostrar resultados en tarjetas
         if st.session_state.resultados:
             st.markdown("---")
-            st.markdown("### 📊 Resultados - Selecciona stock por producto")
+            st.markdown("### 📊 Resultados de la cotización")
+            st.markdown("*💡 Puedes cambiar el origen del stock para cada producto*")
             
             resultados_editados = []
             
             for i, item in enumerate(st.session_state.resultados):
-                st.markdown(f"#### Producto {i+1}: `{item['SKU']}`")
-                st.markdown(f"**Descripción:** {item['Descripción']}")
-                st.markdown(f"**Precio:** S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "**Precio:** Sin precio")
+                if item.get('Error', False):
+                    with st.container():
+                        st.error(f"❌ **{item['SKU']}** - {item['Descripción']}")
+                    continue
                 
-                # Mostrar opciones de stock disponibles
-                if item['Opciones_Stock']:
-                    st.markdown("**📦 Stock disponible en las siguientes hojas:**")
+                # Tarjeta de producto
+                with st.container():
+                    st.markdown(f"""
+                    <div class="product-card">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <h3 style="margin: 0; color: #F79646;">📦 {item['SKU']}</h3>
+                                <p style="margin: 5px 0 0 0; color: #555;">{item['Descripción']}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-size: 1.2rem; font-weight: bold; color: #F79646;">S/. {item['Precio']:,.2f}</span>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Mostrar stock disponible por hoja
+                    st.markdown("**📊 Stock disponible por ubicación:**")
                     
                     opciones_dict = {}
-                    for opt in item['Opciones_Stock']:
-                        opciones_dict[opt['origen']] = opt['stock']
+                    col_badges = st.columns(len(item['OpcionesStock']))
                     
-                    origen_seleccionado = st.selectbox(
-                        f"Seleccionar origen de stock para {item['SKU']}:",
-                        options=list(opciones_dict.keys()),
-                        index=0,
-                        key=f"origen_{item['id']}_{i}"
-                    )
+                    for idx, opt in enumerate(item['OpcionesStock']):
+                        stock = opt['stock']
+                        hoja = opt['hoja']
+                        
+                        # Determinar clase CSS según stock
+                        if stock > 10:
+                            badge_class = "stock-good"
+                        elif stock > 0:
+                            badge_class = "stock-low"
+                        else:
+                            badge_class = "stock-none"
+                        
+                        # Resaltar la que está seleccionada
+                        if hoja == item['OrigenSeleccionado']:
+                            badge_class = "stock-selected"
+                        
+                        st.markdown(f"""
+                        <span class="stock-badge {badge_class}">
+                            📁 {hoja}: {stock} unidades
+                        </span>
+                        """, unsafe_allow_html=True)
+                        
+                        opciones_dict[hoja] = stock
                     
-                    stock_seleccionado = opciones_dict[origen_seleccionado]
-                    st.caption(f"📊 Stock disponible: {stock_seleccionado} unidades")
-                else:
-                    stock_seleccionado = 0
-                    origen_seleccionado = "Sin stock disponible"
-                    st.warning("⚠️ No hay stock disponible en ninguna hoja")
-                
-                # Cantidad a cotizar
-                col1, col2 = st.columns([1, 3])
-                with col1:
-                    cantidad_a_cotizar = st.number_input(
-                        "Cantidad a cotizar:",
-                        min_value=0,
-                        max_value=stock_seleccionado if stock_seleccionado > 0 else 999,
-                        value=min(item['Solicitado'], stock_seleccionado) if stock_seleccionado > 0 else 0,
-                        key=f"cant_{item['id']}_{i}"
-                    )
-                with col2:
-                    if cantidad_a_cotizar > 0 and item['Precio'] > 0:
+                    # Selector para cambiar el origen del stock
+                    st.markdown("---")
+                    col1, col2, col3 = st.columns([2, 1, 1])
+                    
+                    with col1:
+                        nuevo_origen = st.selectbox(
+                            f"🎯 Seleccionar origen de stock para {item['SKU']}:",
+                            options=list(opciones_dict.keys()),
+                            index=list(opciones_dict.keys()).index(item['OrigenSeleccionado']) if item['OrigenSeleccionado'] in opciones_dict else 0,
+                            key=f"origen_{item['id']}_{i}"
+                        )
+                        nuevo_stock = opciones_dict[nuevo_origen]
+                    
+                    with col2:
+                        cantidad_a_cotizar = st.number_input(
+                            "📦 Cantidad a cotizar:",
+                            min_value=0,
+                            max_value=max(nuevo_stock, 999) if nuevo_stock > 0 else 999,
+                            value=min(item['Solicitado'], nuevo_stock) if nuevo_stock > 0 else 0,
+                            key=f"cant_{item['id']}_{i}"
+                        )
+                    
+                    with col3:
                         total_producto = item['Precio'] * cantidad_a_cotizar
-                        st.markdown(f"**💰 Total: S/. {total_producto:,.2f}**")
-                    elif cantidad_a_cotizar > 0 and item['Precio'] == 0:
-                        st.warning("⚠️ Producto sin precio")
-                
-                # Estado
-                if cantidad_a_cotizar == 0:
-                    estado = "⏸️ Excluido"
-                    color = "gray"
-                elif item['Precio'] == 0:
-                    estado = "⚠️ Sin precio"
-                    color = "orange"
-                elif cantidad_a_cotizar <= stock_seleccionado:
-                    estado = "✅ OK"
-                    color = "green"
-                else:
-                    estado = f"⚠️ Excede stock (máx {stock_seleccionado})"
-                    color = "orange"
-                
-                st.markdown(f"<span style='color:{color}'>{estado}</span>", unsafe_allow_html=True)
-                
-                # Guardar
-                item_editado = item.copy()
-                item_editado['Stock_Seleccionado'] = stock_seleccionado
-                item_editado['Origen_Stock'] = origen_seleccionado
-                item_editado['A_Cotizar'] = cantidad_a_cotizar
-                item_editado['Total'] = item['Precio'] * cantidad_a_cotizar
-                item_editado['Estado'] = estado
-                resultados_editados.append(item_editado)
-                
-                st.divider()
+                        if cantidad_a_cotizar > 0 and item['Precio'] > 0:
+                            st.markdown(f"""
+                            <div style="background: #e8f5e9; padding: 0.5rem; border-radius: 8px; text-align: center;">
+                                <span style="font-size: 0.8rem;">💰 TOTAL</span>
+                                <br>
+                                <span style="font-size: 1.2rem; font-weight: bold; color: #2e7d32;">S/. {total_producto:,.2f}</span>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"""
+                            <div style="background: #ffebee; padding: 0.5rem; border-radius: 8px; text-align: center;">
+                                <span style="font-size: 0.8rem;">⚠️ Sin precio</span>
+                            </div>
+                            """, unsafe_allow_html=True)
+                    
+                    # Determinar estado final
+                    if cantidad_a_cotizar == 0:
+                        estado_final = "⏸️ Excluido"
+                        color_estado = "#999"
+                    elif item['Precio'] == 0:
+                        estado_final = "⚠️ Sin precio"
+                        color_estado = "#e65100"
+                    elif cantidad_a_cotizar <= nuevo_stock:
+                        estado_final = f"✅ OK - Usando stock de {nuevo_origen}"
+                        color_estado = "#2e7d32"
+                    else:
+                        estado_final = f"⚠️ Stock insuficiente (máx {nuevo_stock})"
+                        color_estado = "#c62828"
+                    
+                    st.markdown(f"""
+                    <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #eee;">
+                        <span style="color: {color_estado}; font-weight: 500;">{estado_final}</span>
+                    </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Guardar resultados editados
+                    item_editado = item.copy()
+                    item_editado['OrigenSeleccionado'] = nuevo_origen
+                    item_editado['StockSeleccionado'] = nuevo_stock
+                    item_editado['A_Cotizar'] = cantidad_a_cotizar
+                    item_editado['Total'] = total_producto
+                    item_editado['Estado'] = estado_final
+                    resultados_editados.append(item_editado)
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
             
-            # Resumen
-            items_validos = [r for r in resultados_editados if r['A_Cotizar'] > 0 and r['Precio'] > 0]
+            # Resumen final
+            items_validos = [r for r in resultados_editados if r['A_Cotizar'] > 0 and r['Precio'] > 0 and not r.get('Error', False)]
             total_cotizacion = sum(r['Total'] for r in items_validos)
             
+            st.markdown("---")
+            st.markdown("### 📈 Resumen de la cotización")
+            
             col1, col2, col3 = st.columns(3)
-            col1.metric("📦 A cotizar", len(items_validos))
-            col2.metric("💰 Total", f"S/. {total_cotizacion:,.2f}")
-            col3.metric("⏸️ Excluidos", len(resultados_editados) - len(items_validos))
+            with col1:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-value">{len(items_validos)}</div>
+                    <div class="metric-label">📦 Productos a cotizar</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with col2:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-value">S/. {total_cotizacion:,.2f}</div>
+                    <div class="metric-label">💰 Total de la cotización</div>
+                </div>
+                """, unsafe_allow_html=True)
+            with col3:
+                excluidos = len([r for r in resultados_editados if r['A_Cotizar'] == 0 or r.get('Error', False)])
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-value">{excluidos}</div>
+                    <div class="metric-label">⏸️ Productos excluidos</div>
+                </div>
+                """, unsafe_allow_html=True)
             
             if items_validos:
                 st.markdown("---")
                 st.markdown("### 📥 Generar Cotización")
+                
                 col_cli1, col_cli2 = st.columns(2)
                 with col_cli1:
                     cliente = st.text_input("🏢 Cliente", "CLIENTE NUEVO")
@@ -584,19 +689,33 @@ with tab_cotizacion:
                     ruc_cliente = st.text_input("📋 RUC/DNI", "-")
                 
                 if st.button("📥 GENERAR EXCEL", use_container_width=True, type="primary"):
-                    items_excel = [{'sku': r['SKU'], 'desc': r['Descripción'], 'cant': r['A_Cotizar'], 'p_u': r['Precio'], 'total': r['Total']} for r in items_validos]
+                    items_excel = [{
+                        'sku': r['SKU'],
+                        'desc': r['Descripción'],
+                        'cant': r['A_Cotizar'],
+                        'p_u': r['Precio'],
+                        'total': r['Total']
+                    } for r in items_validos]
+                    
                     excel_data = generar_excel_cotizacion(items_excel, cliente, ruc_cliente)
-                    st.download_button(label="💾 DESCARGAR", data=excel_data, file_name=f"Cotizacion_{cliente}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx", use_container_width=True)
+                    
+                    st.download_button(
+                        label="💾 DESCARGAR COTIZACIÓN",
+                        data=excel_data,
+                        file_name=f"Cotizacion_{cliente}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+                        use_container_width=True
+                    )
+                    
                     st.session_state.cotizaciones += 1
                     st.session_state.total_prods = len(items_validos)
                     st.balloons()
-                    st.success("✅ Cotización generada!")
+                    st.success("✅ Cotización generada correctamente!")
 
 # ============================================
-# TAB 2: BUSCAR PRODUCTOS (MEJORADO)
+# TAB 2: BUSCAR PRODUCTOS
 # ============================================
 with tab_buscar:
-    st.markdown("### 🔍 Buscar Productos")
+    st.markdown("### 🔍 Buscar Productos en Catálogos")
     
     if not st.session_state.catalogos:
         st.warning("⚠️ Primero carga catálogos en la pestaña 'Cotización'")
@@ -626,14 +745,14 @@ with tab_buscar:
                     with st.expander(f"📦 {res['SKU']} - {res['Descripción'][:60]}"):
                         col1, col2 = st.columns([2, 1])
                         with col1:
-                            st.markdown(f"**Catálogo:** {res['Catálogo']}")
+                            st.markdown(f"**📁 Catálogo:** {res['Catálogo']}")
                             if res['Precio']:
                                 st.markdown(f"**💰 Precio:** S/. {res['Precio']:,.2f}")
                         with col2:
                             cantidad = st.number_input(
-                                "Cantidad a agregar:",
+                                "➕ Cantidad a agregar:",
                                 min_value=0, max_value=999, value=0,
-                                key=f"agregar_{res['SKU']}",
+                                key=f"add_{res['SKU']}",
                                 label_visibility="collapsed"
                             )
                             if cantidad > 0:
@@ -643,9 +762,14 @@ with tab_buscar:
                         if st.session_state.stock_data:
                             stocks_info = obtener_stock_todas_hojas(res['SKU'], st.session_state.stock_data)
                             if stocks_info:
-                                st.markdown("**📊 Stock disponible:**")
+                                st.markdown("**📊 Stock disponible en el sistema:**")
                                 for s in stocks_info:
-                                    icono = "🔋" if ('APRI.004' in s['hoja'].upper() or 'YESSICA' in s['hoja'].upper()) else ("💙" if 'APRI.001' in s['hoja'].upper() else "📄")
+                                    if s['stock'] > 10:
+                                        icono = "🟢"
+                                    elif s['stock'] > 0:
+                                        icono = "🟠"
+                                    else:
+                                        icono = "🔴"
                                     st.markdown(f"{icono} **{s['hoja']}:** {s['stock']} unidades")
                             else:
                                 st.warning("⚠️ No se encontró stock en ninguna hoja")
@@ -653,12 +777,13 @@ with tab_buscar:
                 st.warning("No se encontraron productos")
         
         st.markdown("---")
-        st.markdown("#### 📝 Agregar SKU específicos")
+        st.markdown("#### 📝 Agregar múltiples SKU manualmente")
         st.caption("Formato: SKU:CANTIDAD (uno por línea)")
         
         texto_multiple = st.text_area("Ingresa SKU:CANTIDAD", height=100, placeholder="CN0900009WH8:5\nCN0903902WH0:2")
         
         if st.button("➕ Agregar productos", use_container_width=True):
+            lineas_agregadas = 0
             for line in texto_multiple.split('\n'):
                 line = line.strip()
                 if ':' in line:
@@ -669,12 +794,18 @@ with tab_buscar:
                             cantidad = int(parts[1].strip())
                             if cantidad > 0:
                                 st.session_state.productos_seleccionados[sku] = st.session_state.productos_seleccionados.get(sku, 0) + cantidad
+                                lineas_agregadas += 1
                         except:
                             pass
                 elif line:
                     st.session_state.productos_seleccionados[line.strip().upper()] = st.session_state.productos_seleccionados.get(line.strip().upper(), 0) + 1
-            st.success(f"✅ Productos agregados! Total: {len(st.session_state.productos_seleccionados)}")
-            st.rerun()
+                    lineas_agregadas += 1
+            
+            if lineas_agregadas > 0:
+                st.success(f"✅ {lineas_agregadas} productos agregados!")
+                st.rerun()
+            else:
+                st.warning("No se agregaron productos. Usa formato SKU:CANTIDAD")
         
         if st.session_state.productos_seleccionados:
             st.markdown("---")
@@ -686,7 +817,7 @@ with tab_buscar:
                 with col1:
                     st.markdown(f"`{sku}`")
                 with col2:
-                    nueva_cant = st.number_input("Cant", min_value=0, max_value=999, value=cant, key=f"edit_{sku}", label_visibility="collapsed")
+                    nueva_cant = st.number_input("Cantidad", min_value=0, max_value=999, value=cant, key=f"edit_{sku}", label_visibility="collapsed")
                 with col3:
                     if st.button("🗑️", key=f"del_{sku}"):
                         nueva_cant = 0
@@ -714,7 +845,7 @@ with tab_dashboard:
         st.markdown(f"""
         <div class="metric-card">
             <div class="metric-value">{st.session_state.get('cotizaciones', 0)}</div>
-            <div class="metric-label">📄 Cotizaciones</div>
+            <div class="metric-label">📄 Cotizaciones Generadas</div>
         </div>
         """, unsafe_allow_html=True)
     with col2:
@@ -731,9 +862,45 @@ with tab_dashboard:
         <div class="metric-card">
             <div class="metric-value">{total_catalogos}</div>
             <div class="metric-label">📚 Catálogos</div>
-            <div style="font-size:0.8rem;">📑 {total_hojas} hojas de stock</div>
+            <div class="metric-label" style="font-size:0.7rem;">📑 {total_hojas} hojas de stock</div>
         </div>
         """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    st.markdown("### 📋 Resumen de Catálogos Cargados")
+    if st.session_state.catalogos:
+        for cat in st.session_state.catalogos:
+            st.markdown(f"- **{cat['nombre']}**")
+    
+    st.markdown("---")
+    st.markdown("### 📋 Stock Disponible (Todas las hojas)")
+    if st.session_state.stock_data:
+        for hoja in st.session_state.stock_data['hojas'].keys():
+            icono = "🔋" if 'APRI.004' in hoja.upper() else ("💜" if 'YESSICA' in hoja.upper() else "💙")
+            st.markdown(f"- {icono} **{hoja}**")
+    else:
+        st.info("No hay stock cargado")
+    
+    st.markdown("---")
+    st.markdown("### 🎯 Manual del Sistema")
+    st.markdown("""
+    **1. Cargar archivos:**
+    - Sube tus catálogos de precios (Excel)
+    - Sube tu archivo de stock (debe contener hojas: APRI.001, APRI.004, YESSICA SEPARADO)
+    
+    **2. Configurar:**
+    - Selecciona la columna de precio (Caja, VIP, Mayor, etc.)
+    - Ingresa SKU en formato `SKU:CANTIDAD`
+    
+    **3. Revisar resultados:**
+    - El sistema muestra stock disponible en CADA hoja
+    - Selecciona automáticamente la hoja con más stock
+    - Puedes cambiar manualmente el origen para cada producto
+    
+    **4. Generar cotización:**
+    - Ingresa datos del cliente
+    - Descarga Excel con formato profesional
+    """)
 
 st.markdown("---")
-st.markdown("*💚 QTC Smart Sales Pro - Selección manual de stock por producto*")
+st.markdown("*💚 QTC Smart Sales Pro - Con selección inteligente de stock*")
