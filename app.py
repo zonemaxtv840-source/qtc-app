@@ -615,9 +615,7 @@ with tab_cotizacion:
                 # Convertir diccionario a lista
                 st.session_state.resultados = list(resultados_dict.values())
                 
-                
-                st.session_state.resultados = resultados
-        
+                        
         if st.session_state.resultados:
             st.markdown("---")
             st.markdown("### 📊 Resultados")
