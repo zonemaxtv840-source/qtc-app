@@ -776,7 +776,7 @@ with tab_cotizacion:
                     st.success("✅ Cotización generada!")
 
 # ============================================
-# TAB BUSCAR PRODUCTOS (CORREGIDO)
+# TAB BUSCAR PRODUCTOS (CORREGIDO - SIN DUPLICADOS)
 # ============================================
 with tab_buscar:
     st.markdown("### 🔍 Buscar Productos")
@@ -807,60 +807,75 @@ with tab_buscar:
             with st.spinner("🔍 Buscando productos y consultando stock..."):
                 precio_seleccionado = None if col_precio_consulta == "(No mostrar precio)" else col_precio_consulta
                 
-                # Búsqueda en catálogos
+                # Diccionario para evitar duplicados por SKU
                 resultados_dict = {}
                 
-                # Separar términos (soporta búsqueda múltiple)
+                # Separar términos para búsqueda múltiple
                 if ',' in busqueda:
-                    terminos = [t.strip() for t in busqueda.split(',')]
+                    terminos = [t.strip().upper() for t in busqueda.split(',') if len(t.strip()) >= 2]
                 else:
-                    terminos = [t.strip() for t in busqueda.split() if len(t.strip()) >= 2]
+                    terminos = [t.strip().upper() for t in busqueda.split() if len(t.strip()) >= 2]
                 
+                # Si no hay múltiples términos, usar el original
+                if not terminos:
+                    terminos = [busqueda.upper()]
+                
+                # Buscar en cada catálogo
                 for cat in st.session_state.catalogos:
                     df = cat['df']
+                    col_sku = cat['col_sku']
+                    col_desc = cat['col_desc']
+                    
                     for term in terminos:
-                        mask_sku = df[cat['col_sku']].astype(str).str.contains(term, case=False, na=False, regex=False)
-                        mask_desc = df[cat['col_desc']].astype(str).str.contains(term, case=False, na=False, regex=False)
+                        # Búsqueda por SKU o descripción
+                        mask_sku = df[col_sku].astype(str).str.contains(term, case=False, na=False, regex=False)
+                        mask_desc = df[col_desc].astype(str).str.contains(term, case=False, na=False, regex=False)
                         
                         for idx, row in df[mask_sku | mask_desc].iterrows():
-                            sku = str(row[cat['col_sku']])
+                            sku = str(row[col_sku]).strip().upper()
                             
-                            if sku not in resultados_dict:
-                                # Precio
-                                precio = None
-                                if precio_seleccionado and precio_seleccionado != "(No mostrar precio)":
-                                    if precio_seleccionado in df.columns:
-                                        precio = corregir_numero(row[precio_seleccionado])
-                                    else:
-                                        precio = 0
-                                
-                                # Stock - BUSCAR EN TODOS LOS STOCKS
-                                stock_total = 0
-                                stocks_detalle = []
-                                
-                                if st.session_state.stocks:
-                                    for stock in st.session_state.stocks:
-                                        try:
-                                            mask_stock = stock['df'][stock['col_sku']].astype(str).str.contains(sku, case=False, na=False, regex=False)
-                                            if not stock['df'][mask_stock].empty:
-                                                row_stock = stock['df'][mask_stock].iloc[0]
-                                                cantidad = int(corregir_numero(row_stock[stock['col_stock']])) if stock['col_stock'] else 0
-                                                stocks_detalle.append({
-                                                    'origen': stock['nombre'],
-                                                    'stock': cantidad
-                                                })
-                                                stock_total += cantidad
-                                        except:
-                                            pass
-                                
-                                resultados_dict[sku] = {
-                                    'SKU': sku,
-                                    'Descripción': str(row[cat['col_desc']])[:100],
-                                    'Catálogo': cat['nombre'],
-                                    'Precio': precio,
-                                    'Stock_Total': stock_total,
-                                    'Stocks_Detalle': stocks_detalle
-                                }
+                            # Si ya tenemos este SKU, saltar (evitar duplicados)
+                            if sku in resultados_dict:
+                                continue
+                            
+                            # Obtener precio
+                            precio = None
+                            if precio_seleccionado and precio_seleccionado != "(No mostrar precio)":
+                                if precio_seleccionado in df.columns:
+                                    precio = corregir_numero(row[precio_seleccionado])
+                                else:
+                                    precio = 0
+                            
+                            # Obtener stock - SUMAR de TODOS los stocks y TODAS las hojas
+                            stock_total = 0
+                            stocks_detalle = {}
+                            
+                            if st.session_state.stocks:
+                                for stock in st.session_state.stocks:
+                                    try:
+                                        mask_stock = stock['df'][stock['col_sku']].astype(str).str.contains(sku, case=False, na=False, regex=False)
+                                        if not stock['df'][mask_stock].empty:
+                                            row_stock = stock['df'][mask_stock].iloc[0]
+                                            cantidad = int(corregir_numero(row_stock[stock['col_stock']])) if stock['col_stock'] else 0
+                                            
+                                            # Usar el nombre del stock como clave para agrupar
+                                            stock_key = stock['nombre']
+                                            if stock_key in stocks_detalle:
+                                                stocks_detalle[stock_key] += cantidad
+                                            else:
+                                                stocks_detalle[stock_key] = cantidad
+                                            stock_total += cantidad
+                                    except Exception as e:
+                                        pass
+                            
+                            resultados_dict[sku] = {
+                                'SKU': sku,
+                                'Descripción': str(row[col_desc])[:100],
+                                'Catálogo': cat['nombre'],
+                                'Precio': precio,
+                                'Stock_Total': stock_total,
+                                'Stocks_Detalle': stocks_detalle
+                            }
                 
                 resultados = list(resultados_dict.values())
             
@@ -873,23 +888,34 @@ with tab_buscar:
                         stock_icon = "🔴"
                         stock_text = "Sin stock"
                         stock_bg = "#FFCDD2"
+                        stock_color = "#C62828"
                     elif res['Stock_Total'] < 10:
                         stock_icon = "🟠"
                         stock_text = f"Stock bajo: {res['Stock_Total']} uds"
                         stock_bg = "#FFF3E0"
+                        stock_color = "#E65100"
                     else:
                         stock_icon = "🟢"
                         stock_text = f"Stock disponible: {res['Stock_Total']} uds"
                         stock_bg = "#C8E6C9"
+                        stock_color = "#1B5E20"
                     
-                    # Construir detalles de stock por hoja
+                    # Construir detalles de stock por archivo (sin duplicados)
                     stock_detalle_html = ""
-                    for s in res['Stocks_Detalle']:
-                        if s['stock'] > 0:
-                            stock_detalle_html += f'<span style="background:#E8F5E9; padding:2px 8px; border-radius:12px; font-size:0.7rem; margin-right:5px;">📁 {s["origen"][:35]}: {s["stock"]} uds</span> '
+                    for origen, cantidad in res['Stocks_Detalle'].items():
+                        if cantidad > 0:
+                            # Tomar solo el nombre del archivo (sin la hoja para no repetir)
+                            nombre_corto = origen.split('[')[0].strip() if '[' in origen else origen
+                            stock_detalle_html += f'<div style="margin: 2px 0;"><span style="background:#E8F5E9; padding:2px 8px; border-radius:12px; font-size:0.7rem;">📁 {nombre_corto}: {cantidad} uds</span></div>'
                     
                     # Precio
-                    precio_html = f'<span style="font-size:1rem; font-weight:bold; color:#66BB6A;">S/. {res["Precio"]:,.2f}</span>' if res['Precio'] else '<span style="color:#FF8F00;">⚠️ Sin precio</span>'
+                    if res['Precio'] and res['Precio'] > 0:
+                        precio_html = f'<span style="font-size:1.1rem; font-weight:bold; color:#66BB6A;">S/. {res["Precio"]:,.2f}</span>'
+                    else:
+                        precio_html = '<span style="color:#FF8F00;">⚠️ Sin precio en catálogo</span>'
+                    
+                    # Catálogo de origen
+                    catalogo_origen = res['Catálogo'].split('[')[0].strip() if '[' in res['Catálogo'] else res['Catálogo']
                     
                     st.markdown(f"""
                     <div style="background: white; border-radius: 12px; padding: 1rem; margin: 0.5rem 0; border-left: 4px solid #66BB6A; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
@@ -902,33 +928,41 @@ with tab_buscar:
                                 {precio_html}
                             </div>
                         </div>
-                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
-                            <span style="background:{stock_bg}; padding:4px 12px; border-radius:20px; font-size:0.75rem; font-weight:600;">
-                                {stock_icon} {stock_text}
-                            </span>
-                            <div style="margin-top: 6px;">
-                                {stock_detalle_html}
+                        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #eee;">
+                            <div style="margin-bottom: 6px;">
+                                <span style="background:{stock_bg}; padding:4px 12px; border-radius:20px; font-size:0.75rem; font-weight:600; color:{stock_color};">
+                                    {stock_icon} {stock_text}
+                                </span>
                             </div>
-                            <span style="font-size:0.7rem; color:#888;">📁 Catálogo: {res['Catálogo'][:50]}</span>
+                            <div style="margin-top: 6px; font-size:0.75rem;">
+                                {stock_detalle_html if stock_detalle_html else '<span style="color:#888;">No hay stock registrado</span>'}
+                            </div>
+                            <div style="margin-top: 6px; font-size:0.7rem; color:#888;">
+                                📋 Catálogo: {catalogo_origen}
+                            </div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
                     
                     # Botón para agregar
-                    col1, col2 = st.columns([3, 1])
+                    col1, col2, col3 = st.columns([2, 1, 1])
                     with col1:
-                        st.markdown(f"**➕ Agregar a cotización**")
+                        st.markdown(f"**➕ Agregar a la cotización**")
                     with col2:
                         cantidad = st.number_input(
-                            "Cant",
+                            "Cantidad",
                             min_value=0,
                             max_value=999,
                             value=0,
                             key=f"add_{res['SKU']}",
                             label_visibility="collapsed"
                         )
+                    with col3:
                         if cantidad > 0:
-                            st.session_state.productos_seleccionados[res['SKU']] = st.session_state.productos_seleccionados.get(res['SKU'], 0) + cantidad
+                            if st.button("✓ Agregar", key=f"btn_{res['SKU']}"):
+                                st.session_state.productos_seleccionados[res['SKU']] = st.session_state.productos_seleccionados.get(res['SKU'], 0) + cantidad
+                                st.success(f"✅ {cantidad} x {res['SKU']} agregado")
+                                st.rerun()
                     st.divider()
             else:
                 st.warning("No se encontraron productos. Intenta con otros términos.")
@@ -938,10 +972,10 @@ with tab_buscar:
             st.markdown("---")
             st.markdown(f"### ✅ Productos seleccionados ({len(st.session_state.productos_seleccionados)})")
             
-            # Mostrar tabla de seleccionados con resumen de stock
+            # Mostrar tabla de seleccionados
             seleccionados_lista = []
             for sku, cant in st.session_state.productos_seleccionados.items():
-                # Obtener stock
+                # Obtener stock total
                 stock_total = 0
                 for stock in st.session_state.stocks:
                     try:
@@ -955,9 +989,9 @@ with tab_buscar:
                 
                 seleccionados_lista.append({
                     'SKU': sku,
-                    'Cantidad a cotizar': cant,
+                    'Cantidad': cant,
                     'Stock disponible': stock_total,
-                    'Estado': '⚠️ Stock insuficiente' if cant > stock_total else '✅ OK'
+                    'Estado': '⚠️ Stock insuficiente' if cant > stock_total and stock_total > 0 else ('❌ Sin stock' if stock_total == 0 else '✅ OK')
                 })
             
             st.dataframe(pd.DataFrame(seleccionados_lista), use_container_width=True)
