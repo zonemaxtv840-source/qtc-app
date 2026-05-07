@@ -672,37 +672,39 @@ with tab_cotizacion:
         
         if st.session_state.resultados:
             st.markdown("---")
-            st.markdown("### 📊 Resultados")
+             st.markdown("### 📊 Resultados")
             
-            # Tabla HTML
-            html = '<div style="overflow-x: auto;"><table style="width:100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden;">'
-            html += '<thead><tr style="background-color: #4CAF50; color: white;">'
-            html += '<th style="padding: 10px; text-align: left;">SKU</th>'
-            html += '<th style="padding: 10px; text-align: left;">Descripción</th>'
-            html += '<th style="padding: 10px; text-align: center;">Precio</th>'
-            html += '<th style="padding: 10px; text-align: center;">Sol.</th>'
-            html += '<th style="padding: 10px; text-align: center;">Stock</th>'
-            html += '<th style="padding: 10px; text-align: center;">A Cotizar</th>'
-            html += '<th style="padding: 10px; text-align: center;">Total</th>'
-            html += '<th style="padding: 10px; text-align: center;">Estado</th>'
-            html += '</table></thead><tbody>'
+            # Usar st.dataframe en lugar de HTML para mejor visualización
+            df_resultados = pd.DataFrame([{
+                'SKU': item['SKU'],
+                'Descripción': item['Descripción'][:60],
+                'Precio (S/.)': item['Precio'] if item['Precio'] > 0 else 0,
+                'Solicitado': item['Solicitado'],
+                'Stock': item['Stock'],
+                'A Cotizar': item['A Cotizar'],
+                'Total (S/.)': item['Total'],
+                'Estado': item['Estado']
+            } for item in st.session_state.resultados])
             
-            for item in st.session_state.resultados:
-                precio_str = f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio"
-                total_str = f"S/. {item['Total']:,.2f}"
-                
-                html += f'<tr style="border-bottom: 1px solid #E8F5E9;">'
-                html += f'<td style="padding: 10px; font-family: monospace;">{item["SKU"]}</td>'
-                html += f'<td style="padding: 10px; max-width: 300px;">{item["Descripción"][:60]}</td>'
-                html += f'<td style="padding: 10px; text-align: center;">{precio_str}</td>'
-                html += f'<td style="padding: 10px; text-align: center;">{item["Solicitado"]}</td>'
-                html += f'<td style="padding: 10px; text-align: center;">{item["Stock"]}</td>'
-                html += f'<td style="padding: 10px; text-align: center;">{item["A Cotizar"]}</td>'
-                html += f'<td style="padding: 10px; text-align: center;">{total_str}</td>'
-                html += f'<td style="padding: 10px; text-align: center;"><span class="{item["Badge"]}">{item["Estado"]}</span></td>'
-                html += '</tr>'
+            # Formatear columnas numéricas
+            df_resultados['Precio (S/.)'] = df_resultados['Precio (S/.)'].apply(lambda x: f"S/. {x:,.2f}" if x > 0 else "Sin precio")
+            df_resultados['Total (S/.)'] = df_resultados['Total (S/.)'].apply(lambda x: f"S/. {x:,.2f}")
             
-            html += '</tbody></table></div>'
+            st.dataframe(
+                df_resultados,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "SKU": st.column_config.TextColumn("SKU", width="small"),
+                    "Descripción": st.column_config.TextColumn("Descripción", width="large"),
+                    "Precio (S/.)": st.column_config.TextColumn("Precio", width="small"),
+                    "Solicitado": st.column_config.NumberColumn("Sol.", width="small"),
+                    "Stock": st.column_config.NumberColumn("Stock", width="small"),
+                    "A Cotizar": st.column_config.NumberColumn("A Cotizar", width="small"),
+                    "Total (S/.)": st.column_config.TextColumn("Total", width="small"),
+                    "Estado": st.column_config.TextColumn("Estado", width="small"),
+                }
+            )
             st.markdown(html, unsafe_allow_html=True)
             
             # Ajuste de cantidades
