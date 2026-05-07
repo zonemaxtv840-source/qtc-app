@@ -656,8 +656,139 @@ with tab_cotizacion:
                     st.markdown("---")
                     st.success("✅ Todos los productos tienen precio registrado en el catálogo")
             
+                        # ============================================
+            # AJUSTE DE CANTIDADES - TABLA DINÁMICA COMPACTA
+            # ============================================
             st.markdown("---")
             st.markdown("### ✏️ Ajustar cantidades")
+            
+            # Crear tabla compacta con columnas
+            cols = st.columns([2, 3, 1.2, 1, 1.2, 1.5])
+            cols[0].markdown("**SKU**")
+            cols[1].markdown("**Descripción**")
+            cols[2].markdown("**Precio**")
+            cols[3].markdown("**Stock**")
+            cols[4].markdown("**A Cotizar**")
+            cols[5].markdown("**Total**")
+            st.divider()
+            
+            resultados_editados = []
+            for i, item in enumerate(st.session_state.resultados):
+                col1, col2, col3, col4, col5, col6 = st.columns([2, 3, 1.2, 1, 1.2, 1.5])
+                
+                with col1:
+                    st.markdown(f"`{item['SKU']}`")
+                with col2:
+                    st.markdown(item['Descripción'][:55])
+                    if st.session_state.tipo_cotizacion == "XIAOMI":
+                        if item['Stock_APRI004'] > 0 and item['Stock_YESSICA'] > 0:
+                            st.caption(f"📦 APRI.004: {item['Stock_APRI004']} | 📋 YESSICA: {item['Stock_YESSICA']}")
+                        elif item['Stock_APRI004'] > 0:
+                            st.caption(f"📦 APRI.004: {item['Stock_APRI004']}")
+                        elif item['Stock_YESSICA'] > 0:
+                            st.caption(f"📋 YESSICA: {item['Stock_YESSICA']}")
+                with col3:
+                    if item['Precio'] > 0:
+                        st.markdown(f"S/. {item['Precio']:,.2f}")
+                    else:
+                        st.markdown("Sin precio")
+                with col4:
+                    st.markdown(str(item['Stock']))
+                with col5:
+                    if item['Precio'] > 0:
+                        nueva_cant = st.number_input(
+                            "Cant",
+                            min_value=0,
+                            max_value=max(item['Stock'], 9999) if item['Stock'] > 0 else 9999,
+                            value=item['A Cotizar'],
+                            key=f"cant_{i}",
+                            label_visibility="collapsed"
+                        )
+                    else:
+                        nueva_cant = 0
+                        st.markdown("0")
+                with col6:
+                    if item['Precio'] > 0 and nueva_cant > 0:
+                        nuevo_total = item['Precio'] * nueva_cant
+                        st.markdown(f"S/. {nuevo_total:,.2f}")
+                        item['A Cotizar'] = nueva_cant
+                        item['Total'] = nuevo_total
+                    else:
+                        st.markdown("S/. 0.00")
+                        item['A Cotizar'] = 0
+                        item['Total'] = 0
+                
+                resultados_editados.append(item)
+                st.divider()
+            
+            # Resumen
+            items_validos = [r for r in st.session_state.resultados if r['A Cotizar'] > 0 and r['Precio'] > 0]
+            total_general = sum(r['Total'] for r in items_validos)
+            
+            col1, col2, col3 = st.columns(3)
+            col1.metric("✅ A cotizar", len(items_validos))
+            col2.metric("💰 Total", f"S/. {total_general:,.2f}")
+            col3.metric("⚠️ Excluidos", len(st.session_state.resultados) - len(items_validos))
+            
+            # Generar cotización
+            if items_validos:
+                st.markdown("---")
+                st.markdown("### 📥 Generar Cotización")
+                col_cli1, col_cli2 = st.columns(2)
+                with col_cli1:
+                    cliente = st.text_input("🏢 Cliente", "CLIENTE NUEVO")
+                with col_cli2:
+                    ruc_cliente = st.text_input("📋 RUC/DNI", "-")
+                
+                if st.button("📥 GENERAR EXCEL", use_container_width=True, type="primary"):
+                    items_excel = [{'sku': r['SKU'], 'desc': r['Descripción'], 'cant': r['A Cotizar'], 'p_u': r['Precio'], 'total': r['Total']} for r in items_validos]
+                    excel = generar_excel(items_excel, cliente, ruc_cliente)
+                    st.download_button("💾 DESCARGAR", data=excel, file_name=f"Cotizacion_{cliente}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx", use_container_width=True)
+                    st.session_state.cotizaciones += 1
+                    st.session_state.total_prods = len(items_validos)
+                    st.balloons()
+                    st.success("✅ Cotización generada")
+            
+            # ============================================
+            # REPORTE DE PRODUCTOS CON STOCK PERO SIN PRECIO (AL FINAL)
+            # ============================================
+            sin_precio_dict = {}
+            for r in st.session_state.resultados:
+                if r['Estado'] == "⚠️ Sin precio" and r['Stock'] > 0:
+                    if r['SKU'] not in sin_precio_dict:
+                        sin_precio_dict[r['SKU']] = r
+            
+            sin_precio = list(sin_precio_dict.values())
+            
+            if sin_precio:
+                st.markdown("---")
+                st.markdown("### 📋 Productos con stock pero sin precio en catálogo")
+                st.info("⚠️ Los siguientes productos tienen stock pero no están registrados en el catálogo de precios. Copia el SKU y la descripción para gestionarlos:")
+                
+                # Tabla compacta para reporte
+                cols_r = st.columns([2, 4, 1])
+                cols_r[0].markdown("**SKU**")
+                cols_r[1].markdown("**Descripción**")
+                cols_r[2].markdown("**Acción**")
+                st.divider()
+                
+                for idx, sp in enumerate(sin_precio):
+                    col_a, col_b, col_c = st.columns([2, 4, 1])
+                    with col_a:
+                        st.code(sp['SKU'], language="text")
+                    with col_b:
+                        st.markdown(f"{sp['Descripción']}")
+                        if st.session_state.tipo_cotizacion == "XIAOMI":
+                            st.caption(f"Stock: {sp['Stock']} uds (APRI.004: {sp['Stock_APRI004']} | YESSICA: {sp['Stock_YESSICA']})")
+                        else:
+                            st.caption(f"Stock: {sp['Stock']} uds")
+                    with col_c:
+                        if st.button(f"📋 Copiar", key=f"copy_{sp['SKU']}_{idx}"):
+                            st.write(f"✅ Copiado: {sp['SKU']} - {sp['Descripción'][:50]}")
+                    st.divider()
+            else:
+                if st.session_state.resultados:
+                    st.success("✅ Todos los productos tienen precio registrado en el catálogo")
             
             resultados_editados = []
             for i, item in enumerate(st.session_state.resultados):
