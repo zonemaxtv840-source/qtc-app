@@ -411,7 +411,6 @@ def buscar_productos(catalogos, termino, col_precio_seleccionada, tipo_producto=
     termino_lower = termino.lower()
     
     for cat in catalogos:
-        # Filtrar por tipo de producto si está seleccionado
         if tipo_producto and tipo_producto != "Todos":
             cat_tipo = cat.get('tipo', 'general')
             if tipo_producto == "Xiaomi Drive" and cat_tipo != 'xiaomi_drive':
@@ -429,7 +428,6 @@ def buscar_productos(catalogos, termino, col_precio_seleccionada, tipo_producto=
         for idx, row in df[mask_sku | mask_desc].iterrows():
             sku = str(row[cat['col_sku']])
             
-            # Obtener precio
             col_precio_real = cat['columnas_precio'].get(col_precio_seleccionada)
             if col_precio_real and col_precio_real in df.columns:
                 precio = corregir_numero(row[col_precio_real])
@@ -444,7 +442,6 @@ def buscar_productos(catalogos, termino, col_precio_seleccionada, tipo_producto=
                 'Tipo': cat.get('tipo', 'general')
             })
     
-    # Eliminar duplicados por SKU
     resultados_unicos = {}
     for r in resultados:
         if r['SKU'] not in resultados_unicos:
@@ -532,7 +529,7 @@ if 'productos_seleccionados' not in st.session_state:
 tab_cotizacion, tab_buscar, tab_dashboard = st.tabs(["📦 Cotización", "🔍 Buscar Productos", "📊 Dashboard"])
 
 # ============================================
-# TAB COTIZACIÓN (igual que antes)
+# TAB COTIZACIÓN
 # ============================================
 with tab_cotizacion:
     with st.sidebar:
@@ -672,8 +669,21 @@ with tab_cotizacion:
         
         if st.session_state.resultados:
             st.markdown("---")
-      st.markdown("### 📊 Resultados")
-            st.markdown(html, unsafe_allow_html=True)
+            st.markdown("### 📊 Resultados")
+            
+            # Usar dataframe para mejor visualización
+            df_resultados = pd.DataFrame([{
+                'SKU': item['SKU'],
+                'Descripción': item['Descripción'][:60],
+                'Precio': f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio",
+                'Solicitado': item['Solicitado'],
+                'Stock': item['Stock'],
+                'A Cotizar': item['A Cotizar'],
+                'Total': f"S/. {item['Total']:,.2f}",
+                'Estado': item['Estado']
+            } for item in st.session_state.resultados])
+            
+            st.dataframe(df_resultados, use_container_width=True, hide_index=True)
             
             # Ajuste de cantidades
             st.markdown("---")
@@ -747,7 +757,7 @@ with tab_cotizacion:
                     st.success("✅ Cotización generada")
 
 # ============================================
-# TAB BUSCAR PRODUCTOS (NUEVO)
+# TAB BUSCAR PRODUCTOS
 # ============================================
 with tab_buscar:
     st.markdown("### 🔍 Buscar Productos")
@@ -756,7 +766,6 @@ with tab_buscar:
     if not st.session_state.catalogos:
         st.warning("🌿 Primero carga catálogos en la pestaña Cotización")
     else:
-        # Selector de columna de precio para la búsqueda
         opciones_precio_buscar = set()
         for cat in st.session_state.catalogos:
             for col in cat['columnas_precio'].keys():
@@ -768,7 +777,6 @@ with tab_buscar:
             key="precio_buscar"
         )
         
-        # Campo de búsqueda
         busqueda = st.text_input(
             "🔎 Buscar productos:", 
             placeholder="Ej: cable, cargador, RN0200046BK8, Xiaomi 67W..."
@@ -784,7 +792,6 @@ with tab_buscar:
                 st.success(f"✅ {len(resultados_busqueda)} resultados encontrados")
                 
                 for res in resultados_busqueda:
-                    # Icono según tipo
                     if res['Tipo'] == 'xiaomi_drive':
                         tipo_icono = "🔋 Drive"
                     elif res['Tipo'] == 'xiaomi_powerbe':
@@ -817,16 +824,14 @@ with tab_buscar:
                             st.session_state.productos_seleccionados[res['SKU']] = st.session_state.productos_seleccionados.get(res['SKU'], 0) + cantidad
                     st.divider()
             else:
-                st.warning("No se encontraron productos. Intenta con otros términos.")
+                st.warning("No se encontraron productos")
         
-        # Mostrar productos seleccionados
         if st.session_state.productos_seleccionados:
             st.markdown("---")
             st.markdown(f"### ✅ Productos seleccionados ({len(st.session_state.productos_seleccionados)})")
             
             seleccionados_lista = []
             for sku, cant in st.session_state.productos_seleccionados.items():
-                # Buscar el producto en catálogos para obtener info
                 for cat in st.session_state.catalogos:
                     mask = cat['df'][cat['col_sku']].astype(str).str.contains(sku, case=False, na=False)
                     if not cat['df'][mask].empty:
@@ -836,7 +841,7 @@ with tab_buscar:
                         precio = corregir_numero(row[col_precio_real]) if col_precio_real else 0
                         break
                 else:
-                    desc = "SKU no encontrado en catálogos"
+                    desc = "SKU no encontrado"
                     precio = 0
                 
                 seleccionados_lista.append({
