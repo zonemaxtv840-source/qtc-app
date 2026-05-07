@@ -534,10 +534,16 @@ with tab_cotizacion:
         
         if st.button("🚀 PROCESAR", use_container_width=True, type="primary") and pedidos:
             with st.spinner("🔍 Procesando..."):
-                resultados = []
+                               # Diccionario para agrupar por SKU y evitar duplicados
+                resultados_dict = {}
+                
                 for pedido in pedidos:
                     sku = pedido['sku']
                     cant = pedido['cantidad']
+                    
+                    # Si ya procesamos este SKU, saltamos
+                    if sku in resultados_dict:
+                        continue
                     
                     precio_info = buscar_precio(st.session_state.catalogos, st.session_state.stocks, sku, col_precio, st.session_state.tipo_cotizacion)
                     
@@ -589,7 +595,7 @@ with tab_cotizacion:
                         badge = "badge-danger"
                         estado = "❌ No encontrado"
                     
-                    resultados.append({
+                    resultados_dict[sku] = {
                         'SKU': sku,
                         'Tipo': f"{icono} {st.session_state.tipo_cotizacion}",
                         'Descripción': precio_info['descripcion'][:80] if precio_info['descripcion'] else f"SKU: {sku}",
@@ -604,7 +610,11 @@ with tab_cotizacion:
                         'Total': total,
                         'Estado': estado,
                         'Badge': badge
-                    })
+                    }
+                
+                # Convertir diccionario a lista
+                st.session_state.resultados = list(resultados_dict.values())
+                
                 
                 st.session_state.resultados = resultados
         
