@@ -672,39 +672,7 @@ with tab_cotizacion:
         
         if st.session_state.resultados:
             st.markdown("---")
-             st.markdown("### 📊 Resultados")
-            
-            # Usar st.dataframe en lugar de HTML para mejor visualización
-            df_resultados = pd.DataFrame([{
-                'SKU': item['SKU'],
-                'Descripción': item['Descripción'][:60],
-                'Precio (S/.)': item['Precio'] if item['Precio'] > 0 else 0,
-                'Solicitado': item['Solicitado'],
-                'Stock': item['Stock'],
-                'A Cotizar': item['A Cotizar'],
-                'Total (S/.)': item['Total'],
-                'Estado': item['Estado']
-            } for item in st.session_state.resultados])
-            
-            # Formatear columnas numéricas
-            df_resultados['Precio (S/.)'] = df_resultados['Precio (S/.)'].apply(lambda x: f"S/. {x:,.2f}" if x > 0 else "Sin precio")
-            df_resultados['Total (S/.)'] = df_resultados['Total (S/.)'].apply(lambda x: f"S/. {x:,.2f}")
-            
-            st.dataframe(
-                df_resultados,
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "SKU": st.column_config.TextColumn("SKU", width="small"),
-                    "Descripción": st.column_config.TextColumn("Descripción", width="large"),
-                    "Precio (S/.)": st.column_config.TextColumn("Precio", width="small"),
-                    "Solicitado": st.column_config.NumberColumn("Sol.", width="small"),
-                    "Stock": st.column_config.NumberColumn("Stock", width="small"),
-                    "A Cotizar": st.column_config.NumberColumn("A Cotizar", width="small"),
-                    "Total (S/.)": st.column_config.TextColumn("Total", width="small"),
-                    "Estado": st.column_config.TextColumn("Estado", width="small"),
-                }
-            )
+      st.markdown("### 📊 Resultados")
             st.markdown(html, unsafe_allow_html=True)
             
             # Ajuste de cantidades
