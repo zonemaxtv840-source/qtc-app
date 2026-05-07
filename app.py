@@ -7,7 +7,7 @@ import numpy as np
 import warnings
 warnings.filterwarnings('ignore')
 
-# --- CONFIGURACIÓN DE PÁGINA ---
+# --- CONFIGURACIÓN DE PÁGINA CON LOGO ---
 try:
     img_logo = Image.open("logo.png")
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon=img_logo, layout="wide")
@@ -132,20 +132,23 @@ st.markdown("""
         border: 1px solid #C8E6C9;
     }
     
-    /* BADGES DE STOCK */
-    .stock-badge {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        margin-right: 6px;
+    /* REPORTE DE EXCLUIDOS */
+    .excluded-report {
+        background: #FFF8E1;
+        border-left: 4px solid #FFC107;
+        padding: 0.8rem;
+        margin: 0.5rem 0;
+        border-radius: 8px;
     }
-    .stock-good { background-color: #C8E6C9; color: #1B5E20 !important; }
-    .stock-low { background-color: #FFF3E0; color: #E65100 !important; }
-    .stock-none { background-color: #FFCDD2; color: #C62828 !important; }
-    .stock-selected { background-color: #4CAF50; color: white !important; }
-    .no-price { background-color: #FFECB3; color: #FF8F00 !important; }
+    .excluded-sku {
+        font-family: monospace;
+        font-weight: bold;
+        color: #E65100;
+    }
+    .excluded-reason {
+        color: #FF8F00;
+        font-size: 0.85rem;
+    }
     
     /* MÉTRICAS DASHBOARD */
     .metric-card {
@@ -161,12 +164,22 @@ st.markdown("""
         font-weight: bold;
         color: #4CAF50 !important;
     }
+    
+    /* Logo en sidebar */
+    .sidebar-logo {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# --- SIDEBAR ---
+# --- SIDEBAR CON LOGO ---
 with st.sidebar:
-    st.markdown("## 💚 QTC Pro")
+    # Logo corporativo
+    try:
+        st.image("logo.png", use_container_width=True)
+    except:
+        st.markdown('<div class="sidebar-logo"><h2 style="color: #4CAF50;">💚 QTC Pro</h2></div>', unsafe_allow_html=True)
     st.markdown("---")
     if "cotizaciones" in st.session_state:
         st.metric("📄 Cotizaciones", st.session_state.get("cotizaciones", 0))
@@ -179,6 +192,11 @@ if "auth" not in st.session_state:
 if not st.session_state.auth:
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
+        try:
+            logo = Image.open("logo.png")
+            st.image(logo, width=150)
+        except:
+            pass
         st.markdown("""
         <div style="background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
             <h1 style="text-align: center; color: #4CAF50;">💚 QTC Smart Sales</h1>
@@ -220,7 +238,7 @@ def corregir_numero(valor):
 def limpiar_cabeceras(df):
     for i in range(min(20, len(df))):
         fila = [str(x).upper() for x in df.iloc[i].values]
-        if any(h in item for h in ['SKU', 'COD', 'SAP', 'NUMERO', 'ARTICULO'] for item in fila):
+        if any(h in item for h in ['SKU', 'COD', 'SAP', 'NUMERO', 'ARTICULO', 'COD SAP'] for item in fila):
             df.columns = [str(c).strip() for c in df.iloc[i]]
             return df.iloc[i+1:].reset_index(drop=True)
     return df
@@ -396,7 +414,16 @@ def generar_excel_cotizacion(items, cliente, ruc):
 # ============================================
 # INTERFAZ PRINCIPAL
 # ============================================
-st.title("💚 QTC Smart Sales Pro")
+# Logo en el título
+try:
+    col_logo, col_title = st.columns([1, 5])
+    with col_logo:
+        st.image("logo.png", width=80)
+    with col_title:
+        st.title("QTC Smart Sales Pro")
+except:
+    st.title("💚 QTC Smart Sales Pro")
+
 st.markdown("---")
 
 # Inicializar session state
@@ -519,32 +546,36 @@ with tab_cotizacion:
                         descripcion = producto['descripcion'][:80]
                         origen_precio = producto['catalogo']
                         precio_valido = precio
+                        motivo_exclusion = None
                         
                     # Caso 2: Tiene precio pero NO tiene stock
                     elif producto['encontrado'] and stock_disponible == 0:
                         precio = obtener_precio(producto['row'], producto['columnas_precio'], col_precio)
-                        estado = "⚠️ Sin stock (tiene precio)"
+                        estado = "⚠️ Sin stock"
                         color_estado = "orange"
                         descripcion = producto['descripcion'][:80]
                         origen_precio = producto['catalogo']
                         precio_valido = precio
+                        motivo_exclusion = "Sin stock disponible"
                         
                     # Caso 3: NO tiene precio pero SÍ tiene stock
                     elif not producto['encontrado'] and stock_disponible > 0:
-                        estado = "⚠️ NO ESTÁ EN LISTA DE PRECIOS"
+                        estado = "⚠️ Sin precio"
                         color_estado = "orange"
                         descripcion = "Producto con stock pero sin precio en catálogo"
                         precio_valido = 0
                         origen_precio = "No encontrado"
+                        motivo_exclusion = "No está en lista de precios"
                         
                     # Caso 4: No tiene precio ni stock
                     else:
-                        estado = "❌ No encontrado (sin precio ni stock)"
+                        estado = "❌ No encontrado"
                         color_estado = "red"
                         descripcion = "Producto no existe en catálogos ni stock"
                         precio_valido = 0
                         origen_precio = "No encontrado"
                         stock_disponible = 0
+                        motivo_exclusion = "No encontrado en catálogo ni stock"
                     
                     resultados.append({
                         'id': sku,
@@ -558,19 +589,20 @@ with tab_cotizacion:
                         'Estado': estado,
                         'Color_Estado': color_estado,
                         'Origen_Precio': origen_precio if producto['encontrado'] else "❌ Sin precio",
-                        'Origen_Stock': origen_stock
+                        'Origen_Stock': origen_stock,
+                        'Motivo_Exclusion': motivo_exclusion
                     })
                 
                 st.session_state.resultados = resultados
         
         if st.session_state.resultados:
             st.markdown("---")
-            st.markdown("### 📊 Resultados")
+            st.markdown("### 📊 Resultados de la cotización")
             
             resultados_editados = []
             
-            # Encabezados
-            cols = st.columns([2, 3, 1.2, 1, 1.2, 1.2, 1.5, 1.5])
+            # Tabla principal
+            cols = st.columns([2, 3, 1.2, 1, 1, 1.2, 1.5])
             cols[0].markdown("**SKU**")
             cols[1].markdown("**Descripción**")
             cols[2].markdown("**Precio**")
@@ -578,11 +610,10 @@ with tab_cotizacion:
             cols[4].markdown("**Stock**")
             cols[5].markdown("**A Cotizar**")
             cols[6].markdown("**Estado**")
-            cols[7].markdown("**Origen**")
             st.divider()
             
             for i, item in enumerate(st.session_state.resultados):
-                col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([2, 3, 1.2, 1, 1.2, 1.2, 1.5, 1.5])
+                col1, col2, col3, col4, col5, col6, col7 = st.columns([2, 3, 1.2, 1, 1, 1.2, 1.5])
                 
                 col1.markdown(f"`{item['SKU']}`")
                 col2.markdown(item['Descripción'][:50])
@@ -595,21 +626,19 @@ with tab_cotizacion:
                 col4.markdown(str(item['Solicitado']))
                 col5.markdown(str(item['Stock_Disponible']))
                 
-                nueva_cantidad = col6.number_input(
-                    "Cant", min_value=0, max_value=9999,
-                    value=int(item['A_Cotizar']),
-                    key=f"cant_{item['id']}_{i}",
-                    label_visibility="collapsed"
-                )
+                # Solo permitir editar si tiene precio y stock
+                if item['Precio'] > 0 and item['Stock_Disponible'] > 0:
+                    nueva_cantidad = col6.number_input(
+                        "Cant", min_value=0, max_value=item['Stock_Disponible'],
+                        value=int(item['A_Cotizar']),
+                        key=f"cant_{item['id']}_{i}",
+                        label_visibility="collapsed"
+                    )
+                else:
+                    nueva_cantidad = 0
+                    col6.markdown("0")
                 
                 col7.markdown(f"<span style='color:{item['Color_Estado']}'>{item['Estado']}</span>", unsafe_allow_html=True)
-                
-                origen_texto = ""
-                if item['Origen_Precio'] != "❌ Sin precio":
-                    origen_texto += f"💰 {item['Origen_Precio'][:20]}"
-                if item['Origen_Stock'] != "Sin stock":
-                    origen_texto += f"\n📦 {item['Origen_Stock'][:20]}"
-                col8.caption(origen_texto if origen_texto else "-")
                 
                 item_editado = item.copy()
                 item_editado['A_Cotizar'] = nueva_cantidad
@@ -617,6 +646,24 @@ with tab_cotizacion:
                 resultados_editados.append(item_editado)
                 
                 st.divider()
+            
+            # ============================================
+            # REPORTE DE PRODUCTOS EXCLUIDOS
+            # ============================================
+            productos_excluidos = [r for r in resultados_editados if r['A_Cotizar'] == 0 and r['Motivo_Exclusion'] is not None]
+            
+            if productos_excluidos:
+                st.markdown("### ⚠️ Productos no incluidos en la cotización")
+                st.markdown("Los siguientes productos no se cotizarán por los motivos indicados:")
+                
+                for excl in productos_excluidos:
+                    st.markdown(f"""
+                    <div class="excluded-report">
+                        <span class="excluded-sku">📦 {excl['SKU']}</span><br>
+                        <span style="font-size:0.85rem; color:#555;">{excl['Descripción'][:60]}</span><br>
+                        <span class="excluded-reason">🚫 Motivo: {excl['Motivo_Exclusion']}</span>
+                    </div>
+                    """, unsafe_allow_html=True)
             
             # Resumen
             items_validos = [r for r in resultados_editados if r['A_Cotizar'] > 0 and r['Precio'] > 0]
@@ -628,7 +675,7 @@ with tab_cotizacion:
             col1, col2, col3, col4 = st.columns(4)
             col1.metric("✅ A cotizar", len(items_validos))
             col2.metric("💰 Total", f"S/. {total_cotizacion:,.2f}")
-            col3.metric("⚠️ Tienen precio sin stock", len(items_con_precio_sin_stock))
+            col3.metric("⚠️ Con precio sin stock", len(items_con_precio_sin_stock))
             col4.metric("⚠️ Stock sin precio", len(items_con_stock_sin_precio))
             
             if items_validos:
@@ -650,7 +697,7 @@ with tab_cotizacion:
                     st.success("✅ Cotización generada!")
 
 # ============================================
-# TAB BUSCAR PRODUCTOS
+# TAB BUSCAR PRODUCTOS (igual que antes)
 # ============================================
 with tab_buscar:
     st.markdown("### 🔍 Buscar Productos")
@@ -670,7 +717,7 @@ with tab_buscar:
             key="precio_busqueda"
         )
         
-        busqueda = st.text_input("🔎 Buscar productos:", placeholder="Escribe SKU o descripción... Ej: cable, CN0900009WH8")
+        busqueda = st.text_input("🔎 Buscar productos:", placeholder="Escribe SKU o descripción...")
         
         if busqueda and len(busqueda) >= 3:
             with st.spinner("Buscando..."):
@@ -703,7 +750,7 @@ with tab_buscar:
         st.markdown("#### 📝 Agregar múltiples SKU manualmente")
         st.caption("Formato: SKU:CANTIDAD (uno por línea)")
         
-        texto_multiple = st.text_area("Ingresa SKU:CANTIDAD", height=100, placeholder="CN0900009WH8:5\nRN0200065BK8:2")
+        texto_multiple = st.text_area("Ingresa SKU:CANTIDAD", height=100)
         
         if st.button("➕ Agregar productos", use_container_width=True):
             for line in texto_multiple.split('\n'):
