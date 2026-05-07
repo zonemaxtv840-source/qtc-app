@@ -654,7 +654,7 @@ with tab_cotizacion:
             html += '</tbody></table></div>'
             st.markdown(html, unsafe_allow_html=True)
             
-            # REPORTE DE PRODUCTOS CON STOCK PERO SIN PRECIO
+                      # REPORTE DE PRODUCTOS CON STOCK PERO SIN PRECIO
             sin_precio_dict = {}
             for r in st.session_state.resultados:
                 if r['Estado'] == "⚠️ Sin precio" and r['Stock'] > 0:
@@ -666,27 +666,27 @@ with tab_cotizacion:
             if sin_precio:
                 st.markdown("---")
                 st.markdown("### 📋 Productos con stock pero sin precio en catálogo")
-                st.info("⚠️ Los siguientes productos tienen stock pero no están registrados en el catálogo de precios. Copia el SKU y la descripción para gestionarlos:")
+                st.info("⚠️ Los siguientes productos tienen stock pero NO están registrados en el catálogo de precios:")
                 
+                # Lista informativa
                 for idx, sp in enumerate(sin_precio):
-                    col_a, col_b, col_c = st.columns([2, 4, 1])
-                    with col_a:
-                        st.code(sp['SKU'], language="text")
-                    with col_b:
-                        st.markdown(f"**{sp['Descripción']}**")
-                        if st.session_state.tipo_cotizacion == "XIAOMI":
-                            st.caption(f"Stock: {sp['Stock']} uds (APRI.004: {sp['Stock_APRI004']} | YESSICA: {sp['Stock_YESSICA']})")
-                        else:
-                            st.caption(f"Stock: {sp['Stock']} uds")
-                    with col_c:
-                        if st.button(f"📋 Copiar", key=f"copy_{sp['SKU']}_{idx}"):
-                            st.write(f"✅ SKU copiado: {sp['SKU']}")
-                    st.divider()
+                    with st.container():
+                        col_a, col_b, col_c = st.columns([2, 5, 1])
+                        with col_a:
+                            st.markdown(f"**📦 `{sp['SKU']}`**")
+                        with col_b:
+                            st.markdown(sp['Descripción'])
+                            if st.session_state.tipo_cotizacion == "XIAOMI":
+                                st.caption(f"📊 Stock: {sp['Stock']} uds (APRI.004: {sp['Stock_APRI004']} | YESSICA: {sp['Stock_YESSICA']})")
+                            else:
+                                st.caption(f"📊 Stock: {sp['Stock']} uds")
+                        with col_c:
+                            if st.button(f"📋 Copiar SKU", key=f"copy_{sp['SKU']}_{idx}"):
+                                st.write(f"✅ SKU copiado: {sp['SKU']}")
+                        st.divider()
             else:
                 if st.session_state.resultados:
-                    st.markdown("---")
                     st.success("✅ Todos los productos tienen precio registrado en el catálogo")
-            
             st.markdown("---")
             st.markdown("### ✏️ Ajustar cantidades")
             
