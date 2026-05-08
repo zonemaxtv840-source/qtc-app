@@ -24,58 +24,21 @@ st.markdown("""
 
 /* Tipografía NEGRA */
 h1, h2, h3, h4, h5, h6 { color: #1A1A2E !important; font-family: 'Segoe UI', sans-serif; }
-p, div, span, label, .stMarkdown { color: #A1887F !important; }
+p, div, span, label, .stMarkdown { color: #1A1A2E !important; }
 
-/* ============================================ */
-/* HEADER Y BOTÓN DEL SIDEBAR - VISIBLE */
-/* ============================================ */
-/* Header con fondo azul */
-.stApp > header {
-    background-color: #E65100  !important;
-    z-index: 100 !important;
-}
-/* Botón de hamburguesa (sidebar toggle) */
-.stApp > header button {
-    background-color: #E65100 !important;
-    border-radius: 8px !important;
-    border: none !important;
-    margin-left: 10px !important;
-    padding: 5px 10px !important;
-}
-.stApp > header button:hover {
-    background-color: #E65100 !important;
-    transform: scale(1.05);
-}
-/* Ícono del botón (blanco) */
-.stApp > header button svg {
-    fill: white !important;
-    stroke: white !important;
-}
-/* Botón cuando el sidebar está colapsado */
-.stApp > header button[kind="header"] {
-    background-color: #FF9800 !important;
-}
-
-/* ============================================ */
-/* SIDEBAR AZUL CORPORATIVO */
-/* ============================================ */
+/* Sidebar azul corporativo */
 [data-testid="stSidebar"] { background: linear-gradient(180deg, #0D47A1 0%, #1565C0 100%) !important; }
 [data-testid="stSidebar"] * { color: #FFFFFF !important; }
 
-/* Botones en sidebar */
-[data-testid="stSidebar"] .stButton button {
-    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%) !important;
-    border-radius: 12px !important;
-    font-weight: 600 !important;
-}
-[data-testid="stSidebar"] .stButton button:hover {
-    background: linear-gradient(135deg, #F57C00 0%, #E65100 100%) !important;
-    transform: translateY(-2px);
+/* Botón de expansión del sidebar visible */
+button[kind="header"] {
+    background-color: #1565C0 !important;
+    color: white !important;
+    border-radius: 20px !important;
+    margin: 5px !important;
 }
 
-/* ============================================ */
-/* BOTONES PRINCIPALES */
-/* ============================================ */
+/* Botones principales */
 .stButton > button { 
     background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%) !important; 
     color: white !important; 
@@ -91,9 +54,18 @@ p, div, span, label, .stMarkdown { color: #A1887F !important; }
     box-shadow: 0 4px 12px rgba(21,101,192,0.3);
 }
 
-/* ============================================ */
-/* SELECTORES */
-/* ============================================ */
+/* Botón cambiar modo en sidebar */
+[data-testid="stSidebar"] .stButton button {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%) !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+}
+[data-testid="stSidebar"] .stButton button:hover {
+    background: linear-gradient(135deg, #F57C00 0%, #E65100 100%) !important;
+    transform: translateY(-2px);
+}
+
+/* Selectores */
 .stSelectbox > div > div { background-color: white !important; border: 1px solid #BBDEFB !important; border-radius: 10px !important; }
 .stSelectbox label { color: #1A1A2E !important; }
 div[data-baseweb="select"] ul { background-color: white !important; border: 1px solid #BBDEFB !important; border-radius: 10px !important; }
@@ -101,15 +73,11 @@ div[data-baseweb="select"] li { color: #1A1A2E !important; background-color: whi
 div[data-baseweb="select"] li:hover { background-color: #E3F2FD !important; }
 div[data-baseweb="select"] li[aria-selected="true"] { background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%) !important; color: white !important; }
 
-/* ============================================ */
-/* FILE UPLOADER */
-/* ============================================ */
+/* File uploader */
 .stFileUploader > div > div { background-color: white !important; border: 1px dashed #1E88E5 !important; border-radius: 12px !important; }
 .stFileUploader button { background-color: #1565C0 !important; color: white !important; }
 
-/* ============================================ */
-/* INPUTS */
-/* ============================================ */
+/* Inputs */
 .stTextInput input, .stTextArea textarea, .stNumberInput input { 
     color: #1A1A2E !important; 
     background-color: white !important; 
@@ -122,51 +90,32 @@ div[data-baseweb="select"] li[aria-selected="true"] { background: linear-gradien
     box-shadow: 0 0 0 2px rgba(30,136,229,0.2);
 }
 
-/* Placeholder color */
-.stTextInput input::placeholder,
-.stTextArea textarea::placeholder {
-    color: #90CAF9 !important;
-    opacity: 1;
-}
-
-/* ============================================ */
-/* TABS */
-/* ============================================ */
+/* Tabs */
 .stTabs [data-baseweb="tab-list"] { background-color: white !important; border-radius: 12px !important; padding: 6px !important; }
 .stTabs [data-baseweb="tab"] { color: #1A1A2E !important; background-color: #F5F7FA !important; border-radius: 10px !important; padding: 10px 20px !important; }
 .stTabs [aria-selected="true"] { background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%) !important; color: white !important; }
 
-/* ============================================ */
-/* BADGES DE ESTADO */
-/* ============================================ */
+/* Badges de estado */
 .badge-ok { background-color: #C8E6C9; color: #1B5E20; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-warning { background-color: #FFF3E0; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-danger { background-color: #FFCDD2; color: #C62828; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-stock-bajo { background-color: #FFE0B2; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 
-/* ============================================ */
-/* BADGES DE ORIGEN */
-/* ============================================ */
+/* Badges de origen */
 .origin-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-right: 5px; }
 .origin-apri004 { background-color: #E1BEE7; color: #4A148C; }
 .origin-yessica { background-color: #BBDEFB; color: #0D47A1; }
 .origin-both { background-color: #C8E6C9; color: #1B5E20; }
 
-/* ============================================ */
-/* MÉTRICAS */
-/* ============================================ */
+/* Métricas */
 .metric-card { background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #BBDEFB; }
 .metric-value { font-size: 2.2rem; font-weight: bold; color: #1565C0 !important; }
 
-/* ============================================ */
-/* DATA EDITOR */
-/* ============================================ */
+/* Data editor */
 .stDataFrame { border-radius: 12px !important; overflow: hidden !important; }
 .stDataFrame thead th { background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%) !important; color: white !important; font-weight: 600 !important; }
 
-/* ============================================ */
-/* TEXT AREA PARA SKUS */
-/* ============================================ */
+/* Text area para SKUs */
 .stTextArea textarea {
     color: #1A1A2E !important;
     background-color: white !important;
@@ -176,9 +125,7 @@ div[data-baseweb="select"] li[aria-selected="true"] { background: linear-gradien
     font-size: 14px !important;
 }
 
-/* ============================================ */
-/* EXPANDER EN SIDEBAR */
-/* ============================================ */
+/* Expander en sidebar */
 [data-testid="stSidebar"] .streamlit-expanderHeader {
     color: #FFFFFF !important;
 }
@@ -186,14 +133,20 @@ div[data-baseweb="select"] li[aria-selected="true"] { background: linear-gradien
     color: #FFFFFF !important;
 }
 
-/* ============================================ */
-/* INDICADORES DE STOCK (SEMÁFORO) */
-/* ============================================ */
+/* Placeholder color */
+.stTextInput input::placeholder,
+.stTextArea textarea::placeholder {
+    color: #90CAF9 !important;
+    opacity: 1;
+}
+
+/* Indicadores de stock */
 .stock-verde { color: #2E7D32; font-weight: bold; background-color: #C8E6C9; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 .stock-amarillo { color: #E65100; font-weight: bold; background-color: #FFE0B2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 .stock-rojo { color: #C62828; font-weight: bold; background-color: #FFCDD2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 </style>
 """, unsafe_allow_html=True)
+
 # ============================================
 # INICIALIZACIÓN DE VARIABLES DE SESIÓN
 # ============================================
@@ -218,7 +171,6 @@ if "productos_seleccionados" not in st.session_state:
 # LOGIN AZUL CORPORATIVO
 # ============================================
 if not st.session_state.auth:
-    # Fondo de la página de login
     st.markdown("""
     <style>
     .stApp {
@@ -236,7 +188,7 @@ if not st.session_state.auth:
     .login-card {
         background: white;
         border-radius: 28px;
-        padding: 2.5rem;
+        padding: 2rem;
         box-shadow: 0 25px 50px rgba(0,0,0,0.15);
         text-align: center;
         border: 1px solid #BBDEFB;
@@ -249,7 +201,7 @@ if not st.session_state.auth:
     }
     .login-card p {
         color: #1A1A2E !important;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         font-weight: 500;
         font-size: 0.9rem;
     }
@@ -283,7 +235,7 @@ if not st.session_state.auth:
         font-weight: 500 !important;
     }
     .login-footer {
-        margin-top: 2rem;
+        margin-top: 1.5rem;
         padding-top: 1rem;
         border-top: 1px solid #BBDEFB;
         font-size: 0.7rem;
@@ -399,15 +351,11 @@ def mapear_columna_precio(columnas, nombre_buscar):
 
 def cargar_catalogo(archivo):
     try:
-        # Detectar si es CSV por el nombre
         if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
-            
-            # Leer todo el archivo como líneas para encontrar la cabecera real
             contenido_str = contenido.decode('utf-8', errors='ignore')
             lineas = contenido_str.split('\n')
             
-            # Buscar la línea que contiene "Columna1;PICK;BOX;NO.;MODEL MARK" o "SKU"
             header_row_index = None
             for i, linea in enumerate(lineas):
                 if 'Columna1;PICK;BOX;NO.;MODEL MARK' in linea or 'SKU' in linea:
@@ -415,16 +363,13 @@ def cargar_catalogo(archivo):
                     break
             
             if header_row_index is not None:
-                # Reconstruir CSV desde la fila de cabecera
                 lineas_limpias = lineas[header_row_index:]
                 contenido_limpio = '\n'.join(lineas_limpias).encode('utf-8')
-                
                 try:
                     df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='utf-8', sep=';', on_bad_lines='skip')
                 except:
                     df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='latin-1', sep=';', on_bad_lines='skip')
             else:
-                # Fallback normal
                 try:
                     df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8', sep=';', on_bad_lines='skip')
                 except:
@@ -480,13 +425,11 @@ def cargar_stock_completo(archivo):
     try:
         todas_hojas = []
         
-        # Leer el archivo según su extensión
         if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
             contenido_str = contenido.decode('utf-8', errors='ignore')
             lineas = contenido_str.split('\n')
             
-            # Buscar línea con SKU o similar
             header_row_index = None
             for i, linea in enumerate(lineas):
                 if 'SKU' in linea or 'COD' in linea or 'ARTICULO' in linea:
@@ -508,10 +451,8 @@ def cargar_stock_completo(archivo):
             
             df = limpiar_cabeceras(df)
             
-            # Identificar columnas de SKU y STOCK
             col_sku = None
             col_stock = None
-            
             for col in df.columns:
                 col_upper = str(col).upper()
                 if any(p in col_upper for p in ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO']):
@@ -521,13 +462,11 @@ def cargar_stock_completo(archivo):
                     if col_stock is None:
                         col_stock = col
             
-            # Si no se encontraron, usar primeras columnas
             if col_sku is None and len(df.columns) > 0:
                 col_sku = df.columns[0]
             if col_stock is None and len(df.columns) > 1:
                 col_stock = df.columns[1]
             
-            # Agregar a la lista solo si hay datos válidos
             if df is not None and len(df) > 0:
                 todas_hojas.append({
                     'nombre': f"{archivo.name} [CSV]",
@@ -537,17 +476,14 @@ def cargar_stock_completo(archivo):
                     'hoja': "CSV"
                 })
         else:
-            # Para archivos Excel
             xls = pd.ExcelFile(archivo)
             for hoja in xls.sheet_names:
                 try:
                     df = pd.read_excel(archivo, sheet_name=hoja)
                     df = limpiar_cabeceras(df)
                     
-                    # Identificar columnas de SKU y STOCK
                     col_sku = None
                     col_stock = None
-                    
                     for col in df.columns:
                         col_upper = str(col).upper()
                         if any(p in col_upper for p in ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO']):
@@ -557,13 +493,11 @@ def cargar_stock_completo(archivo):
                             if col_stock is None:
                                 col_stock = col
                     
-                    # Si no se encontraron, usar primeras columnas
                     if col_sku is None and len(df.columns) > 0:
                         col_sku = df.columns[0]
                     if col_stock is None and len(df.columns) > 1:
                         col_stock = df.columns[1]
                     
-                    # Agregar a la lista solo si hay datos válidos
                     if df is not None and len(df) > 0:
                         todas_hojas.append({
                             'nombre': f"{archivo.name} [{hoja}]",
@@ -641,8 +575,6 @@ def buscar_stock_xiaomi(stocks, sku):
     stock_total = 0
     stock_apri004 = 0
     stock_yessica = 0
-    origen_apri004 = ""
-    origen_yessica = ""
     
     for stock in stocks:
         hoja = stock['hoja'].upper()
@@ -651,22 +583,14 @@ def buscar_stock_xiaomi(stocks, sku):
             if not stock['df'][mask].empty:
                 row = stock['df'][mask].iloc[0]
                 stock_apri004 = int(corregir_numero(row[stock['col_stock']]))
-                origen_apri004 = stock['nombre']
         elif 'YESSICA' in hoja:
             mask = stock['df'][stock['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
             if not stock['df'][mask].empty:
                 row = stock['df'][mask].iloc[0]
                 stock_yessica = int(corregir_numero(row[stock['col_stock']]))
-                origen_yessica = stock['nombre']
     
     stock_total = stock_apri004 + stock_yessica
-    detalles = {}
-    if stock_apri004 > 0:
-        detalles[origen_apri004] = stock_apri004
-    if stock_yessica > 0:
-        detalles[origen_yessica] = stock_yessica
-    
-    return stock_total, detalles, stock_apri004, stock_yessica
+    return stock_total, stock_apri004, stock_yessica
 
 def buscar_stock_general(stocks, sku):
     sku_limpio = sku.strip().upper()
@@ -681,7 +605,6 @@ def buscar_stock_general(stocks, sku):
                 stock_total = int(corregir_numero(row[stock['col_stock']]))
                 break
     
-    # Retorna 3 valores pero los últimos dos son 0 (no aplican en modo GENERAL)
     return stock_total, 0, 0
 
 def buscar_en_catalogos(catalogos, termino, stocks, col_precio_consulta=None, tipo_cotizacion="XIAOMI"):
@@ -713,11 +636,9 @@ def buscar_en_catalogos(catalogos, termino, stocks, col_precio_consulta=None, ti
                             precio = 0
                     
                     if tipo_cotizacion == "XIAOMI":
-                        stock_total, stock_detalle, stock_apri004, stock_yessica = buscar_stock_xiaomi(stocks, sku)
+                        stock_total, stock_apri004, stock_yessica = buscar_stock_xiaomi(stocks, sku)
                     else:
-                        stock_total, stock_detalle = buscar_stock_general(stocks, sku)
-                        stock_apri004 = 0
-                        stock_yessica = 0
+                        stock_total, stock_apri004, stock_yessica = buscar_stock_general(stocks, sku)
                     
                     resultados_dict[sku] = {
                         'SKU': sku,
@@ -726,8 +647,7 @@ def buscar_en_catalogos(catalogos, termino, stocks, col_precio_consulta=None, ti
                         'Precio': precio,
                         'Stock_Total': stock_total,
                         'Stock_APRI004': stock_apri004,
-                        'Stock_YESSICA': stock_yessica,
-                        'Stock_Detalle': stock_detalle
+                        'Stock_YESSICA': stock_yessica
                     }
     
     return list(resultados_dict.values())
@@ -759,7 +679,7 @@ def generar_excel(items, cliente, ruc):
     ws.write('B3', ruc)
     
     ws.merge_range('F1:H1', 'DATOS BANCARIOS', fmt_header)
-    ws.write('F2', 'BBVA SOLES:', workbook.add_format({'font_color': 'red', 'bold': True, 'border': 1}))
+    ws.write('F2', 'BBVA SOLES:', workbook.add_format({'font_color': 'red', 'bold': True', 'border': 1}))
     ws.write('G2', '0011-0616-0100012617', fmt_border)
     
     headers = ['Código SAP', 'Descripción', 'Cantidad', 'Precio Unit.', 'Total']
@@ -777,6 +697,34 @@ def generar_excel(items, cliente, ruc):
     
     writer.close()
     return output.getvalue()
+
+# ============================================
+# FUNCIONES PARA LOS INDICADORES DE STOCK
+# ============================================
+
+def obtener_clase_stock(stock):
+    if stock == 0:
+        return "stock-rojo"
+    elif stock <= 5:
+        return "stock-amarillo"
+    else:
+        return "stock-verde"
+
+def obtener_icono_stock(stock):
+    if stock == 0:
+        return "❌"
+    elif stock <= 5:
+        return "⚠️"
+    else:
+        return "✅"
+
+def obtener_mensaje_stock(stock):
+    if stock == 0:
+        return "Sin stock disponible"
+    elif stock <= 5:
+        return f"¡Stock bajo! Solo quedan {stock} unidades"
+    else:
+        return "Stock suficiente"
 
 # ============================================
 # HEADER
@@ -1041,6 +989,7 @@ with tab_cotizacion:
             st.markdown("---")
             st.markdown("### 📊 Resultados")
             
+            # Tabla de resultados HTML
             html = '<div style="overflow-x: auto;"><table style="width:100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; table-layout: fixed;">'
             html += '<thead><tr style="background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%); color: white;">'
             html += '<th style="width: 12%; padding: 10px; text-align: left;">SKU</th>'
@@ -1069,7 +1018,7 @@ with tab_cotizacion:
                 html += f'<td style="padding: 10px; text-align: center;">{stock_html}</td>'
                 html += f'<td style="padding: 10px;">{item["Origen"]}</td>'
                 html += f'<td style="padding: 10px; text-align: center;"><strong>{item["A Cotizar"]}</strong></td>'
-                html += f'<td style="padding: 10px; text-align: center;"><strong>{total_str}</strong></td>'
+                html += f'<td style="padding: 10px; text-align: center;"><strong>{total_str}</strong></tr>'
                 html += f'<td style="padding: 10px; text-align: center;"><span class="{item["Badge_Estado"]}" style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">{item["Estado"]}</span></td>'
                 html += '</tr>'
             
@@ -1077,7 +1026,7 @@ with tab_cotizacion:
             st.markdown(html, unsafe_allow_html=True)
             
             # ============================================
-            # TABLA DE AJUSTAR CANTIDADES
+            # TABLA DE AJUSTAR CANTIDADES (EDITABLE)
             # ============================================
             st.markdown("---")
             st.markdown("### ✏️ Ajustar cantidades")
