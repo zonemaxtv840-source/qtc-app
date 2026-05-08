@@ -15,6 +15,26 @@ except:
 
 # ============================================
 # ESTILOS CSS MEJORADOS (con colores corregidos)
+
+# ============================================
+# INICIALIZACIÓN DE VARIABLES DE SESIÓN
+# ============================================
+if "auth" not in st.session_state:
+    st.session_state.auth = False
+if "tipo_cotizacion" not in st.session_state:
+    st.session_state.tipo_cotizacion = None
+if "catalogos" not in st.session_state:
+    st.session_state.catalogos = []
+if "stocks" not in st.session_state:
+    st.session_state.stocks = []
+if "resultados" not in st.session_state:
+    st.session_state.resultados = None
+if "cotizaciones" not in st.session_state:
+    st.session_state.cotizaciones = 0
+if "total_prods" not in st.session_state:
+    st.session_state.total_prods = 0
+if "productos_seleccionados" not in st.session_state:
+    st.session_state.productos_seleccionados = {}
 # ============================================
 st.markdown("""
 <style>
