@@ -475,7 +475,7 @@ def generar_excel(items, cliente, ruc):
 try:
     col_logo, col_title = st.columns([1, 6])
     with col_logo:
-        st.image("logo.png", width="70px")
+        st.image("logo.png", width=70)
     with col_title:
         st.title("QTC Smart Sales Pro")
 except:
@@ -505,6 +505,10 @@ if 'total_prods' not in st.session_state:
     st.session_state.total_prods = 0
 if 'productos_seleccionados' not in st.session_state:
     st.session_state.productos_seleccionados = {}
+if 'cliente_nombre' not in st.session_state:
+    st.session_state.cliente_nombre = ""
+if 'cliente_ruc' not in st.session_state:
+    st.session_state.cliente_ruc = ""
 
 tab_cotizacion, tab_buscar, tab_dashboard = st.tabs(["📦 Cotización", "🔍 Buscar Productos", "📊 Dashboard"])
 
@@ -584,36 +588,240 @@ with tab_cotizacion:
                 elif line:
                     pedidos.append({'sku': line.strip().upper(), 'cantidad': 1})
         
+        # Datos del cliente
+        with st.expander("👤 Datos del Cliente"):
+            col_cli1, col_cli2 = st.columns(2)
+            with col_cli1:
+                cliente_nombre = st.text_input("Nombre/Razón Social", value=st.session_state.cliente_nombre)
+            with col_cli2:
+                cliente_ruc = st.text_input("RUC/DNI", value=st.session_state.cliente_ruc)
+        
         if st.button("🚀 PROCESAR", use_container_width=True, type="primary") and pedidos:
-            with st.spinner("🔍 Procesando..."):
-                resultados = []
-                for pedido in pedidos:
-                    sku = pedido['sku']
-                    cant = pedido['cantidad']
-                    
-                    precio_info = buscar_precio_con_descripcion_stock(st.session_state.catalogos, st.session_state.stocks, sku, col_precio, st.session_state.tipo_cotizacion)
-                    
-                    if st.session_state.tipo_cotizacion == "XIAOMI":
-                        stock_total, stock_apri004, stock_yessica = buscar_stock_xiaomi(st.session_state.stocks, sku)
-                    else:
-                        stock_total, stock_apri004, stock_yessica = buscar_stock_general(st.session_state.stocks, sku)
-                    
-                    # Generar badge de origen
-                    if st.session_state.tipo_cotizacion == "XIAOMI":
-                        if stock_apri004 > 0 and stock_yessica > 0:
-                            origen_html = f'<span class="origin-badge-both">📦 APRI.004: {stock_apri004} | 📋 YESSICA: {stock_yessica}</span>'
-                        elif stock_apri004 > 0:
-                            origen_html = f'<span class="origin-badge-apri004">📦 APRI.004: {stock_apri004}</span>'
-                        elif stock_yessica > 0:
-                            origen_html = f'<span class="origin-badge-yessica">📋 YESSICA: {stock_yessica}</span>'
+            if not col_precio:
+                st.error("❌ Selecciona una columna de precio primero")
+            else:
+                with st.spinner("🔍 Procesando..."):
+                    resultados = []
+                    for pedido in pedidos:
+                        sku = pedido['sku']
+                        cant = pedido['cantidad']
+                        
+                        precio_info = buscar_precio_con_descripcion_stock(
+                            st.session_state.catalogos, 
+                            st.session_state.stocks, 
+                            sku, 
+                            col_precio, 
+                            st.session_state.tipo_cotizacion
+                        )
+                        
+                        if st.session_state.tipo_cotizacion == "XIAOMI":
+                            stock_total, stock_apri004, stock_yessica = buscar_stock_xiaomi(st.session_state.stocks, sku)
                         else:
-                            origen_html = '<span style="color: #999;">❌ Sin stock</span>'
-                    else:
-                        origen_html = f'<span class="origin-badge-apri004">📦 Stock: {stock_total}</span>' if stock_total > 0 else '<span style="color: #999;">❌ Sin stock</span>'
+                            stock_total, stock_apri004, stock_yessica = buscar_stock_general(st.session_state.stocks, sku)
+                        
+                        # Determinar cantidad a cotizar
+                        a_cotizar = min(cant, stock_total) if stock_total > 0 else 0
+                        total = precio_info['precio'] * a_cotizar if precio_info['precio'] else 0
+                        
+                        # Determinar estado y badge
+                        if precio_info['encontrado'] and stock_total > 0:
+                            estado = "✅ OK"
+                            badge_class = "badge-ok"
+                            badge_text = f"✅ Disponible: {stock_total}"
+                        elif precio_info['encontrado'] and stock_total == 0:
+                            estado = "⚠️ Sin stock"
+                            badge_class = "badge-warning"
+                            badge_text = f"⚠️ Sin stock (Precio: S/.{precio_info['precio']:.2f})"
+                        elif not precio_info['encontrado']:
+                            estado = "❌ No encontrado"
+                            badge_class = "badge-danger"
+                            badge_text = "❌ SKU no encontrado"
+                        else:
+                            estado = "❌ Error"
+                            badge_class = "badge-danger"
+                            badge_text = "❌ Error en datos"
+                        
+                        # Generar badge de origen stock
+                        if st.session_state.tipo_cotizacion == "XIAOMI":
+                            if stock_apri004 > 0 and stock_yessica > 0:
+                                origen_html = f'<span class="origin-badge-both">📦 APRI.004: {stock_apri004} | 📋 YESSICA: {stock_yessica}</span>'
+                            elif stock_apri004 > 0:
+                                origen_html = f'<span class="origin-badge-apri004">📦 APRI.004: {stock_apri004}</span>'
+                            elif stock_yessica > 0:
+                                origen_html = f'<span class="origin-badge-yessica">📋 YESSICA: {stock_yessica}</span>'
+                            else:
+                                origen_html = '<span style="color: #999;">❌ Sin stock</span>'
+                        else:
+                            origen_html = f'<span class="origin-badge-apri004">📦 Stock: {stock_total}</span>' if stock_total > 0 else '<span style="color: #999;">❌ Sin stock</span>'
+                        
+                        resultados.append({
+                            'sku': sku,
+                            'descripcion': precio_info['descripcion'],
+                            'cant_solicitada': cant,
+                            'stock_total': stock_total,
+                            'cant_cotizar': a_cotizar,
+                            'precio_unitario': precio_info['precio'],
+                            'total': total,
+                            'estado': estado,
+                            'badge_class': badge_class,
+                            'badge_text': badge_text,
+                            'origen_html': origen_html,
+                            'catalogo': precio_info.get('catalogo', 'No encontrado')
+                        })
                     
-                    if precio_info['encontrado'] and stock_total > 0:
-                        a_cotizar = min(cant, stock_total)
-                        total = precio_info['precio'] * a_cotizar
-                        badge = "badge-ok"
-                        estado = "✅ OK"
-                    elif precio_info['en
+                    st.session_state.resultados = resultados
+                    st.session_state.total_prods = sum(r['cant_cotizar'] for r in resultados)
+                    st.session_state.cliente_nombre = cliente_nombre
+                    st.session_state.cliente_ruc = cliente_ruc
+                    st.rerun()
+        
+        # Mostrar resultados si existen
+        if st.session_state.resultados:
+            st.markdown("---")
+            st.markdown("### 📋 Resultados de la Cotización")
+            
+            # Mostrar tabla de resultados
+            df_resultados = pd.DataFrame(st.session_state.resultados)
+            df_display = df_resultados[[
+                'sku', 'descripcion', 'cant_solicitada', 'stock_total', 
+                'cant_cotizar', 'precio_unitario', 'total', 'estado'
+            ]]
+            st.dataframe(df_display, use_container_width=True, hide_index=True)
+            
+            # Métricas
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("📦 Productos solicitados", sum(r['cant_solicitada'] for r in st.session_state.resultados))
+            with col2:
+                st.metric("✅ Productos a cotizar", sum(r['cant_cotizar'] for r in st.session_state.resultados))
+            with col3:
+                st.metric("💰 Total S/.", f"S/. {sum(r['total'] for r in st.session_state.resultados):,.2f}")
+            with col4:
+                sin_stock = sum(1 for r in st.session_state.resultados if r['estado'] != "✅ OK")
+                st.metric("⚠️ Productos con issues", sin_stock)
+            
+            # Botón para generar Excel
+            if st.button("📊 GENERAR COTIZACIÓN EXCEL", use_container_width=True, type="primary"):
+                if not st.session_state.cliente_nombre:
+                    st.warning("⚠️ Ingresa el nombre del cliente antes de generar el Excel")
+                else:
+                    items_excel = [
+                        {
+                            'sku': r['sku'], 
+                            'desc': r['descripcion'], 
+                            'cant': r['cant_cotizar'], 
+                            'p_u': r['precio_unitario'], 
+                            'total': r['total']
+                        }
+                        for r in st.session_state.resultados if r['cant_cotizar'] > 0
+                    ]
+                    if items_excel:
+                        excel_data = generar_excel(
+                            items_excel, 
+                            st.session_state.cliente_nombre, 
+                            st.session_state.cliente_ruc or "--------"
+                        )
+                        st.download_button(
+                            label="⬇️ DESCARGAR EXCEL",
+                            data=excel_data,
+                            file_name=f"cotizacion_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+                        st.session_state.cotizaciones += 1
+                    else:
+                        st.error("❌ No hay productos válidos para cotizar")
+            
+            # Botón para limpiar
+            if st.button("🗑️ LIMPIAR RESULTADOS", use_container_width=True):
+                st.session_state.resultados = None
+                st.rerun()
+
+with tab_buscar:
+    st.markdown("### 🔍 Buscador de Productos")
+    
+    if not st.session_state.catalogos:
+        st.warning("⚠️ Primero carga catálogos en la pestaña 'Cotización'")
+    else:
+        col_busq1, col_busq2 = st.columns([3, 1])
+        with col_busq1:
+            termino_busqueda = st.text_input("Buscar por SKU o descripción:", placeholder="Ej: cargador, RN0200046...")
+        with col_busq2:
+            opciones_precio_busq = ["(No mostrar precio)"] + sorted(list(set(
+                col for cat in st.session_state.catalogos for col in cat['columnas_precio'].keys()
+            )))
+            col_precio_busq = st.selectbox("Mostrar precio:", opciones_precio_busq)
+        
+        if termino_busqueda and len(termino_busqueda) >= 2:
+            with st.spinner("Buscando..."):
+                resultados_busqueda = buscar_en_catalogos(
+                    st.session_state.catalogos,
+                    termino_busqueda,
+                    st.session_state.stocks,
+                    col_precio_busq if col_precio_busq != "(No mostrar precio)" else None,
+                    st.session_state.tipo_cotizacion
+                )
+                
+                if resultados_busqueda:
+                    st.success(f"✅ Se encontraron {len(resultados_busqueda)} productos")
+                    
+                    df_busqueda = pd.DataFrame(resultados_busqueda)
+                    st.dataframe(df_busqueda, use_container_width=True, hide_index=True)
+                    
+                    # Botón para añadir a cotización
+                    st.markdown("### ➕ Añadir a Cotización")
+                    col_add1, col_add2, col_add3 = st.columns([2, 1, 1])
+                    with col_add1:
+                        sku_seleccionado = st.selectbox("Seleccionar SKU:", [r['SKU'] for r in resultados_busqueda])
+                    with col_add2:
+                        cantidad_add = st.number_input("Cantidad:", min_value=1, value=1, step=1)
+                    with col_add3:
+                        if st.button("➕ Añadir", type="primary"):
+                            if 'skus_transferidos' not in st.session_state:
+                                st.session_state.skus_transferidos = {}
+                            if sku_seleccionado in st.session_state.skus_transferidos:
+                                st.session_state.skus_transferidos[sku_seleccionado] += cantidad_add
+                            else:
+                                st.session_state.skus_transferidos[sku_seleccionado] = cantidad_add
+                            st.success(f"✅ {cantidad_add}x {sku_seleccionado} añadido")
+                            st.rerun()
+                else:
+                    st.warning("⚠️ No se encontraron productos")
+
+with tab_dashboard:
+    st.markdown("### 📊 Dashboard de Ventas")
+    
+    if st.session_state.cotizaciones > 0:
+        col_dash1, col_dash2, col_dash3 = st.columns(3)
+        with col_dash1:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-value">{st.session_state.cotizaciones}</div>
+                <div>Cotizaciones Generadas</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_dash2:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-value">{st.session_state.total_prods}</div>
+                <div>Productos Cotizados</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_dash3:
+            if st.session_state.total_prods > 0:
+                avg = st.session_state.total_prods / st.session_state.cotizaciones
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-value">{avg:.1f}</div>
+                    <div>Promedio x Cotización</div>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        st.info("💡 Las cotizaciones se registran automáticamente al generar el Excel")
+    else:
+        st.info("📊 Aún no se han generado cotizaciones. Comienza creando tu primera cotización en la pestaña 'Cotización'")
+    
+    st.markdown("---")
+    st.markdown("### ℹ️ Información del Sistema")
+    st.caption(f"Versión: QTC Smart Sales Pro v2.0")
+    st.caption(f"Última sesión: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
