@@ -44,7 +44,7 @@ st.markdown("""
 .main .block-container { background-color: transparent !important; }
 
 /* Tipografía */
-h1, h2, h3, h4, h5, h6 { color: #1B5E20 !important; font-family: 'Segoe UI', sans-serif; }
+h1, h2, h3, h4, h5, h6 { color: #F0F4F8 !important; font-family: 'Segoe UI', sans-serif; }
 p, div, span, label, .stMarkdown { color: #2E7D32 !important; }
 
 /* Sidebar premium */
