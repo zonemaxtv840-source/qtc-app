@@ -36,7 +36,7 @@ p, div, span, label, .stMarkdown { color: #1A1A2E !important; }
 }
 /* Botón de hamburguesa (sidebar toggle) */
 .stApp > header button {
-    background-color: #FF9800 !important;
+    background-color: #E65100 !important;
     border-radius: 8px !important;
     border: none !important;
     margin-left: 10px !important;
