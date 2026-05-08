@@ -5,6 +5,7 @@ from datetime import datetime
 from PIL import Image
 import numpy as np
 import warnings
+import time
 warnings.filterwarnings('ignore')
 
 try:
@@ -13,79 +14,151 @@ try:
 except:
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon="💼", layout="wide")
 
+# ============================================
+# ESTILOS CSS MEJORADOS (incluye login premium)
+# ============================================
 st.markdown("""
 <style>
-.stApp { background-color: #F1F8E9 !important; }
-.main .block-container { background-color: #F1F8E9 !important; }
-h1, h2, h3, h4, h5, h6 { color: #1B5E20 !important; }
+/* Fondo general */
+.stApp { background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%) !important; }
+.main .block-container { background-color: transparent !important; }
+
+/* Tipografía */
+h1, h2, h3, h4, h5, h6 { color: #1B5E20 !important; font-family: 'Segoe UI', sans-serif; }
 p, div, span, label, .stMarkdown { color: #2E7D32 !important; }
-[data-testid="stSidebar"] { background: linear-gradient(180deg, #1B5E20 0%, #0D3B0F 100%); }
+
+/* Sidebar premium */
+[data-testid="stSidebar"] { background: linear-gradient(180deg, #0D3B0F 0%, #1B5E20 100%) !important; }
 [data-testid="stSidebar"] * { color: #F1F8E9 !important; }
-.stButton > button { background: #4CAF50 !important; color: white !important; border-radius: 12px; font-weight: 600; border: none; transition: all 0.3s ease; }
-.stButton > button:hover { background: #2E7D32 !important; transform: translateY(-2px); }
-.stSelectbox > div > div { background-color: white !important; color: #1B5E20 !important; border: 1px solid #4CAF50 !important; border-radius: 10px !important; }
+
+/* Botones premium */
+.stButton > button { 
+    background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important; 
+    color: white !important; 
+    border-radius: 12px; 
+    font-weight: 600; 
+    border: none; 
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.stButton > button:hover { 
+    background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%) !important; 
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Selectores premium */
+.stSelectbox > div > div { background-color: white !important; border: 1px solid #4CAF50 !important; border-radius: 10px !important; }
 .stSelectbox label { color: #1B5E20 !important; }
-div[data-baseweb="select"] ul { background-color: white !important; border: 1px solid #ddd !important; border-radius: 10px !important; }
-div[data-baseweb="select"] li { color: #1B5E20 !important; background-color: white !important; }
-div[data-baseweb="select"] li:hover { background-color: #E8F5E9 !important; }
-div[data-baseweb="select"] li[aria-selected="true"] { background-color: #4CAF50 !important; color: white !important; }
+
+/* Inputs premium */
+.stTextInput input, .stTextArea textarea, .stNumberInput input { 
+    background-color: white !important; 
+    border: 1px solid #C8E6C9 !important; 
+    border-radius: 10px !important;
+    transition: all 0.3s ease;
+}
+.stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus {
+    border-color: #4CAF50 !important;
+    box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
+}
+
+/* File uploader */
 .stFileUploader > div > div { background-color: white !important; border: 1px dashed #4CAF50 !important; border-radius: 12px !important; }
 .stFileUploader button { background-color: #4CAF50 !important; color: white !important; }
-.stTextInput input, .stTextArea textarea, .stNumberInput input { color: #1B5E20 !important; background-color: white !important; border: 1px solid #C8E6C9 !important; border-radius: 10px !important; }
+
+/* Tabs premium */
 .stTabs [data-baseweb="tab-list"] { background-color: white !important; border-radius: 12px !important; padding: 6px !important; }
-.stTabs [data-baseweb="tab"] { color: #1B5E20 !important; background-color: #F5F5F5 !important; border-radius: 10px !important; padding: 10px 20px !important; }
-.stTabs [aria-selected="true"] { background-color: #4CAF50 !important; color: white !important; }
+.stTabs [data-baseweb="tab"] { color: #1B5E20 !important; background-color: #F5F5F5 !important; border-radius: 10px !important; padding: 10px 20px !important; transition: all 0.3s ease; }
+.stTabs [aria-selected="true"] { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important; color: white !important; }
+
+/* Badges de estado */
 .badge-ok { background-color: #C8E6C9; color: #1B5E20; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-warning { background-color: #FFF3E0; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-danger { background-color: #FFCDD2; color: #C62828; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
-.badge-stock-insuficiente { background-color: #FFE0B2; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
-.metric-card { background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.05); border: 1px solid #C8E6C9; }
-.metric-value { font-size: 2.2rem; font-weight: bold; color: #4CAF50 !important; }
-.origin-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.65rem; font-weight: 600; margin-right: 5px; }
+.badge-stock-bajo { background-color: #FFE0B2; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
+
+/* Badges de origen */
+.origin-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-right: 5px; }
 .origin-apri004 { background-color: #E1BEE7; color: #4A148C; }
 .origin-yessica { background-color: #BBDEFB; color: #0D47A1; }
 .origin-both { background-color: #C8E6C9; color: #1B5E20; }
+
+/* Métricas */
+.metric-card { background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: none; }
+.metric-value { font-size: 2.2rem; font-weight: bold; color: #4CAF50 !important; }
+
+/* Indicador de stock semáforo */
+.stock-verde { color: #2E7D32; font-weight: bold; background-color: #C8E6C9; padding: 2px 8px; border-radius: 20px; display: inline-block; }
+.stock-amarillo { color: #E65100; font-weight: bold; background-color: #FFE0B2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
+.stock-rojo { color: #C62828; font-weight: bold; background-color: #FFCDD2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
+
+/* Animaciones */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.login-card { animation: fadeIn 0.5s ease-out; }
 </style>
+
 """, unsafe_allow_html=True)
 
-with st.sidebar:
-    try:
-        st.image("logo.png", use_container_width=True)
-    except:
-        st.markdown("## 💚 QTC Pro")
-    st.markdown("---")
-    if "cotizaciones" in st.session_state:
-        st.metric("📄 Cotizaciones", st.session_state.get("cotizaciones", 0))
-        st.metric("📦 Productos", st.session_state.get("total_prods", 0))
-    if "debug_mode" not in st.session_state:
-        st.session_state.debug_mode = False
-    st.session_state.debug_mode = st.checkbox("🔧 Modo Depuración", value=st.session_state.debug_mode)
-
+# ============================================
+# LOGIN PREMIUM
+# ============================================
 if "auth" not in st.session_state:
     st.session_state.auth = False
 
 if not st.session_state.auth:
-    col1, col2, col3 = st.columns([1,2,1])
+    # Fondo de la página de login
+    st.markdown("""
+    <style>
+    .stApp {
+        background: linear-gradient(135deg, #1B5E20 0%, #4CAF50 50%, #A5D6A7 100%) !important;
+    }
+    .main .block-container {
+        background-color: transparent !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        try:
-            st.image("logo.png", width=120)
-        except:
-            pass
         st.markdown("""
-        <div style="background: white; padding: 2rem; border-radius: 20px;">
-            <h1 style="text-align: center; color: #4CAF50;">QTC Smart Sales</h1>
-            <p style="text-align: center;">Sistema Profesional de Cotización</p>
+        <div class="login-card" style="background: white; padding: 2.5rem; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: center; margin: 3rem 0;">
+            <div style="margin-bottom: 1.5rem;">
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%234CAF50'/%3E%3Ctext x='50' y='70' font-size='50' text-anchor='middle' fill='white' font-weight='bold'%3EQTC%3C/text%3E%3C/svg%3E" width="80" style="border-radius: 20px;">
+            </div>
+            <h1 style="color: #1B5E20; margin-bottom: 0.5rem;">QTC Smart Sales</h1>
+            <p style="color: #2E7D32; margin-bottom: 2rem;">Sistema Profesional de Cotización</p>
+            <form>
+                <div style="margin-bottom: 1rem;">
+                    <input type="text" id="username" placeholder="👤 Usuario" style="width: 100%; padding: 12px; border: 2px solid #C8E6C9; border-radius: 12px; font-size: 1rem; transition: all 0.3s;">
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <input type="password" id="password" placeholder="🔒 Contraseña" style="width: 100%; padding: 12px; border: 2px solid #C8E6C9; border-radius: 12px; font-size: 1rem; transition: all 0.3s;">
+                </div>
+            </form>
         </div>
         """, unsafe_allow_html=True)
-        user = st.text_input("Usuario")
-        pw = st.text_input("Contraseña", type="password")
-        if st.button("Ingresar", use_container_width=True):
-            if user == "admin" and pw == "qtc2026":
-                st.session_state.auth = True
-                st.rerun()
-            else:
-                st.error("Credenciales incorrectas")
+        
+        user = st.text_input("", placeholder="Usuario", key="login_user", label_visibility="collapsed")
+        pw = st.text_input("", placeholder="Contraseña", type="password", key="login_pass", label_visibility="collapsed")
+        
+        col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
+        with col_btn2:
+            if st.button("🚀 INGRESAR", use_container_width=True):
+                if user == "admin" and pw == "qtc2026":
+                    st.session_state.auth = True
+                    st.rerun()
+                else:
+                    st.error("❌ Credenciales incorrectas")
+                    st.markdown("<p style='text-align: center; font-size: 0.8rem; margin-top: 1rem;'>💡 Usuario: admin | Contraseña: qtc2026</p>", unsafe_allow_html=True)
     st.stop()
+
+# ============================================
+# FUNCIONES DE LA APLICACIÓN
+# ============================================
 
 def corregir_numero(valor):
     if pd.isna(valor) or str(valor).strip() in ["", "0", "0.0", "-"]:
@@ -392,15 +465,52 @@ def generar_excel(items, cliente, ruc):
     writer.close()
     return output.getvalue()
 
+def obtener_clase_stock(stock):
+    """Devuelve la clase CSS según la cantidad de stock"""
+    if stock == 0:
+        return "stock-rojo"
+    elif stock <= 5:
+        return "stock-amarillo"
+    else:
+        return "stock-verde"
+
+def obtener_icono_stock(stock):
+    """Devuelve el ícono según la cantidad de stock"""
+    if stock == 0:
+        return "❌"
+    elif stock <= 5:
+        return "⚠️"
+    else:
+        return "✅"
+
+def obtener_mensaje_stock(stock):
+    """Devuelve el mensaje de tooltip según la cantidad de stock"""
+    if stock == 0:
+        return "Sin stock disponible"
+    elif stock <= 5:
+        return f"¡Stock bajo! Solo quedan {stock} unidades"
+    else:
+        return "Stock suficiente"
+
 # ============================================
-# INTERFAZ PRINCIPAL
+# HEADER
 # ============================================
 try:
-    col_logo, col_title = st.columns([1, 6])
+    col_logo, col_title, col_user = st.columns([1, 4, 2])
     with col_logo:
-        st.image("logo.png", width="70px")
+        st.image("logo.png", width="60px")
     with col_title:
         st.title("QTC Smart Sales Pro")
+    with col_user:
+        st.markdown(f"""
+        <div style="text-align: right; background: white; padding: 8px 15px; border-radius: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            <span style="font-weight: 600;">👤 admin</span><br>
+            <span style="font-size: 0.7rem; color: #4CAF50;">Administrador</span>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("🚪 Cerrar Sesión", key="logout"):
+            st.session_state.auth = False
+            st.rerun()
 except:
     st.title("QTC Smart Sales Pro")
 
@@ -506,7 +616,6 @@ with tab_cotizacion:
         
         texto_skus = st.text_area("", height=150, value=texto_defecto, placeholder="RN0200046BK8:5\nCN0900009WH8:2")
         
-        # Procesar pedidos eliminando duplicados y sumando cantidades
         pedidos_dict = {}
         if texto_skus:
             for line in texto_skus.split('\n'):
@@ -557,10 +666,9 @@ with tab_cotizacion:
                             stock_apri004 = 0
                             stock_yessica = 0
                         
-                        # Validación de stock
                         if cant > stock_total and stock_total > 0:
                             advertencias_stock.append(f"⚠️ **{sku}**: Stock insuficiente. Solicitado: {cant} | Disponible: {stock_total}. Se cotizarán {stock_total} unidades.")
-                            badge_estado = "badge-warning"
+                            badge_estado = "badge-stock-bajo"
                             estado_texto = "⚠️ Stock insuficiente"
                         elif cant > stock_total and stock_total == 0:
                             advertencias_stock.append(f"❌ **{sku}**: Sin stock disponible. Producto no se puede cotizar.")
@@ -570,7 +678,6 @@ with tab_cotizacion:
                             badge_estado = "badge-ok"
                             estado_texto = "✅ OK"
                         
-                        # Crear badge de origen
                         if st.session_state.tipo_cotizacion == "XIAOMI":
                             if stock_apri004 > 0 and stock_yessica > 0:
                                 badge_origen = f'<span class="origin-badge origin-both">🟣 APRI.004: {stock_apri004} | 🔵 YESSICA: {stock_yessica}</span>'
@@ -619,16 +726,12 @@ with tab_cotizacion:
                     
                     st.session_state.resultados = resultados
         
-        # ============================================
-        # TABLA DE RESULTADOS (SOLO LECTURA - ESTILO PROFESIONAL)
-        # ============================================
         if st.session_state.resultados:
             st.markdown("---")
             st.markdown("### 📊 Resultados")
             
-            # Tabla dinámica en HTML (solo lectura, con badges de colores)
             html = '<div style="overflow-x: auto;"><table style="width:100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; table-layout: fixed;">'
-            html += '<thead><tr style="background-color: #4CAF50; color: white;">'
+            html += '<thead><tr style="background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%); color: white;">'
             html += '<th style="width: 12%; padding: 10px; text-align: left;">SKU</th>'
             html += '<th style="width: 28%; padding: 10px; text-align: left;">Descripción</th>'
             html += '<th style="width: 10%; padding: 10px; text-align: center;">Precio</th>'
@@ -643,13 +746,16 @@ with tab_cotizacion:
             for item in st.session_state.resultados:
                 precio_str = f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio"
                 total_str = f"S/. {item['Total']:,.2f}"
+                stock_clase = obtener_clase_stock(item['Stock'])
+                stock_icono = obtener_icono_stock(item['Stock'])
+                stock_html = f'<span class="{stock_clase}" title="{obtener_mensaje_stock(item["Stock"])}">{stock_icono} {item["Stock"]}</span>'
                 
                 html += f'<tr style="border-bottom: 1px solid #E8F5E9;">'
                 html += f'<td style="padding: 10px; font-family: monospace; word-wrap: break-word;">{item["SKU"]}</td>'
                 html += f'<td style="padding: 10px; word-wrap: break-word;">{item["Descripción"][:60]}{"..." if len(item["Descripción"]) > 60 else ""}</td>'
                 html += f'<td style="padding: 10px; text-align: center;">{precio_str}</td>'
                 html += f'<td style="padding: 10px; text-align: center;">{item["Pedido"]}</td>'
-                html += f'<td style="padding: 10px; text-align: center;"><strong>{item["Stock"]}</strong></td>'
+                html += f'<td style="padding: 10px; text-align: center;">{stock_html}</td>'
                 html += f'<td style="padding: 10px;">{item["Origen"]}</td>'
                 html += f'<td style="padding: 10px; text-align: center;"><strong>{item["A Cotizar"]}</strong></td>'
                 html += f'<td style="padding: 10px; text-align: center;"><strong>{total_str}</strong></td>'
@@ -660,24 +766,21 @@ with tab_cotizacion:
             st.markdown(html, unsafe_allow_html=True)
             
             # ============================================
-            # TABLA DE AJUSTAR CANTIDADES (EDITABLE)
+            # TABLA DE AJUSTAR CANTIDADES (EDITABLE CON SEMÁFORO)
             # ============================================
             st.markdown("---")
             st.markdown("### ✏️ Ajustar cantidades")
             st.caption("💡 Modifica las cantidades aquí - Los totales se actualizarán automáticamente")
             
-            # Preparar DataFrame para edición
             df_ajuste = pd.DataFrame(st.session_state.resultados)
             
-            # Seleccionar columnas para la tabla editable
             df_editor = df_ajuste[[
                 'SKU', 'Descripción', 'Precio', 'Stock', 'A Cotizar'
             ]].copy()
             
-            # Formatear precio
             df_editor['Precio'] = df_editor['Precio'].apply(lambda x: f"S/. {x:,.2f}" if x > 0 else "Sin precio")
+            df_editor['Stock/Estado'] = df_editor['Stock'].apply(lambda x: f"{obtener_icono_stock(x)} {x} - {obtener_mensaje_stock(x)}" if x > 0 else f"{obtener_icono_stock(x)} {x} - {obtener_mensaje_stock(x)}")
             
-            # Usar data_editor para edición
             edited_df = st.data_editor(
                 df_editor,
                 column_config={
@@ -685,6 +788,7 @@ with tab_cotizacion:
                     "Descripción": st.column_config.TextColumn("Descripción", width="large", disabled=True),
                     "Precio": st.column_config.TextColumn("Precio", width="small", disabled=True),
                     "Stock": st.column_config.NumberColumn("Stock", width="small", disabled=True),
+                    "Stock/Estado": st.column_config.TextColumn("Stock", width="medium", disabled=True),
                     "A Cotizar": st.column_config.NumberColumn(
                         "A Cotizar",
                         width="small",
@@ -698,13 +802,11 @@ with tab_cotizacion:
                 key="ajuste_editor"
             )
             
-            # Actualizar valores editados
             for idx, row in edited_df.iterrows():
                 if idx < len(st.session_state.resultados):
                     nueva_cant = row['A Cotizar']
                     stock_disponible = st.session_state.resultados[idx]['Stock']
                     
-                    # Validar que no supere el stock
                     if nueva_cant > stock_disponible and stock_disponible > 0:
                         nueva_cant = stock_disponible
                         st.warning(f"⚠️ **{st.session_state.resultados[idx]['SKU']}**: No puede cotizar más de {stock_disponible} unidades (stock disponible)")
@@ -721,9 +823,6 @@ with tab_cotizacion:
                     else:
                         st.session_state.resultados[idx]['Total'] = 0
             
-            # ============================================
-            # RECALCULAR TOTALES Y MOSTRAR MÉTRICAS
-            # ============================================
             items_validos = [r for r in st.session_state.resultados if r['A Cotizar'] > 0 and r['Precio'] > 0]
             items_con_issues = [r for r in st.session_state.resultados if r['A Cotizar'] == 0 or r['Precio'] == 0]
             total_general = sum(r['Total'] for r in items_validos)
@@ -734,9 +833,6 @@ with tab_cotizacion:
             col_m2.metric("💰 Total", f"S/. {total_general:,.2f}")
             col_m3.metric("⚠️ Excluidos", len(items_con_issues))
             
-            # ============================================
-            # REPORTE DE PRODUCTOS CON ISSUES
-            # ============================================
             if items_con_issues:
                 st.markdown("---")
                 st.markdown("### ⚠️ Productos con Issues (No Cotizables)")
@@ -749,9 +845,6 @@ with tab_cotizacion:
                         motivo = "❓ Error en datos"
                     st.warning(f"**{item['SKU']}** - {item['Descripción'][:60]} → `{motivo}`")
             
-            # ============================================
-            # GENERAR COTIZACIÓN
-            # ============================================
             if items_validos:
                 st.markdown("---")
                 st.markdown("### 📥 Generar Cotización")
@@ -764,13 +857,7 @@ with tab_cotizacion:
                 if st.button("📥 GENERAR EXCEL", use_container_width=True, type="primary"):
                     items_excel = [{'sku': r['SKU'], 'desc': r['Descripción'], 'cant': r['A Cotizar'], 'p_u': r['Precio'], 'total': r['Total']} for r in items_validos]
                     excel = generar_excel(items_excel, cliente, ruc_cliente)
-                    st.download_button(
-                        "💾 DESCARGAR", 
-                        data=excel, 
-                        file_name=f"Cotizacion_{cliente}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx", 
-                        use_container_width=True,
-                        key="download_btn"
-                    )
+                    st.download_button("💾 DESCARGAR", data=excel, file_name=f"Cotizacion_{cliente}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx", use_container_width=True, key="download_btn")
                     st.session_state.cotizaciones += 1
                     st.session_state.total_prods = len(items_validos)
                     st.balloons()
@@ -811,7 +898,8 @@ with tab_buscar:
                 st.success(f"✅ {len(resultados)} resultados encontrados")
                 
                 for res in resultados:
-                    stock_icon = "🔴 Sin stock" if res['Stock_Total'] <= 0 else (f"🟠 Stock bajo: {res['Stock_Total']}" if res['Stock_Total'] < 10 else f"🟢 Stock disponible: {res['Stock_Total']}")
+                    stock_clase = obtener_clase_stock(res['Stock_Total'])
+                    stock_icono = obtener_icono_stock(res['Stock_Total'])
                     
                     stock_detalle = ""
                     if st.session_state.tipo_cotizacion == "XIAOMI":
@@ -827,7 +915,11 @@ with tab_buscar:
                     st.markdown(f"""
                     <div style="background: white; border-radius: 12px; padding: 1rem; margin: 0.5rem 0; border-left: 4px solid #4CAF50; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                         <div><span style="font-family: monospace; font-weight: bold; font-size: 1rem;">📦 {res['SKU']}</span><br><span style="font-size: 0.85rem; color: #555;">{res['Descripcion']}</span><br><span style="font-weight: bold; color: #4CAF50;">{f'S/. {res["Precio"]:,.2f}' if res["Precio"] else "💰 Sin precio"}</span></div>
-                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">{stock_icon}<br>{stock_detalle}<div style="font-size:0.7rem; color:#888; margin-top:5px;">📁 Catálogo: {res['Catalogo'][:50]}</div></div>
+                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
+                            <span class="{stock_clase}" title="{obtener_mensaje_stock(res['Stock_Total'])}">{stock_icono} Stock: {res['Stock_Total']}</span><br>
+                            {stock_detalle}
+                            <div style="font-size:0.7rem; color:#888; margin-top:5px;">📁 Catálogo: {res['Catalogo'][:50]}</div>
+                        </div>
                     </div>
                     """, unsafe_allow_html=True)
                     
