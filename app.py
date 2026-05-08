@@ -39,59 +39,21 @@ if "productos_seleccionados" not in st.session_state:
 # ============================================
 st.markdown("""
 <style>
-/* Fondo general */
-.stApp { background: linear-gradient(135deg, #E8F5E9 50%, #C8E6C9 100%) !important; }
-.main .block-container { background-color: transparent !important; }
+/* Fondo principal crema */
+.stApp { background-color: #FFF8E1 !important; }
+.main .block-container { background-color: #FFF8E1 !important; }
 
-/* Tipografía */
-h1, h2, h3, h4, h5, h6 { color: #0A0A0A !important; font-family: 'Segoe UI', sans-serif; }
-p, div, span, label, .stMarkdown { color: #0A0A0A !important; }
+/* Tipografía en tonos naranja */
+h1, h2, h3, h4, h5, h6 { color: #E65100 !important; font-family: 'Segoe UI', sans-serif; }
+p, div, span, label, .stMarkdown { color: #F57C00 !important; }
 
-/* Sidebar premium */
-[data-testid="stSidebar"] { background: linear-gradient(180deg, #0D3B0F 50%, #1B5E20 100%) !important; }
-[data-testid="stSidebar"] * { color: #FFFFFF !important; }
-[data-testid="stSidebar"] .stMarkdown, 
-[data-testid="stSidebar"] p, 
-[data-testid="stSidebar"] div,
-[data-testid="stSidebar"] label { color: #FFFFFF !important; }
+/* Sidebar naranja gradiente */
+[data-testid="stSidebar"] { background: linear-gradient(180deg, #BF360C 0%, #E65100 100%) !important; }
+[data-testid="stSidebar"] * { color: #FFF8E1 !important; }
 
-/* Inputs en sidebar - texto visible */
-[data-testid="stSidebar"] .stTextInput input,
-[data-testid="stSidebar"] .stTextArea textarea,
-[data-testid="stSidebar"] .stNumberInput input {
-    color: #1B5E20 !important;
-    background-color: white !important;
-    border-radius: 10px !important;
-    border: 1px solid #4CAF50 !important;
-}
-
-/* Inputs principales - texto visible */
-.stTextInput input, 
-.stTextArea textarea, 
-.stNumberInput input { 
-    color: #1B5E20 !important;
-    background-color: white !important; 
-    border: 1px solid #C8E6C9 !important; 
-    border-radius: 10px !important;
-    transition: all 0.3s ease;
-}
-.stTextInput input:focus, 
-.stTextArea textarea:focus, 
-.stNumberInput input:focus {
-    border-color: #4CAF50 !important;
-    box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
-}
-
-/* Placeholder color */
-.stTextInput input::placeholder,
-.stTextArea textarea::placeholder {
-    color: #9E9E9E !important;
-    opacity: 1;
-}
-
-/* Botones premium */
+/* Botones naranja */
 .stButton > button { 
-    background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important; 
+    background: linear-gradient(135deg, #E65100 0%, #FF9800 100%) !important; 
     color: white !important; 
     border-radius: 12px; 
     font-weight: 600; 
@@ -100,54 +62,66 @@ p, div, span, label, .stMarkdown { color: #0A0A0A !important; }
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 .stButton > button:hover { 
-    background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%) !important; 
+    background: linear-gradient(135deg, #BF360C 0%, #E65100 100%) !important; 
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(230,81,0,0.3);
 }
 
 /* Selectores */
-.stSelectbox > div > div { background-color: white !important; border: 1px solid #4CAF50 !important; border-radius: 10px !important; }
-.stSelectbox label { color: #1B5E20 !important; }
+.stSelectbox > div > div { background-color: white !important; border: 1px solid #FFE0B2 !important; border-radius: 10px !important; }
+.stSelectbox label { color: #E65100 !important; }
+div[data-baseweb="select"] ul { background-color: white !important; border: 1px solid #FFE0B2 !important; border-radius: 10px !important; }
+div[data-baseweb="select"] li { color: #E65100 !important; background-color: white !important; }
+div[data-baseweb="select"] li:hover { background-color: #FFF8E1 !important; }
+div[data-baseweb="select"] li[aria-selected="true"] { background: linear-gradient(135deg, #E65100 0%, #FF9800 100%) !important; color: white !important; }
 
 /* File uploader */
-.stFileUploader > div > div { background-color: white !important; border: 1px dashed #4CAF50 !important; border-radius: 12px !important; }
-.stFileUploader button { background-color: #4CAF50 !important; color: white !important; }
+.stFileUploader > div > div { background-color: white !important; border: 1px dashed #FF9800 !important; border-radius: 12px !important; }
+.stFileUploader button { background-color: #E65100 !important; color: white !important; }
 
-/* Tabs premium */
+/* Inputs */
+.stTextInput input, .stTextArea textarea, .stNumberInput input { 
+    color: #E65100 !important; 
+    background-color: white !important; 
+    border: 1px solid #FFE0B2 !important; 
+    border-radius: 10px !important;
+    transition: all 0.3s ease;
+}
+.stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus {
+    border-color: #E65100 !important;
+    box-shadow: 0 0 0 2px rgba(230,81,0,0.2);
+}
+
+/* Tabs */
 .stTabs [data-baseweb="tab-list"] { background-color: white !important; border-radius: 12px !important; padding: 6px !important; }
-.stTabs [data-baseweb="tab"] { color: #1B5E20 !important; background-color: #F5F5F5 !important; border-radius: 10px !important; padding: 10px 20px !important; transition: all 0.3s ease; }
-.stTabs [aria-selected="true"] { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important; color: white !important; }
+.stTabs [data-baseweb="tab"] { color: #E65100 !important; background-color: #FFF8E1 !important; border-radius: 10px !important; padding: 10px 20px !important; }
+.stTabs [aria-selected="true"] { background: linear-gradient(135deg, #E65100 0%, #FF9800 100%) !important; color: white !important; }
 
-/* Badges */
+/* Badges de estado (se mantienen) */
 .badge-ok { background-color: #C8E6C9; color: #1B5E20; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-warning { background-color: #FFF3E0; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-danger { background-color: #FFCDD2; color: #C62828; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-stock-bajo { background-color: #FFE0B2; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 
-/* Badges de origen */
+/* Badges de origen (mantener colores originales) */
 .origin-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-right: 5px; }
 .origin-apri004 { background-color: #E1BEE7; color: #4A148C; }
 .origin-yessica { background-color: #BBDEFB; color: #0D47A1; }
 .origin-both { background-color: #C8E6C9; color: #1B5E20; }
 
 /* Métricas */
-.metric-card { background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: none; }
-.metric-value { font-size: 2.2rem; font-weight: bold; color: #4CAF50 !important; }
-
-/* Indicador de stock semáforo */
-.stock-verde { color: #2E7D32; font-weight: bold; background-color: #C8E6C9; padding: 2px 8px; border-radius: 20px; display: inline-block; }
-.stock-amarillo { color: #E65100; font-weight: bold; background-color: #FFE0B2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
-.stock-rojo { color: #C62828; font-weight: bold; background-color: #FFCDD2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
+.metric-card { background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #FFE0B2; }
+.metric-value { font-size: 2.2rem; font-weight: bold; color: #E65100 !important; }
 
 /* Data editor */
 .stDataFrame { border-radius: 12px !important; overflow: hidden !important; }
-.stDataFrame thead th { background-color: #1B5E20 !important; color: white !important; font-weight: 600 !important; }
+.stDataFrame thead th { background: linear-gradient(135deg, #BF360C 0%, #E65100 100%) !important; color: white !important; font-weight: 600 !important; }
 
-/* Text area específico para ingreso de SKUs */
+/* Text area para SKUs */
 .stTextArea textarea {
-    color: #1B5E20 !important;
+    color: #E65100 !important;
     background-color: white !important;
-    border: 2px solid #4CAF50 !important;
+    border: 2px solid #FFE0B2 !important;
     border-radius: 12px !important;
     font-family: monospace !important;
     font-size: 14px !important;
@@ -155,21 +129,25 @@ p, div, span, label, .stMarkdown { color: #0A0A0A !important; }
 
 /* Expander en sidebar */
 [data-testid="stSidebar"] .streamlit-expanderHeader {
-    color: #FFFFFF !important;
+    color: #FFF8E1 !important;
 }
 [data-testid="stSidebar"] .streamlit-expanderContent {
-    color: #FFFFFF !important;
+    color: #FFF8E1 !important;
 }
 
-/* Animaciones */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
+/* Placeholder color */
+.stTextInput input::placeholder,
+.stTextArea textarea::placeholder {
+    color: #FFCC80 !important;
+    opacity: 1;
 }
-.login-card { animation: fadeIn 0.5s ease-out; }
+
+/* Indicadores de stock - se mantienen */
+.stock-verde { color: #2E7D32; font-weight: bold; background-color: #C8E6C9; padding: 2px 8px; border-radius: 20px; display: inline-block; }
+.stock-amarillo { color: #E65100; font-weight: bold; background-color: #FFE0B2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
+.stock-rojo { color: #C62828; font-weight: bold; background-color: #FFCDD2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 </style>
 """, unsafe_allow_html=True)
-
 # ============================================
 # LOGIN PREMIUM (CORREGIDO - SIN CAMPOS DUPLICADOS)
 # ============================================
