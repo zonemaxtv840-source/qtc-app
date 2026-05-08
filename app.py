@@ -167,20 +167,24 @@ if not st.session_state.auth:
     }
     </style>
     """, unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns([1, 2, 1])
+        col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
+        # Logo centrado
+        col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
+        with col_logo2:
+            try:
+                st.image("logo.png", width=100)
+            except:
+                st.markdown("<h2 style='text-align: center; color: #4CAF50;'>💚 QTC</h2>", unsafe_allow_html=True)
+        
+        # Tarjeta blanca
         st.markdown("""
-        <div class="login-card" style="background: white; padding: 2.5rem; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: center; margin: 2rem 0;">
-            <div style="margin-bottom: 1.5rem;">
-                                <img src="logo.png" style="width: 200px; height: 300px; object-fit: contain; border-radius: 15px;">
-            </div>
+        <div style="background: white; padding: 2rem; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: center; margin-top: 1rem;">
             <h1 style="color: #1B5E20; margin-bottom: 0.5rem;">QTC Smart Sales</h1>
-            <p style="color: #2E7D32; margin-bottom: 2rem;">Sistema Profesional de Cotización</p>
+            <p style="color: #2E7D32; margin-bottom: 1.5rem;">Sistema Profesional de Cotización</p>
         </div>
         """, unsafe_allow_html=True)
         
-        # Solamente dos campos de input - sin HTML duplicado
         user = st.text_input("👤 Usuario", placeholder="Ingresa tu usuario", key="login_user")
         pw = st.text_input("🔒 Contraseña", type="password", placeholder="Ingresa tu contraseña", key="login_pass")
         
@@ -193,8 +197,7 @@ if not st.session_state.auth:
                 else:
                     st.error("❌ Credenciales incorrectas")
                     st.markdown("<p style='text-align: center; font-size: 0.8rem; margin-top: 1rem;'>💡 Usuario: admin | Contraseña: qtc2026</p>", unsafe_allow_html=True)
-    st.stop()
-
+   
 # ============================================
 # FUNCIONES DE LA APLICACIÓN
 # ============================================
