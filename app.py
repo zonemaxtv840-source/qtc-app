@@ -422,7 +422,7 @@ def cargar_catalogo(archivo):
                 except:
                     df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', sep=';', on_bad_lines='skip')
             
-    def limpiar_cabeceras(df):
+def limpiar_cabeceras(df):
     # Buscar la fila que contiene "SKU" en cualquier columna
     for i in range(min(50, len(df))):
         # Recorrer cada celda de la fila
