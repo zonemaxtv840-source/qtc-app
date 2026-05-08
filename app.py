@@ -10,7 +10,7 @@ warnings.filterwarnings('ignore')
 try:
     img_logo = Image.open("logo.png")
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon=img_logo, layout="wide")
-except:f
+except:
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon="💼", layout="wide")
 
 # ============================================
