@@ -156,7 +156,7 @@ if not st.session_state.auth:
     st.markdown("""
     <style>
     .stApp {
-        background: linear-gradient(135deg, #FFF8E1 0%, #FFE0B2 50%, #FFCC80 100%) !important;
+        background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 50%, #90CAF9 100%) !important;
     }
     .main .block-container {
         background-color: transparent !important;
@@ -168,18 +168,31 @@ if not st.session_state.auth:
     div[data-testid="stVerticalBlock"] > div {
         background: transparent !important;
     }
-    /* Tarjeta crema */
+    /* Tarjeta blanca */
     .login-card {
-        background: #FFFDF5;
+        background: white;
         border-radius: 28px;
         padding: 2.5rem;
         box-shadow: 0 25px 50px rgba(0,0,0,0.15);
         text-align: center;
-        border: 1px solid #FFE0B2;
+        border: 1px solid #BBDEFB;
     }
-    /* Botón naranja con letras blancas */
+    /* Texto negro en la tarjeta */
+    .login-card h1 {
+        color: #1A1A2E !important;
+        margin-bottom: 0.25rem;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+    .login-card p {
+        color: #1A1A2E !important;
+        margin-bottom: 2rem;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    /* Botón azul corporativo */
     .stButton button {
-        background: linear-gradient(135deg, #E65100 0%, #FF9800 100%) !important;
+        background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%) !important;
         color: white !important;
         font-weight: 600 !important;
         border: none !important;
@@ -188,20 +201,34 @@ if not st.session_state.auth:
         transition: all 0.3s ease !important;
     }
     .stButton button:hover {
-        background: linear-gradient(135deg, #BF360C 0%, #E65100 100%) !important;
+        background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%) !important;
         transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(230,81,0,0.3) !important;
+        box-shadow: 0 8px 20px rgba(21,101,192,0.3) !important;
     }
-    /* Inputs con borde naranja al focus */
+    /* Inputs con borde azul */
     .stTextInput input {
-        border: 1px solid #FFE0B2 !important;
+        border: 1px solid #BBDEFB !important;
         border-radius: 12px !important;
         transition: all 0.3s ease !important;
+        color: #1A1A2E !important;
     }
     .stTextInput input:focus {
-        border-color: #E65100 !important;
-        box-shadow: 0 0 0 2px rgba(230,81,0,0.2) !important;
+        border-color: #1E88E5 !important;
+        box-shadow: 0 0 0 2px rgba(30,136,229,0.2) !important;
         transform: translateY(-2px);
+    }
+    /* Label de inputs en negro */
+    .stTextInput label {
+        color: #1A1A2E !important;
+        font-weight: 500 !important;
+    }
+    /* Footer */
+    .login-footer {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #BBDEFB;
+        font-size: 0.7rem;
+        color: #1565C0 !important;
     }
     /* Animación */
     @keyframes fadeInUp {
@@ -225,21 +252,12 @@ if not st.session_state.auth:
     
     col1, col2, col3 = st.columns([1, 2.5, 1])
     with col2:
-        # Tarjeta crema - SIN LOGO, SOLO TEXTO
+        # Tarjeta blanca
         st.markdown("""
         <div class="login-card">
-            <h1 style="
-                color: #E65100;
-                margin-bottom: 0.25rem;
-                font-size: 1.8rem;
-                font-weight: 700;
-            ">QTC Smart Sales</h1>
-            <p style="
-                color: #F57C00;
-                margin-bottom: 2rem;
-                font-weight: 500;
-                font-size: 0.9rem;
-            ">Sistema Profesional de Cotización</p>
+            <h1>QTC Smart Sales</h1>
+            <p>Sistema Profesional de Cotización</p>
+        </div>
         """, unsafe_allow_html=True)
         
         # Campos de login
@@ -258,7 +276,7 @@ if not st.session_state.auth:
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Botón naranja con letras blancas
+        # Botón azul
         if st.button("🚀 INGRESAR", use_container_width=True):
             if user == "admin" and pw == "qtc2026":
                 st.session_state.auth = True
@@ -269,14 +287,8 @@ if not st.session_state.auth:
         
         # Footer
         st.markdown("""
-        <div style="
-            margin-top: 2rem;
-            padding-top: 1rem;
-            border-top: 1px solid #FFE0B2;
-            font-size: 0.7rem;
-            color: #FF9800;
-        ">
-            <span>⚡ QTC Smart Sales Pro</span>
+        <div class="login-footer">
+            ⚡ QTC Smart Sales Pro
         </div>
         </div>
         """, unsafe_allow_html=True)
