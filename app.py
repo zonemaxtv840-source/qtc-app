@@ -5,7 +5,6 @@ from datetime import datetime
 from PIL import Image
 import numpy as np
 import warnings
-import time
 warnings.filterwarnings('ignore')
 
 try:
@@ -15,7 +14,7 @@ except:
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon="💼", layout="wide")
 
 # ============================================
-# ESTILOS CSS MEJORADOS (incluye login premium)
+# ESTILOS CSS MEJORADOS (con colores corregidos)
 # ============================================
 st.markdown("""
 <style>
@@ -29,7 +28,45 @@ p, div, span, label, .stMarkdown { color: #2E7D32 !important; }
 
 /* Sidebar premium */
 [data-testid="stSidebar"] { background: linear-gradient(180deg, #0D3B0F 0%, #1B5E20 100%) !important; }
-[data-testid="stSidebar"] * { color: #F1F8E9 !important; }
+[data-testid="stSidebar"] * { color: #FFFFFF !important; }
+[data-testid="stSidebar"] .stMarkdown, 
+[data-testid="stSidebar"] p, 
+[data-testid="stSidebar"] div,
+[data-testid="stSidebar"] label { color: #FFFFFF !important; }
+
+/* Inputs en sidebar - texto visible */
+[data-testid="stSidebar"] .stTextInput input,
+[data-testid="stSidebar"] .stTextArea textarea,
+[data-testid="stSidebar"] .stNumberInput input {
+    color: #1B5E20 !important;
+    background-color: white !important;
+    border-radius: 10px !important;
+    border: 1px solid #4CAF50 !important;
+}
+
+/* Inputs principales - texto visible */
+.stTextInput input, 
+.stTextArea textarea, 
+.stNumberInput input { 
+    color: #1B5E20 !important;
+    background-color: white !important; 
+    border: 1px solid #C8E6C9 !important; 
+    border-radius: 10px !important;
+    transition: all 0.3s ease;
+}
+.stTextInput input:focus, 
+.stTextArea textarea:focus, 
+.stNumberInput input:focus {
+    border-color: #4CAF50 !important;
+    box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
+}
+
+/* Placeholder color */
+.stTextInput input::placeholder,
+.stTextArea textarea::placeholder {
+    color: #9E9E9E !important;
+    opacity: 1;
+}
 
 /* Botones premium */
 .stButton > button { 
@@ -47,21 +84,9 @@ p, div, span, label, .stMarkdown { color: #2E7D32 !important; }
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-/* Selectores premium */
+/* Selectores */
 .stSelectbox > div > div { background-color: white !important; border: 1px solid #4CAF50 !important; border-radius: 10px !important; }
 .stSelectbox label { color: #1B5E20 !important; }
-
-/* Inputs premium */
-.stTextInput input, .stTextArea textarea, .stNumberInput input { 
-    background-color: white !important; 
-    border: 1px solid #C8E6C9 !important; 
-    border-radius: 10px !important;
-    transition: all 0.3s ease;
-}
-.stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus {
-    border-color: #4CAF50 !important;
-    box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
-}
 
 /* File uploader */
 .stFileUploader > div > div { background-color: white !important; border: 1px dashed #4CAF50 !important; border-radius: 12px !important; }
@@ -72,7 +97,7 @@ p, div, span, label, .stMarkdown { color: #2E7D32 !important; }
 .stTabs [data-baseweb="tab"] { color: #1B5E20 !important; background-color: #F5F5F5 !important; border-radius: 10px !important; padding: 10px 20px !important; transition: all 0.3s ease; }
 .stTabs [aria-selected="true"] { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important; color: white !important; }
 
-/* Badges de estado */
+/* Badges */
 .badge-ok { background-color: #C8E6C9; color: #1B5E20; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-warning { background-color: #FFF3E0; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-danger { background-color: #FFCDD2; color: #C62828; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
@@ -93,6 +118,28 @@ p, div, span, label, .stMarkdown { color: #2E7D32 !important; }
 .stock-amarillo { color: #E65100; font-weight: bold; background-color: #FFE0B2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 .stock-rojo { color: #C62828; font-weight: bold; background-color: #FFCDD2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 
+/* Data editor */
+.stDataFrame { border-radius: 12px !important; overflow: hidden !important; }
+.stDataFrame thead th { background-color: #1B5E20 !important; color: white !important; font-weight: 600 !important; }
+
+/* Text area específico para ingreso de SKUs */
+.stTextArea textarea {
+    color: #1B5E20 !important;
+    background-color: white !important;
+    border: 2px solid #4CAF50 !important;
+    border-radius: 12px !important;
+    font-family: monospace !important;
+    font-size: 14px !important;
+}
+
+/* Expander en sidebar */
+[data-testid="stSidebar"] .streamlit-expanderHeader {
+    color: #FFFFFF !important;
+}
+[data-testid="stSidebar"] .streamlit-expanderContent {
+    color: #FFFFFF !important;
+}
+
 /* Animaciones */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-20px); }
@@ -100,11 +147,10 @@ p, div, span, label, .stMarkdown { color: #2E7D32 !important; }
 }
 .login-card { animation: fadeIn 0.5s ease-out; }
 </style>
-
 """, unsafe_allow_html=True)
 
 # ============================================
-# LOGIN PREMIUM
+# LOGIN PREMIUM (CORREGIDO - SIN CAMPOS DUPLICADOS)
 # ============================================
 if "auth" not in st.session_state:
     st.session_state.auth = False
@@ -125,25 +171,20 @@ if not st.session_state.auth:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("""
-        <div class="login-card" style="background: white; padding: 2.5rem; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: center; margin: 3rem 0;">
+        <div class="login-card" style="background: white; padding: 2.5rem; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: center; margin: 2rem 0;">
             <div style="margin-bottom: 1.5rem;">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%234CAF50'/%3E%3Ctext x='50' y='70' font-size='50' text-anchor='middle' fill='white' font-weight='bold'%3EQTC%3C/text%3E%3C/svg%3E" width="80" style="border-radius: 20px;">
+                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); border-radius: 25px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+                    <span style="font-size: 40px; font-weight: bold; color: white;">Q</span>
+                </div>
             </div>
             <h1 style="color: #1B5E20; margin-bottom: 0.5rem;">QTC Smart Sales</h1>
             <p style="color: #2E7D32; margin-bottom: 2rem;">Sistema Profesional de Cotización</p>
-            <form>
-                <div style="margin-bottom: 1rem;">
-                    <input type="text" id="username" placeholder="👤 Usuario" style="width: 100%; padding: 12px; border: 2px solid #C8E6C9; border-radius: 12px; font-size: 1rem; transition: all 0.3s;">
-                </div>
-                <div style="margin-bottom: 1.5rem;">
-                    <input type="password" id="password" placeholder="🔒 Contraseña" style="width: 100%; padding: 12px; border: 2px solid #C8E6C9; border-radius: 12px; font-size: 1rem; transition: all 0.3s;">
-                </div>
-            </form>
         </div>
         """, unsafe_allow_html=True)
         
-        user = st.text_input("", placeholder="Usuario", key="login_user", label_visibility="collapsed")
-        pw = st.text_input("", placeholder="Contraseña", type="password", key="login_pass", label_visibility="collapsed")
+        # Solamente dos campos de input - sin HTML duplicado
+        user = st.text_input("👤 Usuario", placeholder="Ingresa tu usuario", key="login_user")
+        pw = st.text_input("🔒 Contraseña", type="password", placeholder="Ingresa tu contraseña", key="login_pass")
         
         col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
         with col_btn2:
@@ -614,7 +655,7 @@ with tab_cotizacion:
         else:
             texto_defecto = ""
         
-        texto_skus = st.text_area("", height=150, value=texto_defecto, placeholder="RN0200046BK8:5\nCN0900009WH8:2")
+        texto_skus = st.text_area("", height=150, value=texto_defecto, placeholder="Ejemplo:\nRN0200046BK8:5\nCN0900009WH8:2")
         
         pedidos_dict = {}
         if texto_skus:
@@ -741,7 +782,7 @@ with tab_cotizacion:
             html += '<th style="width: 8%; padding: 10px; text-align: center;">A Cotizar</th>'
             html += '<th style="width: 8%; padding: 10px; text-align: center;">Total</th>'
             html += '<th style="width: 8%; padding: 10px; text-align: center;">Estado</th>'
-            html += '</tr></thead><tbody>'
+            html += '<tr></thead><tbody>'
             
             for item in st.session_state.resultados:
                 precio_str = f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio"
