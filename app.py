@@ -384,11 +384,26 @@ def mapear_columna_precio(columnas, nombre_buscar):
 
 def cargar_catalogo(archivo):
     try:
-        xls = pd.ExcelFile(archivo)
-        hojas = xls.sheet_names
-        hoja_seleccionada = st.sidebar.selectbox(f"📗 Hoja {archivo.name}:", hojas, key=f"cat_{archivo.name}")
-        df = pd.read_excel(archivo, sheet_name=hoja_seleccionada)
-        df = limpiar_cabeceras(df)
+        # Detectar si es CSV por el nombre o extensión
+        if archivo.name.lower().endswith('.csv'):
+            # Leer CSV con detección automática de encoding
+            contenido = archivo.getvalue()
+            # Probar diferentes encodings
+            try:
+                df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8')
+            except:
+                try:
+                    df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1')
+                except:
+                    df = pd.read_csv(io.BytesIO(contenido), encoding='iso-8859-1')
+            df = limpiar_cabeceras(df)
+            hoja_seleccionada = "CSV"
+        else:
+            xls = pd.ExcelFile(archivo)
+            hojas = xls.sheet_names
+            hoja_seleccionada = st.sidebar.selectbox(f"📗 Hoja {archivo.name}:", hojas, key=f"cat_{archivo.name}")
+            df = pd.read_excel(archivo, sheet_name=hoja_seleccionada)
+            df = limpiar_cabeceras(df)
         
         posibles_skus = ['SKU', 'COD', 'CODIGO', 'SAP', 'NUMERO', 'ARTICULO', 'COD SAP']
         posibles_desc = ['DESC', 'DESCRIPCION', 'NOMBRE', 'PRODUCTO', 'NOMBRE PRODUCTO']
@@ -429,11 +444,18 @@ def cargar_catalogo(archivo):
 
 def cargar_stock_completo(archivo):
     try:
-        xls = pd.ExcelFile(archivo)
         todas_hojas = []
         
-        for hoja in xls.sheet_names:
-            df = pd.read_excel(archivo, sheet_name=hoja)
+        # Detectar si es CSV
+        if archivo.name.lower().endswith('.csv'):
+            contenido = archivo.getvalue()
+            try:
+                df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8')
+            except:
+                try:
+                    df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1')
+                except:
+                    df = pd.read_csv(io.BytesIO(contenido), encoding='iso-8859-1')
             df = limpiar_cabeceras(df)
             
             posibles_skus = ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO']
@@ -443,12 +465,31 @@ def cargar_stock_completo(archivo):
             col_stock = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_stock)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
             
             todas_hojas.append({
-                'nombre': f"{archivo.name} [{hoja}]",
+                'nombre': f"{archivo.name} [CSV]",
                 'df': df,
                 'col_sku': col_sku,
                 'col_stock': col_stock,
-                'hoja': hoja
+                'hoja': "CSV"
             })
+        else:
+            xls = pd.ExcelFile(archivo)
+            for hoja in xls.sheet_names:
+                df = pd.read_excel(archivo, sheet_name=hoja)
+                df = limpiar_cabeceras(df)
+                
+                posibles_skus = ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO']
+                posibles_stock = ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO', 'EN STOCK']
+                
+                col_sku = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_skus)), df.columns[0])
+                col_stock = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_stock)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
+                
+                todas_hojas.append({
+                    'nombre': f"{archivo.name} [{hoja}]",
+                    'df': df,
+                    'col_sku': col_sku,
+                    'col_stock': col_stock,
+                    'hoja': hoja
+                })
         
         return todas_hojas
     except Exception as e:
@@ -755,7 +796,7 @@ with tab_cotizacion:
         st.markdown("### 📂 Archivos")
         
         st.markdown("**📚 Catálogos de Precios**")
-        archivos_catalogos = st.file_uploader("Sube catálogos", type=['xlsx', 'xls'], accept_multiple_files=True, key="cat_upload")
+        archivos_catalogos = st.file_uploader("Sube catálogos", type=['xlsx', 'xls', 'csv'], accept_multiple_files=True, key="cat_upload")
         if archivos_catalogos:
             st.session_state.catalogos = []
             for archivo in archivos_catalogos:
@@ -766,7 +807,7 @@ with tab_cotizacion:
         
         st.markdown("**📦 Reportes de Stock**")
         st.caption("💡 El sistema cargará TODAS las hojas automáticamente")
-        archivos_stock = st.file_uploader("Sube stocks", type=['xlsx', 'xls'], accept_multiple_files=True, key="stock_upload")
+        archivos_stock = st.file_uploader("Sube stocks", type=['xlsx', 'xls', 'csv'], accept_multiple_files=True, key="stock_upload")
         if archivos_stock:
             st.session_state.stocks = []
             for archivo in archivos_stock:
