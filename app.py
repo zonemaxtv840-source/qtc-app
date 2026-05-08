@@ -44,8 +44,8 @@ st.markdown("""
 .main .block-container { background-color: transparent !important; }
 
 /* Tipografía */
-h1, h2, h3, h4, h5, h6 { color: #F0F4F8 !important; font-family: 'Segoe UI', sans-serif; }
-p, div, span, label, .stMarkdown { color: #FCF5E5 !important; }
+h1, h2, h3, h4, h5, h6 { color: #0A0A0A !important; font-family: 'Segoe UI', sans-serif; }
+p, div, span, label, .stMarkdown { color: #0A0A0A !important; }
 
 /* Sidebar premium */
 [data-testid="stSidebar"] { background: linear-gradient(180deg, #0D3B0F 50%, #1B5E20 100%) !important; }
