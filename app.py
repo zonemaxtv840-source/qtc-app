@@ -148,6 +148,13 @@ div[data-baseweb="select"] li[aria-selected="true"] { background: linear-gradien
 .stock-rojo { color: #C62828; font-weight: bold; background-color: #FFCDD2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 </style>
 """, unsafe_allow_html=True)
+/* Hacer visible el botón de expansión del sidebar */
+button[kind="header"] {
+    background-color: #1565C0 !important;
+    color: white !important;
+    border-radius: 20px !important;
+    margin: 5px !important;
+}
 # ============================================
 # LOGIN PREMIUM (CORREGIDO - SIN CAMPOS DUPLICADOS)
 # ============================================
