@@ -422,15 +422,23 @@ def cargar_catalogo(archivo):
                 except:
                     df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', sep=';', on_bad_lines='skip')
             
-            df = limpiar_cabeceras(df)
-            hoja_seleccionada = "CSV"
-        else:
-            xls = pd.ExcelFile(archivo)
-            hojas = xls.sheet_names
-            hoja_seleccionada = st.sidebar.selectbox(f"📗 Hoja {archivo.name}:", hojas, key=f"cat_{archivo.name}")
-            df = pd.read_excel(archivo, sheet_name=hoja_seleccionada)
-            df = limpiar_cabeceras(df)
-        
+            def limpiar_cabeceras(df):
+    # Buscar la fila que contiene "SKU" en cualquier columna
+    for i in range(min(50, len(df))):
+        # Recorrer cada celda de la fila
+        for celda in df.iloc[i].values:
+            if celda is not None and pd.notna(celda):
+                celda_str = str(celda).upper().strip()
+                if 'SKU' in celda_str:
+                    nuevas_columnas = []
+                    for col_val in df.iloc[i].values:
+                        if col_val is not None and pd.notna(col_val) and str(col_val).strip() != '':
+                            nuevas_columnas.append(str(col_val).strip())
+                        else:
+                            nuevas_columnas.append(f"Col_{len(nuevas_columnas)}")
+                    df.columns = nuevas_columnas
+                    return df.iloc[i+1:].reset_index(drop=True)
+    return df
         posibles_skus = ['SKU', 'COD', 'CODIGO', 'SAP', 'NUMERO', 'ARTICULO', 'COD SAP']
         posibles_desc = ['DESC', 'DESCRIPCION', 'NOMBRE', 'PRODUCTO', 'NOMBRE PRODUCTO']
         
