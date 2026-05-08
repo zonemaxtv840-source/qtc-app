@@ -197,7 +197,7 @@ if not st.session_state.auth:
         
         # Tarjeta blanca
         st.markdown("""
-        <div style="background: white; padding: 2rem; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: center; margin-top: 1rem;">
+        <div style="background: white; padding: 2rem; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); text-align: center; margin-top: 1rem;">
             <h1 style="color: #1B5E20; margin-bottom: 0.5rem;">QTC Smart Sales</h1>
             <p style="color: #2E7D32; margin-bottom: 1.5rem;">Sistema Profesional de Cotización</p>
         </div>
