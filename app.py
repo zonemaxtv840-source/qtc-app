@@ -664,49 +664,92 @@ with tab_cotizacion:
             # AJUSTE DE CANTIDADES
             # ============================================
             st.markdown("---")
-            st.markdown("### ✏️ Ajustar cantidades")
+                        st.markdown("### ✏️ Ajustar cantidades")
+            st.caption("💡 Modifica las cantidades directamente en la tabla - Haz clic en la celda 'A Cotizar'")
             
-            resultados_editados = []
-            for i, item in enumerate(st.session_state.resultados):
-                with st.container():
-                    col1, col2, col3, col4 = st.columns([2, 1.5, 1, 2])
-                    with col1:
-                        st.markdown(f"**📦 {item['SKU']}**")
-                        st.caption(item['Descripción'][:60])
-                    with col2:
-                        st.markdown(f"💰 Precio: {f'S/. {item["Precio"]:,.2f}' if item['Precio'] > 0 else 'Sin precio'}")
-                        st.markdown(f"📦 Stock: {item['Stock']}")
-                        if st.session_state.tipo_cotizacion == "XIAOMI":
-                            if item['Stock_APRI004'] > 0:
-                                st.markdown(f"   └─ APRI.004: {item['Stock_APRI004']}")
-                            if item['Stock_YESSICA'] > 0:
-                                st.markdown(f"   └─ YESSICA: {item['Stock_YESSICA']}")
-                    with col3:
-                        if item['Precio'] > 0:
-                            nueva_cant = st.number_input(
-                                "Cantidad",
-                                min_value=0,
-                                max_value=max(item['Stock'], 9999) if item['Stock'] > 0 else 9999,
-                                value=item['A Cotizar'],
-                                key=f"cant_{i}",
-                                label_visibility="collapsed"
-                            )
-                        else:
-                            nueva_cant = 0
-                            st.markdown("**No cotizable**")
-                    with col4:
-                        if item['Precio'] > 0:
-                            nuevo_total = item['Precio'] * nueva_cant
-                            st.markdown(f"**💰 Total: S/. {nuevo_total:,.2f}**")
-                            st.markdown(f"<span class='{item['Badge']}'>{item['Estado']}</span>", unsafe_allow_html=True)
-                            item['A Cotizar'] = nueva_cant
-                            item['Total'] = nuevo_total
-                        else:
-                            st.markdown(f"<span class='{item['Badge']}'>{item['Estado']}</span>", unsafe_allow_html=True)
-                            item['A Cotizar'] = 0
-                            item['Total'] = 0
-                    resultados_editados.append(item)
-                    st.divider()
+            # Preparar datos para el data_editor
+            df_ajuste = pd.DataFrame(st.session_state.resultados)
+            
+            # Crear columna de origen simplificada
+            def crear_texto_origen(row):
+                if st.session_state.tipo_cotizacion == "XIAOMI":
+                    if row.get('Stock_APRI004', 0) > 0 and row.get('Stock_YESSICA', 0) > 0:
+                        return f"🟣 APRI:{row['Stock_APRI004']} 🔵 YES:{row['Stock_YESSICA']}"
+                    elif row.get('Stock_APRI004', 0) > 0:
+                        return f"🟣 APRI.004: {row['Stock_APRI004']}"
+                    elif row.get('Stock_YESSICA', 0) > 0:
+                        return f"🔵 YESSICA: {row['Stock_YESSICA']}"
+                    else:
+                        return "❌ Sin stock"
+                else:
+                    return f"📦 Stock: {row['Stock']}" if row['Stock'] > 0 else "❌ Sin stock"
+            
+            df_ajuste['Origen'] = df_ajuste.apply(crear_texto_origen, axis=1)
+            
+            # Seleccionar columnas para el editor
+            df_editor = df_ajuste[[
+                'SKU', 'Descripción', 'Precio', 'Stock', 'Origen', 'Solicitado', 'A Cotizar', 'Total'
+            ]].copy()
+            
+            # Formatear valores
+            df_editor['Precio'] = df_editor['Precio'].apply(lambda x: f"S/. {x:,.2f}" if x > 0 else "Sin precio")
+            df_editor['Total'] = df_editor['Total'].apply(lambda x: f"S/. {x:,.2f}")
+            
+            # Configurar columnas
+            column_config = {
+                "SKU": st.column_config.TextColumn("SKU", width="small", disabled=True),
+                "Descripción": st.column_config.TextColumn("Descripción", width="large", disabled=True),
+                "Precio": st.column_config.TextColumn("Precio", width="small", disabled=True),
+                "Stock": st.column_config.NumberColumn("Stock", width="small", disabled=True),
+                "Origen": st.column_config.TextColumn("Origen", width="medium", disabled=True),
+                "Solicitado": st.column_config.NumberColumn("Sol.", width="small", disabled=True),
+                "A Cotizar": st.column_config.NumberColumn(
+                    "A Cotizar",
+                    width="small",
+                    min_value=0,
+                    step=1,
+                    required=True
+                ),
+                "Total": st.column_config.TextColumn("Total", width="small", disabled=True),
+            }
+            
+            # Mostrar data_editor editable
+            edited_df = st.data_editor(
+                df_editor,
+                column_config=column_config,
+                use_container_width=True,
+                hide_index=True,
+                key="ajuste_cantidades_editor"
+            )
+            
+            # Actualizar los valores editados en los resultados originales
+            for idx, row in edited_df.iterrows():
+                if idx < len(st.session_state.resultados):
+                    nueva_cant = row['A Cotizar']
+                    st.session_state.resultados[idx]['A Cotizar'] = nueva_cant
+                    if st.session_state.resultados[idx]['Precio'] > 0:
+                        st.session_state.resultados[idx]['Total'] = st.session_state.resultados[idx]['Precio'] * nueva_cant
+                    else:
+                        st.session_state.resultados[idx]['Total'] = 0
+            
+            resultados_editados = st.session_state.resultados.copy()
+            
+            # Mostrar leyenda de orígenes
+            st.markdown("---")
+            st.markdown("### 📌 Leyenda de Orígenes")
+            col_leg1, col_leg2, col_leg3, col_leg4 = st.columns(4)
+            with col_leg1:
+                st.markdown('<span style="background:#E1BEE7; padding:4px 12px; border-radius:20px;">🟣 APRI.004</span>', unsafe_allow_html=True)
+                st.caption("Stock APRI.004")
+            with col_leg2:
+                st.markdown('<span style="background:#BBDEFB; padding:4px 12px; border-radius:20px;">🔵 YESSICA</span>', unsafe_allow_html=True)
+                st.caption("Stock YESSICA")
+            with col_leg3:
+                st.markdown('<span style="background:#C8E6C9; padding:4px 12px; border-radius:20px;">🟣 AMBOS</span>', unsafe_allow_html=True)
+                st.caption("Stock en ambos orígenes")
+            with col_leg4:
+                st.markdown('<span style="background:#C8E6C9; padding:4px 12px; border-radius:20px;">🟢 GENERAL</span>', unsafe_allow_html=True)
+                st.caption("Modo GENERAL")
             
             # ============================================
             # REPORTE DE PRODUCTOS CON ISSUES
