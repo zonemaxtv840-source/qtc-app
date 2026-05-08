@@ -30,12 +30,27 @@ p, div, span, label, .stMarkdown { color: #1A1A2E !important; }
 [data-testid="stSidebar"] { background: linear-gradient(180deg, #0D47A1 0%, #1565C0 100%) !important; }
 [data-testid="stSidebar"] * { color: #FFFFFF !important; }
 
-/* Botón de expansión del sidebar visible */
-button[kind="header"] {
+/* Botón de expansión del sidebar - visible */
+button[data-testid="baseButton-header"] {
     background-color: #1565C0 !important;
+    color: white !important;
+    border-radius: 8px !important;
+    margin: 5px !important;
+    padding: 5px 10px !important;
+}
+button[data-testid="baseButton-header"]:hover {
+    background-color: #0D47A1 !important;
+    transform: scale(1.05);
+}
+/* También el botón cuando está colapsado */
+button[kind="header"] {
+    background-color: #FF9800 !important;
     color: white !important;
     border-radius: 20px !important;
     margin: 5px !important;
+    padding: 5px 12px !important;
+    font-weight: bold !important;
+
 }
 
 /* Botones principales */
