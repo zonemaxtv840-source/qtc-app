@@ -526,11 +526,15 @@ with tab_cotizacion:
             else:
                 with st.spinner("🔍 Procesando..."):
                     resultados = []
-                    for pedido in pedidos:
+                                       for pedido in pedidos:
                         sku = pedido['sku']
                         cant = pedido['cantidad']
                         
                         precio_info = buscar_precio(st.session_state.catalogos, sku, col_precio)
+                        
+                        # 🔧 NUEVO: Si no tiene descripción, buscarla en stocks
+                        if not precio_info['descripcion'] or precio_info['descripcion'] == '':
+                            precio_info['descripcion'] = buscar_descripcion_en_stock(st.session_state.stocks, sku)
                         
                         if st.session_state.tipo_cotizacion == "XIAOMI":
                             stock_total, stock_detalle, stock_apri004, stock_yessica = buscar_stock_xiaomi(st.session_state.stocks, sku)
@@ -595,6 +599,7 @@ with tab_cotizacion:
                             'Total': total,
                             'Estado': estado,
                             'Badge': badge
+                        })
                         })
                     
                     st.session_state.resultados = resultados
