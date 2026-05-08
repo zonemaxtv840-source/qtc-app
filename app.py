@@ -671,7 +671,6 @@ def buscar_stock_xiaomi(stocks, sku):
 def buscar_stock_general(stocks, sku):
     sku_limpio = sku.strip().upper()
     stock_total = 0
-    detalles = {}
     
     for stock in stocks:
         hoja = stock['hoja'].upper()
@@ -680,10 +679,10 @@ def buscar_stock_general(stocks, sku):
             if not stock['df'][mask].empty:
                 row = stock['df'][mask].iloc[0]
                 stock_total = int(corregir_numero(row[stock['col_stock']]))
-                detalles[stock['nombre']] = stock_total
                 break
     
-    return stock_total, detalles
+    # Retorna 3 valores pero los últimos dos son 0 (no aplican en modo GENERAL)
+    return stock_total, 0, 0
 
 def buscar_en_catalogos(catalogos, termino, stocks, col_precio_consulta=None, tipo_cotizacion="XIAOMI"):
     resultados_dict = {}
