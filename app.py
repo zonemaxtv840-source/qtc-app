@@ -233,6 +233,28 @@ def buscar_precio(catalogos, sku, col_precio_seleccionada):
             }
     return {'encontrado': False, 'precio': 0, 'descripcion': ''}
 
+# =================================================================================
+# NUEVA FUNCIÓN: BUSCAR DESCRIPCIÓN EN STOCKS (para SKUs sin precio)
+# =================================================================================
+def buscar_descripcion_en_stock(stocks, sku):
+    """Busca la descripción de un SKU en los archivos de stock cuando no está en catálogo"""
+    sku_limpio = sku.strip().upper()
+    for stock in stocks:
+        df = stock['df']
+        col_sku = stock['col_sku']
+        # Buscar coincidencia exacta o parcial
+        mask = df[col_sku].astype(str).str.contains(sku_limpio, case=False, na=False)
+        if not df[mask].empty:
+            row = df[mask].iloc[0]
+            # Buscar columna de descripción
+            for col in df.columns:
+                if any(p in str(col).upper() for p in ['DESC', 'NOMBRE', 'PRODUCTO', 'DESCRIPCION']):
+                    desc = str(row[col])
+                    if desc and desc != 'nan':
+                        return desc[:100]
+            return f"SKU: {sku}"
+    return f"SKU: {sku}"
+
 def buscar_stock_xiaomi(stocks, sku):
     """Busca stock en APRI.004 y YESSICA SEPARADO simultáneamente"""
     sku_limpio = sku.strip().upper()
@@ -526,7 +548,7 @@ with tab_cotizacion:
             else:
                 with st.spinner("🔍 Procesando..."):
                     resultados = []
-                                       for pedido in pedidos:
+                    for pedido in pedidos:
                         sku = pedido['sku']
                         cant = pedido['cantidad']
                         
@@ -600,7 +622,6 @@ with tab_cotizacion:
                             'Estado': estado,
                             'Badge': badge
                         })
-                        })
                     
                     st.session_state.resultados = resultados
         
@@ -621,7 +642,7 @@ with tab_cotizacion:
             html += '<th style="padding: 10px; text-align: center;">A Cotizar</th>'
             html += '<th style="padding: 10px; text-align: center;">Total</th>'
             html += '<th style="padding: 10px; text-align: center;">Estado</th>'
-            html += '</tr></thead><tbody>'
+            html += '<table></thead><tbody>'
             
             for item in st.session_state.resultados:
                 precio_str = f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio"
@@ -640,7 +661,7 @@ with tab_cotizacion:
                 html += f'<td style="padding: 10px; text-align: center;"><span class="{item["Badge"]}">{item["Estado"]}</span></td>'
                 html += '</tr>'
             
-            html += '</tbody><tr></div>'
+            html += '</tbody></table></div>'
             st.markdown(html, unsafe_allow_html=True)
             
             # ============================================
@@ -735,7 +756,7 @@ with tab_cotizacion:
                 st.caption("Modo GENERAL")
             
             # ============================================
-            # REPORTE DE PRODUCTOS CON ISSUES (MANTIENE ESTILO ORIGINAL)
+            # REPORTE DE PRODUCTOS CON ISSUES
             # ============================================
             st.markdown("---")
             st.markdown("### ⚠️ Productos con Issues (No Cotizables)")
