@@ -382,22 +382,36 @@ def mapear_columna_precio(columnas, nombre_buscar):
             return col
     return None
 
-def cargar_catalogo(archivo):
-    try:
-        # Detectar si es CSV por el nombre o extensión
         if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
-            # Probar diferentes parámetros para leer CSV problemático
-            try:
-                df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8', on_bad_lines='skip', engine='python')
-            except:
+            
+            # Leer todo el archivo como líneas para encontrar la cabecera real
+            contenido_str = contenido.decode('utf-8', errors='ignore')
+            lineas = contenido_str.split('\n')
+            
+            # Buscar la línea que contiene "Columna1;PICK;BOX;NO.;MODEL MARK"
+            header_row_index = None
+            for i, linea in enumerate(lineas):
+                if 'Columna1;PICK;BOX;NO.;MODEL MARK' in linea or 'SKU' in linea:
+                    header_row_index = i
+                    break
+            
+            if header_row_index is not None:
+                # Reconstruir CSV desde la fila de cabecera
+                lineas_limpias = lineas[header_row_index:]
+                contenido_limpio = '\n'.join(lineas_limpias).encode('utf-8')
+                
                 try:
-                    df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', on_bad_lines='skip', engine='python')
+                    df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='utf-8', sep=';', on_bad_lines='skip')
                 except:
-                    try:
-                        df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8', sep=';', on_bad_lines='skip', engine='python')
-                    except:
-                        df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', sep=';', on_bad_lines='skip', engine='python')
+                    df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='latin-1', sep=';', on_bad_lines='skip')
+            else:
+                # Fallback normal
+                try:
+                    df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8', sep=';', on_bad_lines='skip')
+                except:
+                    df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', sep=';', on_bad_lines='skip')
+            
             df = limpiar_cabeceras(df)
             hoja_seleccionada = "CSV"
         else:
@@ -444,23 +458,33 @@ def cargar_catalogo(archivo):
         st.error(f"Error en {archivo.name}: {str(e)[:100]}")
         return None
 
-def cargar_stock_completo(archivo):
-    try:
-        todas_hojas = []
-        
-        # Detectar si es CSV
         if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
-            try:
-                df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8', on_bad_lines='skip', engine='python')
-            except:
+            
+            contenido_str = contenido.decode('utf-8', errors='ignore')
+            lineas = contenido_str.split('\n')
+            
+            # Buscar línea con SKU o similar
+            header_row_index = None
+            for i, linea in enumerate(lineas):
+                if 'SKU' in linea or 'COD' in linea or 'Columna1' in linea:
+                    header_row_index = i
+                    break
+            
+            if header_row_index is not None:
+                lineas_limpias = lineas[header_row_index:]
+                contenido_limpio = '\n'.join(lineas_limpias).encode('utf-8')
+                
                 try:
-                    df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', on_bad_lines='skip', engine='python')
+                    df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='utf-8', sep=';', on_bad_lines='skip')
                 except:
-                    try:
-                        df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8', sep=';', on_bad_lines='skip', engine='python')
-                    except:
-                        df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', sep=';', on_bad_lines='skip', engine='python')
+                    df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='latin-1', sep=';', on_bad_lines='skip')
+            else:
+                try:
+                    df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8', sep=';', on_bad_lines='skip')
+                except:
+                    df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', sep=';', on_bad_lines='skip')
+            
             df = limpiar_cabeceras(df)
             
             posibles_skus = ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO']
