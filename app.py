@@ -185,7 +185,7 @@ if not st.session_state.auth:
     </style>
     """, unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns([1, 4, 1])
     with col2:
         # Logo centrado
         col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
