@@ -663,7 +663,6 @@ with tab_cotizacion:
             # ============================================
             # AJUSTE DE CANTIDADES
             # ============================================
-            st.markdown("---")
                         st.markdown("### ✏️ Ajustar cantidades")
             st.caption("💡 Modifica las cantidades directamente en la tabla - Haz clic en la celda 'A Cotizar'")
             
@@ -750,7 +749,6 @@ with tab_cotizacion:
             with col_leg4:
                 st.markdown('<span style="background:#C8E6C9; padding:4px 12px; border-radius:20px;">🟢 GENERAL</span>', unsafe_allow_html=True)
                 st.caption("Modo GENERAL")
-            
             # ============================================
             # REPORTE DE PRODUCTOS CON ISSUES
             # ============================================
