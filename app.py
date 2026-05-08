@@ -5,14 +5,23 @@ from datetime import datetime
 from PIL import Image
 import numpy as np
 import warnings
+import plotly.express as px
+import plotly.graph_objects as go
+from streamlit_option_menu import option_menu
 warnings.filterwarnings('ignore')
 
+# ============================================
+# CONFIGURACIÓN DE PÁGINA
+# ============================================
 try:
     img_logo = Image.open("logo.png")
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon=img_logo, layout="wide")
 except:
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon="💼", layout="wide")
 
+# ============================================
+# ESTILOS CSS
+# ============================================
 st.markdown("""
 <style>
 .stApp { background-color: #F1F8E9 !important; }
@@ -40,6 +49,7 @@ div[data-baseweb="select"] li[aria-selected="true"] { background-color: #4CAF50 
 .badge-danger { background-color: #FFCDD2; color: #C62828; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .metric-card { background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.05); border: 1px solid #C8E6C9; }
 .metric-value { font-size: 2.2rem; font-weight: bold; color: #4CAF50 !important; }
+.dataframe-card { background: white; border-radius: 20px; padding: 1rem; box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
 .origin-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.65rem; font-weight: 600; margin-right: 5px; }
 .origin-apri004 { background-color: #E1BEE7; color: #4A148C; }
 .origin-yessica { background-color: #BBDEFB; color: #0D47A1; }
@@ -47,23 +57,35 @@ div[data-baseweb="select"] li[aria-selected="true"] { background-color: #4CAF50 
 </style>
 """, unsafe_allow_html=True)
 
-with st.sidebar:
-    try:
-        st.image("logo.png", use_container_width=True)
-    except:
-        st.markdown("## 💚 QTC Pro")
-    st.markdown("---")
-    if "cotizaciones" in st.session_state:
-        st.metric("📄 Cotizaciones", st.session_state.get("cotizaciones", 0))
-        st.metric("📦 Productos", st.session_state.get("total_prods", 0))
-    if "debug_mode" not in st.session_state:
-        st.session_state.debug_mode = False
-    st.session_state.debug_mode = st.checkbox("🔧 Modo Depuración", value=st.session_state.debug_mode)
+# ============================================
+# SISTEMA DE USUARIOS Y ROLES
+# ============================================
+USUARIOS = {
+    "admin": {"password": "admin2026", "rol": "admin", "nombre": "Administrador"},
+    "vendedor1": {"password": "ventas2026", "rol": "vendedor", "nombre": "Carlos Ventas"},
+    "vendedor2": {"password": "ventas2026", "rol": "vendedor", "nombre": "Maria Lopez"},
+    "invitado": {"password": "guest", "rol": "invitado", "nombre": "Usuario Invitado"}
+}
 
-if "auth" not in st.session_state:
-    st.session_state.auth = False
+def verificar_usuario(usuario, password):
+    if usuario in USUARIOS and USUARIOS[usuario]["password"] == password:
+        return USUARIOS[usuario]
+    return None
 
-if not st.session_state.auth:
+def init_user_session():
+    if "usuario_actual" not in st.session_state:
+        st.session_state.usuario_actual = None
+    if "historial_cotizaciones" not in st.session_state:
+        st.session_state.historial_cotizaciones = []
+    if "rol_actual" not in st.session_state:
+        st.session_state.rol_actual = None
+
+init_user_session()
+
+# ============================================
+# LOGIN CON ROLES
+# ============================================
+if st.session_state.usuario_actual is None:
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
         try:
@@ -76,16 +98,28 @@ if not st.session_state.auth:
             <p style="text-align: center;">Sistema Profesional de Cotización</p>
         </div>
         """, unsafe_allow_html=True)
+        
         user = st.text_input("Usuario")
         pw = st.text_input("Contraseña", type="password")
-        if st.button("Ingresar", use_container_width=True):
-            if user == "admin" and pw == "qtc2026":
-                st.session_state.auth = True
-                st.rerun()
-            else:
-                st.error("Credenciales incorrectas")
+        
+        col_info, col_btn = st.columns([1,1])
+        with col_info:
+            st.caption("💡 Usuarios: admin / vendedor1 / vendedor2 / invitado")
+        with col_btn:
+            if st.button("Ingresar", use_container_width=True):
+                usuario_data = verificar_usuario(user, pw)
+                if usuario_data:
+                    st.session_state.usuario_actual = user
+                    st.session_state.rol_actual = usuario_data["rol"]
+                    st.session_state.nombre_usuario = usuario_data["nombre"]
+                    st.rerun()
+                else:
+                    st.error("Credenciales incorrectas")
     st.stop()
 
+# ============================================
+# FUNCIONES EXISTENTES (se mantienen igual)
+# ============================================
 def corregir_numero(valor):
     if pd.isna(valor) or str(valor).strip() in ["", "0", "0.0", "-"]:
         return 0.0
@@ -171,7 +205,6 @@ def cargar_catalogo(archivo):
         return None
 
 def cargar_stock_completo(archivo):
-    """Carga TODAS las hojas del archivo de stock"""
     try:
         xls = pd.ExcelFile(archivo)
         todas_hojas = []
@@ -234,7 +267,6 @@ def buscar_precio(catalogos, sku, col_precio_seleccionada):
     return {'encontrado': False, 'precio': 0, 'descripcion': ''}
 
 def buscar_stock_xiaomi(stocks, sku):
-    """Busca stock en APRI.004 y YESSICA SEPARADO simultáneamente"""
     sku_limpio = sku.strip().upper()
     stock_total = 0
     stock_apri004 = 0
@@ -258,7 +290,6 @@ def buscar_stock_xiaomi(stocks, sku):
                 origen_yessica = stock['nombre']
     
     stock_total = stock_apri004 + stock_yessica
-    
     detalles = {}
     if stock_apri004 > 0:
         detalles[origen_apri004] = stock_apri004
@@ -268,7 +299,6 @@ def buscar_stock_xiaomi(stocks, sku):
     return stock_total, detalles, stock_apri004, stock_yessica
 
 def buscar_stock_general(stocks, sku):
-    """Busca stock en APRI.001"""
     sku_limpio = sku.strip().upper()
     stock_total = 0
     detalles = {}
@@ -333,10 +363,10 @@ def buscar_en_catalogos(catalogos, termino, stocks, col_precio_consulta=None, ti
     
     return list(resultados_dict.values())
 
-def generar_excel(items, cliente, ruc):
+def generar_excel(items, cliente, ruc, usuario):
     output = io.BytesIO()
     writer = pd.ExcelWriter(output, engine='xlsxwriter')
-    pd.DataFrame(items).to_excel(writer, sheet_name='Cotizacion', index=False, startrow=5)
+    pd.DataFrame(items).to_excel(writer, sheet_name='Cotizacion', index=False, startrow=7)
     
     workbook = writer.book
     ws = writer.sheets['Cotizacion']
@@ -352,62 +382,92 @@ def generar_excel(items, cliente, ruc):
     ws.set_column('D:D', 18)
     ws.set_column('E:E', 18)
     
-    ws.write('A1', 'FECHA:', fmt_bold)
-    ws.write('B1', datetime.now().strftime("%d/%m/%Y"))
-    ws.write('A2', 'CLIENTE:', fmt_bold)
-    ws.write('B2', cliente.upper())
-    ws.write('A3', 'RUC:', fmt_bold)
-    ws.write('B3', ruc)
+    ws.write('A1', 'EMPRESA:', fmt_bold)
+    ws.write('B1', 'QTC SMART SALES')
+    ws.write('A2', 'FECHA:', fmt_bold)
+    ws.write('B2', datetime.now().strftime("%d/%m/%Y %H:%M"))
+    ws.write('A3', 'VENDEDOR:', fmt_bold)
+    ws.write('B3', usuario)
+    ws.write('A4', 'CLIENTE:', fmt_bold)
+    ws.write('B4', cliente.upper())
+    ws.write('A5', 'RUC:', fmt_bold)
+    ws.write('B5', ruc)
     
     ws.merge_range('F1:H1', 'DATOS BANCARIOS', fmt_header)
     ws.write('F2', 'BBVA SOLES:', workbook.add_format({'font_color': 'red', 'bold': True, 'border': 1}))
     ws.write('G2', '0011-0616-0100012617', fmt_border)
+    ws.write('F3', 'INTERBANK:', workbook.add_format({'font_color': 'red', 'bold': True, 'border': 1}))
+    ws.write('G3', '898-1234567890', fmt_border)
     
     headers = ['Código SAP', 'Descripción', 'Cantidad', 'Precio Unit.', 'Total']
     for i, header in enumerate(headers):
-        ws.write(5, i, header, fmt_header)
+        ws.write(7, i, header, fmt_header)
     
     for row_idx, item in enumerate(items):
-        ws.write_row(row_idx + 6, 0, [item['sku'], item['desc'], item['cant'], item['p_u'], item['total']], fmt_border)
-        ws.write(row_idx + 6, 3, item['p_u'], fmt_money)
-        ws.write(row_idx + 6, 4, item['total'], fmt_money)
+        ws.write_row(row_idx + 8, 0, [item['sku'], item['desc'], item['cant'], item['p_u'], item['total']], fmt_border)
+        ws.write(row_idx + 8, 3, item['p_u'], fmt_money)
+        ws.write(row_idx + 8, 4, item['total'], fmt_money)
     
-    total_row = len(items) + 6
+    total_row = len(items) + 8
     ws.write(total_row, 3, 'TOTAL S/.', fmt_header)
     ws.write(total_row, 4, sum(item['total'] for item in items), fmt_money)
+    
+    # Agregar nota de pie
+    ws.write(total_row + 2, 0, '* Cotización generada automáticamente por QTC Smart Sales Pro', workbook.add_format({'italic': True}))
     
     writer.close()
     return output.getvalue()
 
 # ============================================
-# INTERFAZ PRINCIPAL
+# INTERFAZ PRINCIPAL CON ROLES
 # ============================================
-try:
-    col_logo, col_title = st.columns([1, 6])
-    with col_logo:
-        st.image("logo.png", width="70px")
-    with col_title:
-        st.title("QTC Smart Sales Pro")
-except:
+
+# Header con info de usuario
+col_logo, col_title, col_user = st.columns([1, 4, 2])
+with col_logo:
+    try:
+        st.image("logo.png", width=60)
+    except:
+        st.markdown("💚")
+with col_title:
     st.title("QTC Smart Sales Pro")
+with col_user:
+    rol_icon = "👑" if st.session_state.rol_actual == "admin" else "👤" if st.session_state.rol_actual == "vendedor" else "👋"
+    st.markdown(f"""
+    <div style="text-align: right; background: white; padding: 10px; border-radius: 12px;">
+        <strong>{rol_icon} {st.session_state.nombre_usuario}</strong><br>
+        <span style="font-size: 0.8rem;">Rol: {st.session_state.rol_actual.upper()}</span>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button("🚪 Cerrar Sesión", key="logout"):
+        st.session_state.usuario_actual = None
+        st.session_state.rol_actual = None
+        st.rerun()
 
 st.markdown("---")
 
-if 'tipo_cotizacion' not in st.session_state:
-    st.session_state.tipo_cotizacion = None
-
-if st.session_state.tipo_cotizacion is None:
-    st.markdown("### 🎯 ¿Qué vas a cotizar hoy?")
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🔋 XIAOMI", use_container_width=True):
-            st.session_state.tipo_cotizacion = "XIAOMI"
-            st.rerun()
-    with col2:
-        if st.button("💼 GENERAL", use_container_width=True):
-            st.session_state.tipo_cotizacion = "GENERAL"
-            st.rerun()
-    st.stop()
+# Selección de modo de cotización (solo admin puede cambiar?)
+if st.session_state.rol_actual == "admin":
+    if 'tipo_cotizacion' not in st.session_state:
+        st.session_state.tipo_cotizacion = None
+    
+    if st.session_state.tipo_cotizacion is None:
+        st.markdown("### 🎯 ¿Qué vas a cotizar hoy?")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🔋 XIAOMI", use_container_width=True):
+                st.session_state.tipo_cotizacion = "XIAOMI"
+                st.rerun()
+        with col2:
+            if st.button("💼 GENERAL", use_container_width=True):
+                st.session_state.tipo_cotizacion = "GENERAL"
+                st.rerun()
+        st.stop()
+else:
+    # Para vendedores e invitados, usar el modo por defecto (XIAOMI)
+    if 'tipo_cotizacion' not in st.session_state:
+        st.session_state.tipo_cotizacion = "XIAOMI"
 
 if st.session_state.tipo_cotizacion == "XIAOMI":
     st.success("🔋 **Modo XIAOMI** - Buscará stock en: **APRI.004** y **YESSICA SEPARADO** (suma ambas)")
@@ -416,6 +476,7 @@ else:
 
 st.markdown("---")
 
+# Inicializar session state
 if 'catalogos' not in st.session_state:
     st.session_state.catalogos = []
 if 'stocks' not in st.session_state:
@@ -428,9 +489,17 @@ if 'total_prods' not in st.session_state:
     st.session_state.total_prods = 0
 if 'productos_seleccionados' not in st.session_state:
     st.session_state.productos_seleccionados = {}
+if 'historial_cotizaciones' not in st.session_state:
+    st.session_state.historial_cotizaciones = []
+if 'dashboard_data' not in st.session_state:
+    st.session_state.dashboard_data = []
 
-tab_cotizacion, tab_buscar, tab_dashboard = st.tabs(["📦 Cotización", "🔍 Buscar Productos", "📊 Dashboard"])
+# Crear tabs
+tab_cotizacion, tab_buscar, tab_dashboard, tab_usuarios = st.tabs(["📦 Cotización", "🔍 Buscar Productos", "📊 Dashboard", "👥 Usuarios"])
 
+# ============================================
+# TAB COTIZACIÓN
+# ============================================
 with tab_cotizacion:
     with st.sidebar:
         st.markdown("### 📂 Archivos")
@@ -493,7 +562,7 @@ with tab_cotizacion:
         
         texto_skus = st.text_area("", height=150, value=texto_defecto, placeholder="RN0200046BK8:5\nCN0900009WH8:2")
         
-        # Procesar pedidos eliminando duplicados (sumando cantidades)
+        # Procesar pedidos eliminando duplicados
         pedidos_dict = {}
         if texto_skus:
             for line in texto_skus.split('\n'):
@@ -504,10 +573,11 @@ with tab_cotizacion:
                         try:
                             sku = parts[0].strip().upper()
                             cantidad = int(parts[1].strip())
-                            if sku in pedidos_dict:
-                                pedidos_dict[sku] += cantidad
-                            else:
-                                pedidos_dict[sku] = cantidad
+                            if cantidad > 0:
+                                if sku in pedidos_dict:
+                                    pedidos_dict[sku] += cantidad
+                                else:
+                                    pedidos_dict[sku] = cantidad
                         except:
                             pass
                 elif line:
@@ -581,8 +651,7 @@ with tab_cotizacion:
                         
                         resultados.append({
                             'SKU': sku,
-                            'Tipo': f"{icono} {st.session_state.tipo_cotizacion}",
-                            'Descripción': precio_info['descripcion'][:80] if precio_info['descripcion'] else f"SKU: {sku}",
+                            'Descripción': precio_info['descripcion'][:100] if precio_info['descripcion'] else f"SKU: {sku}",
                             'Precio': precio_info['precio'],
                             'Solicitado': cant,
                             'Stock': stock_total,
@@ -593,103 +662,104 @@ with tab_cotizacion:
                             'A Cotizar': a_cotizar,
                             'Total': total,
                             'Estado': estado,
-                            'Badge': badge
+                            'Badge': badge,
+                            'Tipo': st.session_state.tipo_cotizacion
                         })
                     
                     st.session_state.resultados = resultados
         
-        # MOSTRAR RESULTADOS CON EL MISMO ESTILO VISUAL ORIGINAL
+        # MOSTRAR RESULTADOS
         if st.session_state.resultados:
             st.markdown("---")
             st.markdown("### 📊 Resultados")
             
-            # Tabla HTML con el mismo estilo original (solo lectura - resultados)
-            html = '<div style="overflow-x: auto;"><table style="width:100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden;">'
-            html += '<thead><tr style="background-color: #4CAF50; color: white;">'
-            html += '<th style="padding: 10px; text-align: left;">SKU</th>'
-            html += '<th style="padding: 10px; text-align: left;">Descripción</th>'
-            html += '<th style="padding: 10px; text-align: center;">Precio</th>'
-            html += '<th style="padding: 10px; text-align: center;">Sol.</th>'
-            html += '<th style="padding: 10px; text-align: center;">Stock</th>'
-            html += '<th style="padding: 10px; text-align: left;">Origen</th>'
-            html += '<th style="padding: 10px; text-align: center;">A Cotizar</th>'
-            html += '<th style="padding: 10px; text-align: center;">Total</th>'
-            html += '<th style="padding: 10px; text-align: center;">Estado</th>'
-            html += '</tr></thead><tbody>'
+            # Tabla con formato profesional usando dataframe
+            df_resultados = pd.DataFrame(st.session_state.resultados)
+            df_display = df_resultados[['SKU', 'Descripción', 'Precio', 'Solicitado', 'Stock', 'A Cotizar', 'Total', 'Estado']].copy()
+            df_display['Precio'] = df_display['Precio'].apply(lambda x: f"S/. {x:,.2f}" if x > 0 else "Sin precio")
+            df_display['Total'] = df_display['Total'].apply(lambda x: f"S/. {x:,.2f}")
             
-            for item in st.session_state.resultados:
-                precio_str = f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio"
-                total_str = f"S/. {item['Total']:,.2f}"
-                origen_html = f'<span class="origin-badge {item["Origen_Clase"]}">{item["Origen_Texto"]}</span>' if item["Origen_Clase"] else item["Origen_Texto"]
-                
-                html += f'<tr style="border-bottom: 1px solid #E8F5E9;">'
-                html += f'<td style="padding: 10px; font-family: monospace;">{item["SKU"]}</td>'
-                html += f'<td style="padding: 10px; max-width: 300px;">{item["Descripción"][:60]}</td>'
-                html += f'<td style="padding: 10px; text-align: center;">{precio_str}</td>'
-                html += f'<td style="padding: 10px; text-align: center;">{item["Solicitado"]}</td>'
-                html += f'<td style="padding: 10px; text-align: center;">{item["Stock"]}</td>'
-                html += f'<td style="padding: 10px;">{origen_html}</td>'
-                html += f'<td style="padding: 10px; text-align: center;"><strong>{item["A Cotizar"]}</strong></td>'
-                html += f'<td style="padding: 10px; text-align: center;">{total_str}</td>'
-                html += f'<td style="padding: 10px; text-align: center;"><span class="{item["Badge"]}">{item["Estado"]}</span></td>'
-                html += '</tr>'
-            
-            html += '</tbody></table></div>'
-            st.markdown(html, unsafe_allow_html=True)
+            st.dataframe(df_display, use_container_width=True, hide_index=True)
             
             # ============================================
-            # SECCIÓN DE AJUSTE DE CANTIDADES
+            # TABLA DE AJUSTE DE CANTIDADES MEJORADA
             # ============================================
             st.markdown("---")
             st.markdown("### ✏️ Ajustar cantidades")
+            st.caption("💡 Modifica las cantidades usando los controles deslizantes")
             
             resultados_editados = []
+            
+            # Usar columnas para mejor visualización
             for i, item in enumerate(st.session_state.resultados):
                 with st.container():
-                    col1, col2, col3, col4 = st.columns([2, 1.5, 1, 2])
-                    with col1:
+                    cols = st.columns([2, 2, 1, 1, 1.5, 1.5])
+                    
+                    with cols[0]:
                         st.markdown(f"**📦 {item['SKU']}**")
-                        st.caption(item['Descripción'][:60])
-                    with col2:
-                        st.markdown(f"💰 Precio: {f'S/. {item["Precio"]:,.2f}' if item['Precio'] > 0 else 'Sin precio'}")
-                        st.markdown(f"📦 Stock: {item['Stock']}")
+                        st.caption(item['Descripción'][:50])
+                    
+                    with cols[1]:
+                        st.markdown(f"💰 **S/. {item['Precio']:,.2f}**" if item['Precio'] > 0 else "💰 **Sin precio**")
+                        st.caption(f"📦 Stock: {item['Stock']} unidades")
                         if st.session_state.tipo_cotizacion == "XIAOMI":
-                            if item['Stock_APRI004'] > 0:
-                                st.markdown(f"   └─ APRI.004: {item['Stock_APRI004']}")
-                            if item['Stock_YESSICA'] > 0:
-                                st.markdown(f"   └─ YESSICA: {item['Stock_YESSICA']}")
-                    with col3:
-                        if item['Precio'] > 0:
-                            nueva_cant = st.number_input(
+                            if item.get('Stock_APRI004', 0) > 0:
+                                st.caption(f"└─ APRI.004: {item['Stock_APRI004']}")
+                            if item.get('Stock_YESSICA', 0) > 0:
+                                st.caption(f"└─ YESSICA: {item['Stock_YESSICA']}")
+                    
+                    with cols[2]:
+                        st.markdown(f"**Solicitado:** {item['Solicitado']}")
+                    
+                    with cols[3]:
+                        if item['Precio'] > 0 and item['Stock'] > 0:
+                            max_cant = max(item['Stock'], item['Solicitado'])
+                            nueva_cant = st.slider(
                                 "Cantidad",
                                 min_value=0,
-                                max_value=max(item['Stock'], 9999) if item['Stock'] > 0 else 9999,
-                                value=item['A Cotizar'],
-                                key=f"cant_{i}_{item['SKU']}",
-                                label_visibility="collapsed"
+                                max_value=max_cant,
+                                value=min(item['A Cotizar'], max_cant),
+                                key=f"slider_{i}_{item['SKU']}",
+                                label_visibility="collapsed",
+                                step=1
                             )
                         else:
                             nueva_cant = 0
-                            st.markdown("**No cotizable**")
-                    with col4:
-                        if item['Precio'] > 0:
+                            st.markdown("❌ **No cotizable**")
+                    
+                    with cols[4]:
+                        if item['Precio'] > 0 and nueva_cant > 0:
                             nuevo_total = item['Precio'] * nueva_cant
-                            st.markdown(f"**💰 Total: S/. {nuevo_total:,.2f}**")
-                            st.markdown(f"<span class='{item['Badge']}'>{item['Estado']}</span>", unsafe_allow_html=True)
-                            item['A Cotizar'] = nueva_cant
-                            item['Total'] = nuevo_total
+                            st.markdown(f"**💰 Total:**")
+                            st.markdown(f"**S/. {nuevo_total:,.2f}**")
                         else:
-                            st.markdown(f"<span class='{item['Badge']}'>{item['Estado']}</span>", unsafe_allow_html=True)
-                            item['A Cotizar'] = 0
-                            item['Total'] = 0
-                    resultados_editados.append(item)
+                            nuevo_total = 0
+                            st.markdown("**Total:**")
+                            st.markdown("**S/. 0.00**")
+                    
+                    with cols[5]:
+                        if nueva_cant > 0 and item['Precio'] > 0:
+                            st.markdown(f'<span class="badge-ok">✅ Cotizable</span>', unsafe_allow_html=True)
+                        elif item['Precio'] == 0:
+                            st.markdown(f'<span class="badge-warning">⚠️ Sin precio</span>', unsafe_allow_html=True)
+                        elif item['Stock'] == 0:
+                            st.markdown(f'<span class="badge-warning">⚠️ Sin stock</span>', unsafe_allow_html=True)
+                        else:
+                            st.markdown(f'<span class="badge-danger">❌ Error</span>', unsafe_allow_html=True)
+                    
+                    # Guardar valores editados
+                    item_editado = item.copy()
+                    item_editado['A Cotizar'] = nueva_cant
+                    item_editado['Total'] = nuevo_total
+                    resultados_editados.append(item_editado)
+                    
                     st.divider()
             
             # ============================================
             # REPORTE DE PRODUCTOS CON ISSUES
             # ============================================
             st.markdown("---")
-            st.markdown("### ⚠️ Productos con Issues")
+            st.markdown("### ⚠️ Productos con Issues (No Cotizables)")
             
             items_con_issues = [r for r in resultados_editados if r['A Cotizar'] == 0 or r['Precio'] == 0]
             items_validos = [r for r in resultados_editados if r['A Cotizar'] > 0 and r['Precio'] > 0]
@@ -707,16 +777,9 @@ with tab_cotizacion:
                 st.metric("📦 Total SKUs", len(resultados_editados))
             
             if items_con_issues:
-                st.markdown("#### 📋 Productos no cotizables:")
                 for item in items_con_issues:
-                    motivo = ""
-                    if item['Precio'] == 0:
-                        motivo = "💰 Sin precio en catálogo"
-                    elif item['Stock'] == 0:
-                        motivo = "📦 Sin stock disponible"
-                    else:
-                        motivo = "❓ Error"
-                    st.markdown(f"- **{item['SKU']}** - {item['Descripción'][:50]} → `{motivo}`")
+                    motivo = "💰 Sin precio" if item['Precio'] == 0 else "📦 Sin stock" if item['Stock'] == 0 else "❓ Error"
+                    st.warning(f"**{item['SKU']}** - {item['Descripción'][:50]} → `{motivo}`")
             
             # ============================================
             # GENERAR COTIZACIÓN
@@ -724,21 +787,59 @@ with tab_cotizacion:
             if items_validos:
                 st.markdown("---")
                 st.markdown("### 📥 Generar Cotización")
+                
                 col_cli1, col_cli2 = st.columns(2)
                 with col_cli1:
-                    cliente = st.text_input("🏢 Cliente", "CLIENTE NUEVO", key="cliente_nombre")
+                    cliente = st.text_input("🏢 Cliente / Razón Social", value="CLIENTE NUEVO", key="cliente_nombre")
                 with col_cli2:
-                    ruc_cliente = st.text_input("📋 RUC/DNI", "-", key="cliente_ruc")
+                    ruc_cliente = st.text_input("📋 RUC / DNI", value="-", key="cliente_ruc")
                 
                 if st.button("📥 GENERAR EXCEL", use_container_width=True, type="primary"):
-                    items_excel = [{'sku': r['SKU'], 'desc': r['Descripción'], 'cant': r['A Cotizar'], 'p_u': r['Precio'], 'total': r['Total']} for r in items_validos]
-                    excel = generar_excel(items_excel, cliente, ruc_cliente)
-                    st.download_button("💾 DESCARGAR", data=excel, file_name=f"Cotizacion_{cliente}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx", use_container_width=True)
+                    items_excel = [
+                        {
+                            'sku': r['SKU'], 
+                            'desc': r['Descripción'], 
+                            'cant': r['A Cotizar'], 
+                            'p_u': r['Precio'], 
+                            'total': r['Total']
+                        } 
+                        for r in items_validos
+                    ]
+                    
+                    # Guardar en historial
+                    cotizacion_data = {
+                        'fecha': datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        'cliente': cliente,
+                        'usuario': st.session_state.nombre_usuario,
+                        'total': total_general,
+                        'productos': len(items_validos),
+                        'items': items_excel
+                    }
+                    st.session_state.historial_cotizaciones.append(cotizacion_data)
+                    st.session_state.dashboard_data.append(cotizacion_data)
+                    
+                    excel = generar_excel(items_excel, cliente, ruc_cliente, st.session_state.nombre_usuario)
+                    st.download_button(
+                        "💾 DESCARGAR EXCEL", 
+                        data=excel, 
+                        file_name=f"Cotizacion_{cliente}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx", 
+                        use_container_width=True,
+                        key="download_btn"
+                    )
                     st.session_state.cotizaciones += 1
                     st.session_state.total_prods = len(items_validos)
                     st.balloons()
-                    st.success("✅ Cotización generada")
+                    st.success("✅ Cotización generada exitosamente!")
+            
+            # Botón para limpiar
+            st.markdown("---")
+            if st.button("🗑️ LIMPIAR TODOS LOS RESULTADOS", use_container_width=True):
+                st.session_state.resultados = None
+                st.rerun()
 
+# ============================================
+# TAB BUSCAR
+# ============================================
 with tab_buscar:
     st.markdown("### 🔍 Buscar Productos")
     st.caption("💡 Busca por SKU o descripción - Muestra stock y precio en tiempo real")
@@ -774,34 +875,33 @@ with tab_buscar:
                 st.success(f"✅ {len(resultados)} resultados encontrados")
                 
                 for res in resultados:
-                    stock_icon = "🔴 Sin stock" if res['Stock_Total'] <= 0 else (f"🟠 Stock bajo: {res['Stock_Total']}" if res['Stock_Total'] < 10 else f"🟢 Stock disponible: {res['Stock_Total']}")
-                    
-                    stock_detalle = ""
-                    if st.session_state.tipo_cotizacion == "XIAOMI":
-                        if res.get('Stock_APRI004', 0) > 0:
-                            stock_detalle += f'<span class="stock-badge" style="background:#E1BEE7;">📦 APRI.004: {res["Stock_APRI004"]}</span> '
-                        if res.get('Stock_YESSICA', 0) > 0:
-                            stock_detalle += f'<span class="stock-badge" style="background:#BBDEFB;">📋 YESSICA: {res["Stock_YESSICA"]}</span> '
-                    else:
-                        for origen, stock in res['Stock_Detalle'].items():
-                            if stock > 0:
-                                stock_detalle += f'<span class="stock-badge">📁 {origen}: {stock}</span> '
-                    
-                    st.markdown(f"""
-                    <div style="background: white; border-radius: 12px; padding: 1rem; margin: 0.5rem 0; border-left: 4px solid #4CAF50; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                        <div><span style="font-family: monospace; font-weight: bold; font-size: 1rem;">📦 {res['SKU']}</span><br><span style="font-size: 0.85rem; color: #555;">{res['Descripcion']}</span><br><span style="font-weight: bold; color: #4CAF50;">{f'S/. {res["Precio"]:,.2f}' if res["Precio"] else "💰 Sin precio"}</span></div>
-                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">{stock_icon}<br>{stock_detalle}<div style="font-size:0.7rem; color:#888; margin-top:5px;">📁 Catálogo: {res['Catalogo'][:50]}</div></div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    col1, col2 = st.columns([3, 1])
-                    with col1:
-                        st.markdown("**➕ Agregar a cotización**")
-                    with col2:
-                        cantidad = st.number_input("Cant", min_value=0, max_value=999, value=0, key=f"add_{res['SKU']}", label_visibility="collapsed")
-                        if cantidad > 0:
-                            st.session_state.productos_seleccionados[res['SKU']] = st.session_state.productos_seleccionados.get(res['SKU'], 0) + cantidad
-                    st.divider()
+                    with st.container():
+                        cols = st.columns([2, 2, 1, 1])
+                        with cols[0]:
+                            st.markdown(f"**📦 {res['SKU']}**")
+                            st.caption(res['Descripcion'][:60])
+                        with cols[1]:
+                            if res['Precio']:
+                                st.markdown(f"💰 **S/. {res['Precio']:,.2f}**")
+                            else:
+                                st.markdown("💰 **Sin precio**")
+                            st.caption(f"📦 Stock: {res['Stock_Total']}")
+                        with cols[2]:
+                            cantidad = st.number_input(
+                                "Cantidad", 
+                                min_value=0, 
+                                max_value=999, 
+                                value=0, 
+                                key=f"add_{res['SKU']}",
+                                label_visibility="collapsed"
+                            )
+                        with cols[3]:
+                            if cantidad > 0:
+                                if st.button(f"➕ Agregar", key=f"btn_{res['SKU']}"):
+                                    st.session_state.productos_seleccionados[res['SKU']] = st.session_state.productos_seleccionados.get(res['SKU'], 0) + cantidad
+                                    st.success(f"✅ {cantidad}x {res['SKU']} agregado")
+                                    st.rerun()
+                        st.divider()
             else:
                 st.warning("No se encontraron productos")
         
@@ -815,7 +915,7 @@ with tab_buscar:
                     stock_total, _, _, _ = buscar_stock_xiaomi(st.session_state.stocks, sku)
                 else:
                     stock_total, _ = buscar_stock_general(st.session_state.stocks, sku)
-                seleccionados_lista.append({'SKU': sku, 'Cantidad': cant, 'Stock disponible': stock_total, 'Estado': '⚠️ Stock insuficiente' if cant > stock_total else '✅ OK'})
+                seleccionados_lista.append({'SKU': sku, 'Cantidad': cant, 'Stock disponible': stock_total})
             
             st.dataframe(pd.DataFrame(seleccionados_lista), use_container_width=True)
             
@@ -831,37 +931,212 @@ with tab_buscar:
                     st.success(f"✅ {len(st.session_state.skus_transferidos)} productos transferidos!")
                     st.info("👉 Ve a la pestaña Cotización y haz clic en PROCESAR")
 
+# ============================================
+# TAB DASHBOARD CON GRÁFICOS
+# ============================================
 with tab_dashboard:
-    st.markdown("### 📊 Dashboard")
+    st.markdown("### 📊 Dashboard de Ventas")
     
-    col1, col2, col3 = st.columns(3)
-    col1.metric("📄 Cotizaciones", st.session_state.get('cotizaciones', 0))
-    col2.metric("🌿 Productos", st.session_state.get('total_prods', 0))
-    col3.metric("📚 Catálogos", len(st.session_state.get('catalogos', [])))
-    
-    st.markdown("---")
-    st.markdown("### 📋 Catálogos Cargados")
-    for cat in st.session_state.get('catalogos', []):
-        st.markdown(f"- {cat['nombre']}")
-    
-    st.markdown("---")
-    st.markdown("### 📋 Stocks Cargados (Todas las hojas)")
-    if st.session_state.get('stocks'):
-        for stock in st.session_state.stocks:
-            st.markdown(f"- {stock['nombre']}")
+    # Verificar permisos (solo admin y vendedores pueden ver dashboard)
+    if st.session_state.rol_actual == "invitado":
+        st.warning("🔒 Los invitados no tienen acceso al Dashboard. Contacta al administrador para más permisos.")
     else:
-        st.info("No hay stocks cargados")
-    
-    st.markdown("---")
-    st.markdown("### 🎯 Reglas actuales")
-    if st.session_state.tipo_cotizacion == "XIAOMI":
-        st.markdown("""
-        🔋 **Modo XIAOMI** → Stock en APRI.004 y YESSICA SEPARADO (suma ambas)
-        - 📦 **APRI.004**: Stock físico disponible
-        - 📋 **YESSICA**: Stock apartado (también disponible)
-        """)
+        # Métricas principales
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("📄 Cotizaciones", st.session_state.get('cotizaciones', 0))
+        with col2:
+            st.metric("🌿 Productos Vendidos", st.session_state.get('total_prods', 0))
+        with col3:
+            st.metric("📚 Catálogos", len(st.session_state.get('catalogos', [])))
+        with col4:
+            total_ventas = sum(c.get('total', 0) for c in st.session_state.dashboard_data)
+            st.metric("💰 Ventas Totales", f"S/. {total_ventas:,.2f}")
+        
+        st.markdown("---")
+        
+        # Gráfico 1: Ventas por día/mes
+        if st.session_state.dashboard_data:
+            df_historial = pd.DataFrame(st.session_state.dashboard_data)
+            df_historial['fecha_dt'] = pd.to_datetime(df_historial['fecha'])
+            df_historial['día'] = df_historial['fecha_dt'].dt.strftime('%Y-%m-%d')
+            
+            # Ventas por día
+            ventas_por_dia = df_historial.groupby('día')['total'].sum().reset_index()
+            
+            fig1 = px.bar(
+                ventas_por_dia, 
+                x='día', 
+                y='total',
+                title='💰 Ventas por Día',
+                labels={'día': 'Fecha', 'total': 'Total S/.'},
+                color_discrete_sequence=['#4CAF50']
+            )
+            fig1.update_layout(
+                plot_bgcolor='white',
+                paper_bgcolor='white',
+                title_font_color='#1B5E20',
+                font_color='#2E7D32'
+            )
+            st.plotly_chart(fig1, use_container_width=True)
+            
+            # Gráfico 2: Top productos más vendidos
+            st.markdown("---")
+            st.markdown("### 🏆 Top Productos Más Cotizados")
+            
+            productos_vendidos = []
+            for cotizacion in st.session_state.dashboard_data:
+                for item in cotizacion.get('items', []):
+                    productos_vendidos.append({
+                        'SKU': item['sku'],
+                        'Descripción': item['desc'][:50],
+                        'Cantidad': item['cant'],
+                        'Total': item['total']
+                    })
+            
+            if productos_vendidos:
+                df_productos = pd.DataFrame(productos_vendidos)
+                top_productos = df_productos.groupby('SKU').agg({
+                    'Cantidad': 'sum',
+                    'Total': 'sum',
+                    'Descripción': 'first'
+                }).reset_index().sort_values('Cantidad', ascending=False).head(10)
+                
+                fig2 = px.bar(
+                    top_productos,
+                    x='SKU',
+                    y='Cantidad',
+                    title='📦 Top 10 Productos Más Cotizados',
+                    labels={'SKU': 'Producto', 'Cantidad': 'Unidades'},
+                    color='Cantidad',
+                    color_continuous_scale='Greens'
+                )
+                fig2.update_layout(
+                    plot_bgcolor='white',
+                    paper_bgcolor='white',
+                    title_font_color='#1B5E20',
+                    font_color='#2E7D32'
+                )
+                st.plotly_chart(fig2, use_container_width=True)
+                
+                # Tabla de top productos
+                st.markdown("#### 📋 Detalle de Top Productos")
+                st.dataframe(top_productos[['SKU', 'Descripción', 'Cantidad', 'Total']], use_container_width=True)
+            else:
+                st.info("📊 Aún no hay datos de productos vendidos")
+            
+            # Gráfico 3: Ventas por usuario
+            st.markdown("---")
+            st.markdown("### 👥 Ventas por Vendedor")
+            
+            ventas_por_usuario = df_historial.groupby('usuario')['total'].sum().reset_index()
+            
+            fig3 = px.pie(
+                ventas_por_usuario,
+                values='total',
+                names='usuario',
+                title='💰 Distribución de Ventas por Vendedor',
+                color_discrete_sequence=px.colors.sequential.Greens_r,
+                hole=0.4
+            )
+            fig3.update_layout(
+                plot_bgcolor='white',
+                paper_bgcolor='white',
+                title_font_color='#1B5E20',
+                font_color='#2E7D32'
+            )
+            st.plotly_chart(fig3, use_container_width=True)
+            
+            # Historial de cotizaciones
+            st.markdown("---")
+            st.markdown("### 📜 Historial de Cotizaciones")
+            
+            df_historial_display = df_historial[['fecha', 'cliente', 'usuario', 'productos', 'total']].copy()
+            df_historial_display['total'] = df_historial_display['total'].apply(lambda x: f"S/. {x:,.2f}")
+            st.dataframe(df_historial_display, use_container_width=True, hide_index=True)
+            
+        else:
+            st.info("📊 Aún no hay cotizaciones generadas. Comienza creando tu primera cotización en la pestaña 'Cotización'")
+        
+        # Stock bajo (solo admin)
+        if st.session_state.rol_actual == "admin" and st.session_state.stocks:
+            st.markdown("---")
+            st.markdown("### ⚠️ Alertas de Stock Bajo")
+            
+            stock_bajo = []
+            for stock in st.session_state.stocks:
+                df = stock['df']
+                col_stock = stock['col_stock']
+                for idx, row in df.iterrows():
+                    try:
+                        cantidad = int(corregir_numero(row[col_stock]))
+                        if 0 < cantidad < 10:
+                            sku = str(row[stock['col_sku']])
+                            stock_bajo.append({
+                                'SKU': sku,
+                                'Stock': cantidad,
+                                'Origen': stock['nombre']
+                            })
+                    except:
+                        pass
+            
+            if stock_bajo:
+                df_bajo = pd.DataFrame(stock_bajo).drop_duplicates(subset=['SKU'])
+                st.warning(f"⚠️ {len(df_bajo)} productos con stock bajo (<10 unidades)")
+                st.dataframe(df_bajo, use_container_width=True)
+            else:
+                st.success("✅ No hay productos con stock bajo")
+
+# ============================================
+# TAB USUARIOS (solo visible para admin)
+# ============================================
+with tab_usuarios:
+    if st.session_state.rol_actual == "admin":
+        st.markdown("### 👥 Gestión de Usuarios")
+        st.caption("Administra los usuarios del sistema")
+        
+        # Mostrar usuarios existentes
+        st.markdown("#### 📋 Usuarios Registrados")
+        df_usuarios = pd.DataFrame([
+            {"Usuario": u, "Rol": USUARIOS[u]["rol"], "Nombre": USUARIOS[u]["nombre"]}
+            for u in USUARIOS.keys()
+        ])
+        st.dataframe(df_usuarios, use_container_width=True, hide_index=True)
+        
+        st.markdown("---")
+        st.markdown("#### ➕ Agregar Nuevo Usuario")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            nuevo_usuario = st.text_input("Usuario", key="new_user")
+        with col2:
+            nueva_password = st.text_input("Contraseña", type="password", key="new_pass")
+        with col3:
+            nuevo_rol = st.selectbox("Rol", ["vendedor", "invitado"], key="new_rol")
+        
+        if st.button("➕ Crear Usuario", use_container_width=True):
+            if nuevo_usuario and nueva_password:
+                if nuevo_usuario not in USUARIOS:
+                    USUARIOS[nuevo_usuario] = {
+                        "password": nueva_password,
+                        "rol": nuevo_rol,
+                        "nombre": nuevo_usuario.capitalize()
+                    }
+                    st.success(f"✅ Usuario {nuevo_usuario} creado exitosamente!")
+                    st.rerun()
+                else:
+                    st.error("❌ El usuario ya existe")
+            else:
+                st.warning("⚠️ Completa todos los campos")
+        
+        st.markdown("---")
+        st.markdown("#### 🔧 Información del Sistema")
+        st.caption(f"Versión: QTC Smart Sales Pro v3.0")
+        st.caption(f"Última sesión: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+        st.caption(f"Usuario actual: {st.session_state.nombre_usuario} ({st.session_state.rol_actual})")
     else:
-        st.markdown("💼 **Modo GENERAL** → Stock en APRI.001")
+        st.warning("🔒 Solo el Administrador puede acceder a esta sección")
+        st.info("Contacta con el administrador para gestionar usuarios")
 
 st.markdown("---")
 st.markdown("*💚 QTC Smart Sales Pro - Sistema Robusto de Cotización*")
