@@ -159,6 +159,31 @@ div[data-baseweb="select"] li[aria-selected="true"] { background: linear-gradien
 .stock-verde { color: #2E7D32; font-weight: bold; background-color: #C8E6C9; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 .stock-amarillo { color: #E65100; font-weight: bold; background-color: #FFE0B2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 .stock-rojo { color: #C62828; font-weight: bold; background-color: #FFCDD2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
+/* Forzar visibilidad del botón del sidebar */
+.stApp > header {
+    background-color: #0D47A1 !important;
+    z-index: 100 !important;
+}
+.stApp > header button {
+    background-color: #FF9800 !important;
+    color: white !important;
+    border-radius: 50% !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-left: 10px !important;
+}
+.stApp > header button:hover {
+    background-color: #E65100 !important;
+    transform: scale(1.1);
+}
+/* Icono del botón */
+.stApp > header button svg {
+    fill: white !important;
+    stroke: white !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
