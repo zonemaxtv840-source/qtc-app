@@ -40,10 +40,13 @@ div[data-baseweb="select"] li[aria-selected="true"] { background-color: #4CAF50 
 .badge-danger { background-color: #FFCDD2; color: #C62828; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .metric-card { background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.05); border: 1px solid #C8E6C9; }
 .metric-value { font-size: 2.2rem; font-weight: bold; color: #4CAF50 !important; }
-.origin-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.65rem; font-weight: 600; margin-right: 5px; }
-.origin-apri004 { background-color: #E1BEE7; color: #4A148C; }
-.origin-yessica { background-color: #BBDEFB; color: #0D47A1; }
-.origin-both { background-color: #C8E6C9; color: #1B5E20; }
+.origin-badge-apri004 { background-color: #E1BEE7; color: #4A148C; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
+.origin-badge-yessica { background-color: #BBDEFB; color: #0D47A1; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
+.origin-badge-both { background-color: #C8E6C9; color: #1B5E20; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
+.resultado-tabla { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; }
+.resultado-tabla th { background-color: #4CAF50; color: white; padding: 12px; text-align: left; font-weight: 600; }
+.resultado-tabla td { padding: 10px; border-bottom: 1px solid #E8F5E9; }
+.resultado-tabla tr:hover { background-color: #F1F8E9; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -171,7 +174,6 @@ def cargar_catalogo(archivo):
         return None
 
 def cargar_stock_completo(archivo):
-    """Carga TODAS las hojas del archivo de stock"""
     try:
         xls = pd.ExcelFile(archivo)
         todas_hojas = []
@@ -203,9 +205,10 @@ def buscar_precio(catalogos, sku, col_precio_seleccionada):
     sku_limpio = sku.strip().upper()
     for cat in catalogos:
         df = cat['df']
-        mask = df[cat['col_sku']].astype(str).str.strip().str.upper() == sku_limpio
-        if not df[mask].empty:
-            row = df[mask].iloc[0]
+        # Búsqueda exacta primero
+        mask_exacta = df[cat['col_sku']].astype(str).str.strip().str.upper() == sku_limpio
+        if not df[mask_exacta].empty:
+            row = df[mask_exacta].iloc[0]
             col_precio_real = cat['columnas_precio'].get(col_precio_seleccionada)
             if col_precio_real and col_precio_real in df.columns:
                 precio = corregir_numero(row[col_precio_real])
@@ -217,9 +220,10 @@ def buscar_precio(catalogos, sku, col_precio_seleccionada):
                 'precio': precio,
                 'descripcion': str(row[cat['col_desc']])
             }
-        mask = df[cat['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
-        if not df[mask].empty:
-            row = df[mask].iloc[0]
+        # Búsqueda parcial como fallback
+        mask_parcial = df[cat['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
+        if not df[mask_parcial].empty:
+            row = df[mask_parcial].iloc[0]
             col_precio_real = cat['columnas_precio'].get(col_precio_seleccionada)
             if col_precio_real and col_precio_real in df.columns:
                 precio = corregir_numero(row[col_precio_real])
@@ -233,20 +237,23 @@ def buscar_precio(catalogos, sku, col_precio_seleccionada):
             }
     return {'encontrado': False, 'precio': 0, 'descripcion': ''}
 
-# =================================================================================
-# NUEVA FUNCIÓN: BUSCAR DESCRIPCIÓN EN STOCKS (para SKUs sin precio)
-# =================================================================================
 def buscar_descripcion_en_stock(stocks, sku):
-    """Busca la descripción de un SKU en los archivos de stock cuando no está en catálogo"""
     sku_limpio = sku.strip().upper()
     for stock in stocks:
         df = stock['df']
         col_sku = stock['col_sku']
-        # Buscar coincidencia exacta o parcial
-        mask = df[col_sku].astype(str).str.contains(sku_limpio, case=False, na=False)
-        if not df[mask].empty:
-            row = df[mask].iloc[0]
-            # Buscar columna de descripción
+        mask_exacta = df[col_sku].astype(str).str.strip().str.upper() == sku_limpio
+        if not df[mask_exacta].empty:
+            row = df[mask_exacta].iloc[0]
+            for col in df.columns:
+                if any(p in str(col).upper() for p in ['DESC', 'NOMBRE', 'PRODUCTO', 'DESCRIPCION']):
+                    desc = str(row[col])
+                    if desc and desc != 'nan':
+                        return desc[:100]
+            return f"SKU: {sku}"
+        mask_parcial = df[col_sku].astype(str).str.contains(sku_limpio, case=False, na=False)
+        if not df[mask_parcial].empty:
+            row = df[mask_parcial].iloc[0]
             for col in df.columns:
                 if any(p in str(col).upper() for p in ['DESC', 'NOMBRE', 'PRODUCTO', 'DESCRIPCION']):
                     desc = str(row[col])
@@ -256,73 +263,84 @@ def buscar_descripcion_en_stock(stocks, sku):
     return f"SKU: {sku}"
 
 def buscar_stock_xiaomi(stocks, sku):
-    """Busca stock en APRI.004 y YESSICA SEPARADO simultáneamente"""
     sku_limpio = sku.strip().upper()
-    stock_total = 0
     stock_apri004 = 0
     stock_yessica = 0
-    origen_apri004 = ""
-    origen_yessica = ""
     
     for stock in stocks:
         hoja = stock['hoja'].upper()
-        if 'APRI.004' in hoja:
-            mask = stock['df'][stock['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
-            if not stock['df'][mask].empty:
-                row = stock['df'][mask].iloc[0]
-                stock_apri004 = int(corregir_numero(row[stock['col_stock']]))
-                origen_apri004 = stock['nombre']
-        elif 'YESSICA' in hoja:
-            mask = stock['df'][stock['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
-            if not stock['df'][mask].empty:
-                row = stock['df'][mask].iloc[0]
-                stock_yessica = int(corregir_numero(row[stock['col_stock']]))
-                origen_yessica = stock['nombre']
+        df = stock['df']
+        col_sku = stock['col_sku']
+        col_stock = stock['col_stock']
+        
+        # Búsqueda exacta primero
+        mask_exacta = df[col_sku].astype(str).str.strip().str.upper() == sku_limpio
+        if not df[mask_exacta].empty:
+            row = df[mask_exacta].iloc[0]
+            cantidad = int(corregir_numero(row[col_stock]))
+            if 'APRI.004' in hoja:
+                stock_apri004 = cantidad
+            elif 'YESSICA' in hoja:
+                stock_yessica = cantidad
+            continue
+        
+        # Búsqueda parcial como fallback
+        mask_parcial = df[col_sku].astype(str).str.contains(sku_limpio, case=False, na=False)
+        if not df[mask_parcial].empty:
+            row = df[mask_parcial].iloc[0]
+            cantidad = int(corregir_numero(row[col_stock]))
+            if 'APRI.004' in hoja:
+                stock_apri004 = cantidad
+            elif 'YESSICA' in hoja:
+                stock_yessica = cantidad
     
     stock_total = stock_apri004 + stock_yessica
-    
-    detalles = {}
-    if stock_apri004 > 0:
-        detalles[origen_apri004] = stock_apri004
-    if stock_yessica > 0:
-        detalles[origen_yessica] = stock_yessica
-    
-    return stock_total, detalles, stock_apri004, stock_yessica
+    return stock_total, stock_apri004, stock_yessica
 
 def buscar_stock_general(stocks, sku):
-    """Busca stock en APRI.001"""
     sku_limpio = sku.strip().upper()
     stock_total = 0
-    detalles = {}
     
     for stock in stocks:
         hoja = stock['hoja'].upper()
         if 'APRI.001' in hoja:
-            mask = stock['df'][stock['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
-            if not stock['df'][mask].empty:
-                row = stock['df'][mask].iloc[0]
-                stock_total = int(corregir_numero(row[stock['col_stock']]))
-                detalles[stock['nombre']] = stock_total
+            df = stock['df']
+            col_sku = stock['col_sku']
+            col_stock = stock['col_stock']
+            
+            mask_exacta = df[col_sku].astype(str).str.strip().str.upper() == sku_limpio
+            if not df[mask_exacta].empty:
+                row = df[mask_exacta].iloc[0]
+                stock_total = int(corregir_numero(row[col_stock]))
+                break
+            
+            mask_parcial = df[col_sku].astype(str).str.contains(sku_limpio, case=False, na=False)
+            if not df[mask_parcial].empty:
+                row = df[mask_parcial].iloc[0]
+                stock_total = int(corregir_numero(row[col_stock]))
                 break
     
-    return stock_total, detalles
+    return stock_total, 0, 0
 
 def buscar_en_catalogos(catalogos, termino, stocks, col_precio_consulta=None, tipo_cotizacion="XIAOMI"):
     resultados_dict = {}
     
+    # Dividir la búsqueda en palabras clave
     if ',' in termino:
-        terminos = [t.strip() for t in termino.split(',') if len(t.strip()) >= 2]
+        palabras = [t.strip().lower() for t in termino.split(',') if len(t.strip()) >= 2]
     else:
-        terminos = [t.strip() for t in termino.split() if len(t.strip()) >= 2]
+        palabras = [t.strip().lower() for t in termino.split() if len(t.strip()) >= 2]
     
-    if not terminos:
-        terminos = [termino.strip()]
+    if not palabras:
+        palabras = [termino.strip().lower()]
     
     for cat in catalogos:
         df = cat['df']
-        for term in terminos:
-            mask_sku = df[cat['col_sku']].astype(str).str.contains(term, case=False, na=False)
-            mask_desc = df[cat['col_desc']].astype(str).str.contains(term, case=False, na=False)
+        for palabra in palabras:
+            # Búsqueda más estricta: la palabra debe estar completa en SKU o descripción
+            mask_sku = df[cat['col_sku']].astype(str).str.lower().str.contains(r'\b' + re.escape(palabra) + r'\b', regex=True, na=False)
+            mask_desc = df[cat['col_desc']].astype(str).str.lower().str.contains(r'\b' + re.escape(palabra) + r'\b', regex=True, na=False)
+            
             for idx, row in df[mask_sku | mask_desc].iterrows():
                 sku = str(row[cat['col_sku']])
                 
@@ -336,11 +354,9 @@ def buscar_en_catalogos(catalogos, termino, stocks, col_precio_consulta=None, ti
                             precio = 0
                     
                     if tipo_cotizacion == "XIAOMI":
-                        stock_total, stock_detalle, stock_apri004, stock_yessica = buscar_stock_xiaomi(stocks, sku)
+                        stock_total, stock_apri004, stock_yessica = buscar_stock_xiaomi(stocks, sku)
                     else:
-                        stock_total, stock_detalle = buscar_stock_general(stocks, sku)
-                        stock_apri004 = 0
-                        stock_yessica = 0
+                        stock_total, stock_apri004, stock_yessica = buscar_stock_general(stocks, sku)
                     
                     resultados_dict[sku] = {
                         'SKU': sku,
@@ -349,8 +365,7 @@ def buscar_en_catalogos(catalogos, termino, stocks, col_precio_consulta=None, ti
                         'Precio': precio,
                         'Stock_Total': stock_total,
                         'Stock_APRI004': stock_apri004,
-                        'Stock_YESSICA': stock_yessica,
-                        'Stock_Detalle': stock_detalle
+                        'Stock_YESSICA': stock_yessica
                     }
     
     return list(resultados_dict.values())
@@ -515,7 +530,6 @@ with tab_cotizacion:
         
         texto_skus = st.text_area("", height=150, value=texto_defecto, placeholder="RN0200046BK8:5\nCN0900009WH8:2")
         
-        # Procesar pedidos eliminando duplicados
         pedidos_dict = {}
         if texto_skus:
             for line in texto_skus.split('\n'):
@@ -554,36 +568,26 @@ with tab_cotizacion:
                         
                         precio_info = buscar_precio(st.session_state.catalogos, sku, col_precio)
                         
-                        # 🔧 NUEVO: Si no tiene descripción, buscarla en stocks
                         if not precio_info['descripcion'] or precio_info['descripcion'] == '':
                             precio_info['descripcion'] = buscar_descripcion_en_stock(st.session_state.stocks, sku)
                         
                         if st.session_state.tipo_cotizacion == "XIAOMI":
-                            stock_total, stock_detalle, stock_apri004, stock_yessica = buscar_stock_xiaomi(st.session_state.stocks, sku)
+                            stock_total, stock_apri004, stock_yessica = buscar_stock_xiaomi(st.session_state.stocks, sku)
                         else:
-                            stock_total, stock_detalle = buscar_stock_general(st.session_state.stocks, sku)
-                            stock_apri004 = 0
-                            stock_yessica = 0
+                            stock_total, stock_apri004, stock_yessica = buscar_stock_general(st.session_state.stocks, sku)
                         
-                        icono = "🔋" if st.session_state.tipo_cotizacion == "XIAOMI" else "💼"
-                        
-                        # Crear texto de origen
+                        # Generar badge de origen HTML
                         if st.session_state.tipo_cotizacion == "XIAOMI":
                             if stock_apri004 > 0 and stock_yessica > 0:
-                                origen_texto = f"📦 APRI.004: {stock_apri004} | 📋 YESSICA: {stock_yessica}"
-                                origen_clase = "origin-both"
+                                origen_html = f'<span class="origin-badge-both">📦 APRI.004: {stock_apri004} | 📋 YESSICA: {stock_yessica}</span>'
                             elif stock_apri004 > 0:
-                                origen_texto = f"📦 APRI.004: {stock_apri004}"
-                                origen_clase = "origin-apri004"
+                                origen_html = f'<span class="origin-badge-apri004">📦 APRI.004: {stock_apri004}</span>'
                             elif stock_yessica > 0:
-                                origen_texto = f"📋 YESSICA: {stock_yessica}"
-                                origen_clase = "origin-yessica"
+                                origen_html = f'<span class="origin-badge-yessica">📋 YESSICA: {stock_yessica}</span>'
                             else:
-                                origen_texto = "❌ Sin stock"
-                                origen_clase = ""
+                                origen_html = '<span style="color: #999;">❌ Sin stock</span>'
                         else:
-                            origen_texto = f"📦 Stock: {stock_total}" if stock_total > 0 else "❌ Sin stock"
-                            origen_clase = ""
+                            origen_html = f'<span class="origin-badge-apri004">📦 Stock: {stock_total}</span>' if stock_total > 0 else '<span style="color: #999;">❌ Sin stock</span>'
                         
                         if precio_info['encontrado'] and stock_total > 0:
                             a_cotizar = min(cant, stock_total)
@@ -608,15 +612,13 @@ with tab_cotizacion:
                         
                         resultados.append({
                             'SKU': sku,
-                            'Tipo': f"{icono} {st.session_state.tipo_cotizacion}",
                             'Descripción': precio_info['descripcion'][:80] if precio_info['descripcion'] else f"SKU: {sku}",
                             'Precio': precio_info['precio'],
                             'Solicitado': cant,
                             'Stock': stock_total,
                             'Stock_APRI004': stock_apri004,
                             'Stock_YESSICA': stock_yessica,
-                            'Origen_Texto': origen_texto,
-                            'Origen_Clase': origen_clase,
+                            'Origen_HTML': origen_html,
                             'A Cotizar': a_cotizar,
                             'Total': total,
                             'Estado': estado,
@@ -625,108 +627,73 @@ with tab_cotizacion:
                     
                     st.session_state.resultados = resultados
         
-        # MOSTRAR RESULTADOS
         if st.session_state.resultados:
             st.markdown("---")
             st.markdown("### 📊 Resultados")
             
-            # Tabla dinámica en HTML
-            html = '<div style="overflow-x: auto;"><table style="width:100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden;">'
-            html += '<thead><tr style="background-color: #4CAF50; color: white;">'
-            html += '<th style="padding: 10px; text-align: left;">SKU</th>'
-            html += '<th style="padding: 10px; text-align: left;">Descripción</th>'
-            html += '<th style="padding: 10px; text-align: center;">Precio</th>'
-            html += '<th style="padding: 10px; text-align: center;">Sol.</th>'
-            html += '<th style="padding: 10px; text-align: center;">Stock</th>'
-            html += '<th style="padding: 10px; text-align: left;">Origen</th>'
-            html += '<th style="padding: 10px; text-align: center;">A Cotizar</th>'
-            html += '<th style="padding: 10px; text-align: center;">Total</th>'
-            html += '<th style="padding: 10px; text-align: center;">Estado</th>'
-            html += '<table></thead><tbody>'
+            # Tabla ordenada usando st.dataframe
+            df_resultados = pd.DataFrame(st.session_state.resultados)
             
-            for item in st.session_state.resultados:
-                precio_str = f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio"
-                total_str = f"S/. {item['Total']:,.2f}"
-                origen_html = f'<span class="origin-badge {item["Origen_Clase"]}">{item["Origen_Texto"]}</span>' if item["Origen_Clase"] else item["Origen_Texto"]
-                
-                html += f'<tr style="border-bottom: 1px solid #E8F5E9;">'
-                html += f'<td style="padding: 10px; font-family: monospace;">{item["SKU"]}</td>'
-                html += f'<td style="padding: 10px; max-width: 300px;">{item["Descripción"][:60]}</td>'
-                html += f'<td style="padding: 10px; text-align: center;">{precio_str}</td>'
-                html += f'<td style="padding: 10px; text-align: center;">{item["Solicitado"]}</td>'
-                html += f'<td style="padding: 10px; text-align: center;">{item["Stock"]}</td>'
-                html += f'<td style="padding: 10px;">{origen_html}</td>'
-                html += f'<td style="padding: 10px; text-align: center;"><strong>{item["A Cotizar"]}</strong></td>'
-                html += f'<td style="padding: 10px; text-align: center;">{total_str}</td>'
-                html += f'<td style="padding: 10px; text-align: center;"><span class="{item["Badge"]}">{item["Estado"]}</span></td>'
-                html += '</tr>'
+            # Formatear columnas para mostrar
+            df_display = df_resultados[[
+                'SKU', 'Descripción', 'Precio', 'Solicitado', 'Stock', 'Origen_HTML', 'A Cotizar', 'Total', 'Estado'
+            ]].copy()
             
-            html += '</tbody></table></div>'
-            st.markdown(html, unsafe_allow_html=True)
+            df_display['Precio'] = df_display['Precio'].apply(lambda x: f"S/. {x:,.2f}" if x > 0 else "Sin precio")
+            df_display['Total'] = df_display['Total'].apply(lambda x: f"S/. {x:,.2f}")
+            
+            # Configurar columnas para mostrar HTML en Origen
+            column_config = {
+                "SKU": st.column_config.TextColumn("SKU", width="small"),
+                "Descripción": st.column_config.TextColumn("Descripción", width="large"),
+                "Precio": st.column_config.TextColumn("Precio", width="small"),
+                "Solicitado": st.column_config.NumberColumn("Sol.", width="small"),
+                "Stock": st.column_config.NumberColumn("Stock", width="small"),
+                "Origen_HTML": st.column_config.TextColumn("Origen", width="medium"),
+                "A Cotizar": st.column_config.NumberColumn("A Cotizar", width="small"),
+                "Total": st.column_config.TextColumn("Total", width="small"),
+                "Estado": st.column_config.TextColumn("Estado", width="small"),
+            }
+            
+            st.dataframe(
+                df_display,
+                column_config=column_config,
+                use_container_width=True,
+                hide_index=True
+            )
             
             # ============================================
-            # AJUSTE DE CANTIDADES CON DATA_EDITOR (COMPACTO)
+            # AJUSTE DE CANTIDADES
             # ============================================
             st.markdown("---")
             st.markdown("### ✏️ Ajustar cantidades")
-            st.caption("💡 Modifica las cantidades directamente en la tabla - Usa los campos numéricos")
+            st.caption("💡 Modifica las cantidades directamente en la tabla")
             
-            # Preparar datos para el data_editor
-            df_ajuste = pd.DataFrame(st.session_state.resultados)
-            
-            # Crear columna de origen con badges visuales
-            def crear_badge_origen(row):
-                if st.session_state.tipo_cotizacion == "XIAOMI":
-                    if row.get('Stock_APRI004', 0) > 0 and row.get('Stock_YESSICA', 0) > 0:
-                        return f"🟣 AMBOS | APRI:{row['Stock_APRI004']} YES:{row['Stock_YESSICA']}"
-                    elif row.get('Stock_APRI004', 0) > 0:
-                        return f"🟣 APRI.004 | {row['Stock_APRI004']}"
-                    elif row.get('Stock_YESSICA', 0) > 0:
-                        return f"🔵 YESSICA | {row['Stock_YESSICA']}"
-                    else:
-                        return "🔴 Sin stock"
-                else:
-                    return f"🟢 GENERAL | {row['Stock']}" if row['Stock'] > 0 else "🔴 Sin stock"
-            
-            df_ajuste['Origen'] = df_ajuste.apply(crear_badge_origen, axis=1)
-            
-            # Seleccionar columnas para el editor
-            df_editor = df_ajuste[[
-                'SKU', 'Descripción', 'Precio', 'Stock', 'Origen', 'Solicitado', 'A Cotizar', 'Total'
+            df_ajuste = df_resultados[[
+                'SKU', 'Descripción', 'Precio', 'Stock', 'Solicitado', 'A Cotizar', 'Total'
             ]].copy()
             
-            # Formatear valores
-            df_editor['Precio'] = df_editor['Precio'].apply(lambda x: f"S/. {x:,.2f}" if x > 0 else "Sin precio")
-            df_editor['Total'] = df_editor['Total'].apply(lambda x: f"S/. {x:,.2f}")
+            df_ajuste['Precio'] = df_ajuste['Precio'].apply(lambda x: f"S/. {x:,.2f}" if x > 0 else "Sin precio")
+            df_ajuste['Total'] = df_ajuste['Total'].apply(lambda x: f"S/. {x:,.2f}")
             
-            # Configurar columnas
-            column_config = {
+            column_config_ajuste = {
                 "SKU": st.column_config.TextColumn("SKU", width="small", disabled=True),
                 "Descripción": st.column_config.TextColumn("Descripción", width="large", disabled=True),
                 "Precio": st.column_config.TextColumn("Precio", width="small", disabled=True),
                 "Stock": st.column_config.NumberColumn("Stock", width="small", disabled=True),
-                "Origen": st.column_config.TextColumn("Origen", width="medium", disabled=True),
                 "Solicitado": st.column_config.NumberColumn("Sol.", width="small", disabled=True),
-                "A Cotizar": st.column_config.NumberColumn(
-                    "A Cotizar",
-                    width="small",
-                    min_value=0,
-                    step=1,
-                    required=True
-                ),
+                "A Cotizar": st.column_config.NumberColumn("A Cotizar", width="small", min_value=0, step=1),
                 "Total": st.column_config.TextColumn("Total", width="small", disabled=True),
             }
             
-            # Mostrar data_editor editable
             edited_df = st.data_editor(
-                df_editor,
-                column_config=column_config,
+                df_ajuste,
+                column_config=column_config_ajuste,
                 use_container_width=True,
                 hide_index=True,
-                key="ajuste_cantidades_editor"
+                key="ajuste_editor"
             )
             
-            # Actualizar valores editados
             for idx, row in edited_df.iterrows():
                 if idx < len(st.session_state.resultados):
                     nueva_cant = row['A Cotizar']
@@ -737,23 +704,6 @@ with tab_cotizacion:
                         st.session_state.resultados[idx]['Total'] = 0
             
             resultados_editados = st.session_state.resultados.copy()
-            
-            # Mostrar leyenda de orígenes
-            st.markdown("---")
-            st.markdown("### 📌 Leyenda de Orígenes")
-            col_leg1, col_leg2, col_leg3, col_leg4 = st.columns(4)
-            with col_leg1:
-                st.markdown('<span style="background:#E1BEE7; padding:4px 12px; border-radius:20px;">🟣 APRI.004</span>', unsafe_allow_html=True)
-                st.caption("Stock físico APRI.004")
-            with col_leg2:
-                st.markdown('<span style="background:#BBDEFB; padding:4px 12px; border-radius:20px;">🔵 YESSICA</span>', unsafe_allow_html=True)
-                st.caption("Stock YESSICA")
-            with col_leg3:
-                st.markdown('<span style="background:#C8E6C9; padding:4px 12px; border-radius:20px;">🟣 AMBOS</span>', unsafe_allow_html=True)
-                st.caption("Stock en ambos orígenes")
-            with col_leg4:
-                st.markdown('<span style="background:#C8E6C9; padding:4px 12px; border-radius:20px;">🟢 GENERAL</span>', unsafe_allow_html=True)
-                st.caption("Modo GENERAL")
             
             # ============================================
             # REPORTE DE PRODUCTOS CON ISSUES
@@ -803,7 +753,7 @@ with tab_cotizacion:
 
 with tab_buscar:
     st.markdown("### 🔍 Buscar Productos")
-    st.caption("💡 Busca por SKU o descripción - Muestra stock y precio en tiempo real")
+    st.caption("💡 Busca por SKU o descripción - Búsqueda más estricta (palabras completas)")
     
     if not st.session_state.catalogos:
         st.warning("🌿 Primero carga catálogos en la pestaña Cotización")
@@ -819,7 +769,7 @@ with tab_buscar:
             key="precio_busqueda"
         )
         
-        busqueda = st.text_input("🔎 Buscar:", placeholder="Ej: cable cargador RN0200046BK8")
+        busqueda = st.text_input("🔎 Buscar:", placeholder="Ej: audifonos bluetooth (búsqueda por palabras completas)")
         
         if busqueda and len(busqueda) >= 2:
             with st.spinner("🔍 Buscando..."):
@@ -835,63 +785,30 @@ with tab_buscar:
             if resultados:
                 st.success(f"✅ {len(resultados)} resultados encontrados")
                 
-                for res in resultados:
-                    stock_icon = "🔴 Sin stock" if res['Stock_Total'] <= 0 else (f"🟠 Stock bajo: {res['Stock_Total']}" if res['Stock_Total'] < 10 else f"🟢 Stock disponible: {res['Stock_Total']}")
-                    
-                    stock_detalle = ""
-                    if st.session_state.tipo_cotizacion == "XIAOMI":
-                        if res.get('Stock_APRI004', 0) > 0:
-                            stock_detalle += f'<span class="stock-badge" style="background:#E1BEE7;">📦 APRI.004: {res["Stock_APRI004"]}</span> '
-                        if res.get('Stock_YESSICA', 0) > 0:
-                            stock_detalle += f'<span class="stock-badge" style="background:#BBDEFB;">📋 YESSICA: {res["Stock_YESSICA"]}</span> '
-                    else:
-                        for origen, stock in res['Stock_Detalle'].items():
-                            if stock > 0:
-                                stock_detalle += f'<span class="stock-badge">📁 {origen}: {stock}</span> '
-                    
-                    st.markdown(f"""
-                    <div style="background: white; border-radius: 12px; padding: 1rem; margin: 0.5rem 0; border-left: 4px solid #4CAF50; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                        <div><span style="font-family: monospace; font-weight: bold; font-size: 1rem;">📦 {res['SKU']}</span><br><span style="font-size: 0.85rem; color: #555;">{res['Descripcion']}</span><br><span style="font-weight: bold; color: #4CAF50;">{f'S/. {res["Precio"]:,.2f}' if res["Precio"] else "💰 Sin precio"}</span></div>
-                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">{stock_icon}<br>{stock_detalle}<div style="font-size:0.7rem; color:#888; margin-top:5px;">📁 Catálogo: {res['Catalogo'][:50]}</div></div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    col1, col2 = st.columns([3, 1])
-                    with col1:
-                        st.markdown("**➕ Agregar a cotización**")
-                    with col2:
-                        cantidad = st.number_input("Cant", min_value=0, max_value=999, value=0, key=f"add_{res['SKU']}", label_visibility="collapsed")
-                        if cantidad > 0:
-                            st.session_state.productos_seleccionados[res['SKU']] = st.session_state.productos_seleccionados.get(res['SKU'], 0) + cantidad
-                    st.divider()
+                df_busqueda = pd.DataFrame(resultados)
+                df_busqueda['Precio'] = df_busqueda['Precio'].apply(lambda x: f"S/. {x:,.2f}" if x else "Sin precio")
+                st.dataframe(df_busqueda, use_container_width=True, hide_index=True)
+                
+                st.markdown("---")
+                st.markdown("### ➕ Agregar a Cotización")
+                
+                col_add1, col_add2, col_add3 = st.columns([2, 1, 1])
+                with col_add1:
+                    sku_seleccionado = st.selectbox("Seleccionar SKU:", [r['SKU'] for r in resultados])
+                with col_add2:
+                    cantidad_add = st.number_input("Cantidad:", min_value=1, value=1, step=1)
+                with col_add3:
+                    if st.button("➕ Añadir a Cotización", type="primary"):
+                        if 'skus_transferidos' not in st.session_state:
+                            st.session_state.skus_transferidos = {}
+                        if sku_seleccionado in st.session_state.skus_transferidos:
+                            st.session_state.skus_transferidos[sku_seleccionado] += cantidad_add
+                        else:
+                            st.session_state.skus_transferidos[sku_seleccionado] = cantidad_add
+                        st.success(f"✅ {cantidad_add}x {sku_seleccionado} añadido")
+                        st.rerun()
             else:
                 st.warning("No se encontraron productos")
-        
-        if st.session_state.productos_seleccionados:
-            st.markdown("---")
-            st.markdown(f"### ✅ Productos seleccionados ({len(st.session_state.productos_seleccionados)})")
-            
-            seleccionados_lista = []
-            for sku, cant in st.session_state.productos_seleccionados.items():
-                if st.session_state.tipo_cotizacion == "XIAOMI":
-                    stock_total, _, _, _ = buscar_stock_xiaomi(st.session_state.stocks, sku)
-                else:
-                    stock_total, _ = buscar_stock_general(st.session_state.stocks, sku)
-                seleccionados_lista.append({'SKU': sku, 'Cantidad': cant, 'Stock disponible': stock_total, 'Estado': '⚠️ Stock insuficiente' if cant > stock_total else '✅ OK'})
-            
-            st.dataframe(pd.DataFrame(seleccionados_lista), use_container_width=True)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("🗑️ Limpiar todo", use_container_width=True):
-                    st.session_state.productos_seleccionados = {}
-                    st.rerun()
-            with col2:
-                if st.button("📋 TRANSFERIR A COTIZACIÓN", use_container_width=True, type="primary"):
-                    st.session_state.skus_transferidos = st.session_state.productos_seleccionados.copy()
-                    st.session_state.productos_seleccionados = {}
-                    st.success(f"✅ {len(st.session_state.skus_transferidos)} productos transferidos!")
-                    st.info("👉 Ve a la pestaña Cotización y haz clic en PROCESAR")
 
 with tab_dashboard:
     st.markdown("### 📊 Dashboard")
