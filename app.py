@@ -173,9 +173,7 @@ if not st.session_state.auth:
         st.markdown("""
         <div class="login-card" style="background: white; padding: 2.5rem; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: center; margin: 2rem 0;">
             <div style="margin-bottom: 1.5rem;">
-                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); border-radius: 25px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
-                    <span style="font-size: 40px; font-weight: bold; color: white;">Q</span>
-                </div>
+                                <img src="logo.png" style="width: 80px; height: 80px; object-fit: contain; border-radius: 15px;">
             </div>
             <h1 style="color: #1B5E20; margin-bottom: 0.5rem;">QTC Smart Sales</h1>
             <p style="color: #2E7D32; margin-bottom: 2rem;">Sistema Profesional de Cotización</p>
