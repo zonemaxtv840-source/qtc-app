@@ -380,10 +380,11 @@ def mapear_columna_precio(columnas, nombre_buscar):
             return col
         if nombre_buscar.upper() == "P. VIP" and ("VIP" in col_upper or "P.VIP" in col_upper):
             return col
+            if archivo.name.lower().endswith('.csv'):
+            contenido = archivo.getvalue()
     return None
 
-        if archivo.name.lower().endswith('.csv'):
-            contenido = archivo.getvalue()
+        
             
             # Leer todo el archivo como líneas para encontrar la cabecera real
             contenido_str = contenido.decode('utf-8', errors='ignore')
