@@ -449,7 +449,7 @@ def cargar_stock_completo(archivo):
         todas_hojas = []
         
         # Detectar si es CSV
-               if archivo.name.lower().endswith('.csv'):
+     if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
             try:
                 df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8', on_bad_lines='skip', engine='python')
