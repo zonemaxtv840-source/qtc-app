@@ -12,30 +12,9 @@ try:
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon=img_logo, layout="wide")
 except:
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon="💼", layout="wide")
-if "auth" not in st.session_state:
-    st.session_state.auth = False
-if "tipo_cotizacion" not in st.session_state:
-    st.session_state.tipo_cotizacion = None
-if "catalogos" not in st.session_state:
-    st.session_state.catalogos = []
-if "stocks" not in st.session_state:
-    st.session_state.stocks = []
-if "resultados" not in st.session_state:
-    st.session_state.resultados = None
-if "cotizaciones" not in st.session_state:
-    st.session_state.cotizaciones = 0
-if "total_prods" not in st.session_state:
-    st.session_state.total_prods = 0
-if "productos_seleccionados" not in st.session_state:
-    st.session_state.productos_seleccionados = {}
 
 # ============================================
-# ESTILOS CSS MEJORADOS (con colores corregidos)
-
-# ============================================
-# INICIALIZACIÓN DE VARIABLES DE SESIÓN
-# ============================================
-
+# CSS PRINCIPAL - AZUL CORPORATIVO CON TEXTO NEGRO
 # ============================================
 st.markdown("""
 <style>
@@ -51,7 +30,15 @@ p, div, span, label, .stMarkdown { color: #1A1A2E !important; }
 [data-testid="stSidebar"] { background: linear-gradient(180deg, #0D47A1 0%, #1565C0 100%) !important; }
 [data-testid="stSidebar"] * { color: #FFFFFF !important; }
 
-/* Botones azules */
+/* Botón de expansión del sidebar visible */
+button[kind="header"] {
+    background-color: #1565C0 !important;
+    color: white !important;
+    border-radius: 20px !important;
+    margin: 5px !important;
+}
+
+/* Botones principales */
 .stButton > button { 
     background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%) !important; 
     color: white !important; 
@@ -65,6 +52,17 @@ p, div, span, label, .stMarkdown { color: #1A1A2E !important; }
     background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%) !important; 
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(21,101,192,0.3);
+}
+
+/* Botón cambiar modo en sidebar */
+[data-testid="stSidebar"] .stButton button {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%) !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+}
+[data-testid="stSidebar"] .stButton button:hover {
+    background: linear-gradient(135deg, #F57C00 0%, #E65100 100%) !important;
+    transform: translateY(-2px);
 }
 
 /* Selectores */
@@ -148,15 +146,29 @@ div[data-baseweb="select"] li[aria-selected="true"] { background: linear-gradien
 .stock-rojo { color: #C62828; font-weight: bold; background-color: #FFCDD2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 </style>
 """, unsafe_allow_html=True)
-/* Hacer visible el botón de expansión del sidebar */
-button[kind="header"] {
-    background-color: #1565C0 !important;
-    color: white !important;
-    border-radius: 20px !important;
-    margin: 5px !important;
-}
+
 # ============================================
-# LOGIN PREMIUM (CORREGIDO - SIN CAMPOS DUPLICADOS)
+# INICIALIZACIÓN DE VARIABLES DE SESIÓN
+# ============================================
+if "auth" not in st.session_state:
+    st.session_state.auth = False
+if "tipo_cotizacion" not in st.session_state:
+    st.session_state.tipo_cotizacion = None
+if "catalogos" not in st.session_state:
+    st.session_state.catalogos = []
+if "stocks" not in st.session_state:
+    st.session_state.stocks = []
+if "resultados" not in st.session_state:
+    st.session_state.resultados = None
+if "cotizaciones" not in st.session_state:
+    st.session_state.cotizaciones = 0
+if "total_prods" not in st.session_state:
+    st.session_state.total_prods = 0
+if "productos_seleccionados" not in st.session_state:
+    st.session_state.productos_seleccionados = {}
+
+# ============================================
+# LOGIN AZUL CORPORATIVO
 # ============================================
 if not st.session_state.auth:
     # Fondo de la página de login
@@ -168,14 +180,12 @@ if not st.session_state.auth:
     .main .block-container {
         background-color: transparent !important;
     }
-    /* Eliminar fondos blancos */
     .stMarkdown {
         background: transparent !important;
     }
     div[data-testid="stVerticalBlock"] > div {
         background: transparent !important;
     }
-    /* Tarjeta blanca */
     .login-card {
         background: white;
         border-radius: 28px;
@@ -184,7 +194,6 @@ if not st.session_state.auth:
         text-align: center;
         border: 1px solid #BBDEFB;
     }
-    /* Texto negro en la tarjeta */
     .login-card h1 {
         color: #1A1A2E !important;
         margin-bottom: 0.25rem;
@@ -197,7 +206,6 @@ if not st.session_state.auth:
         font-weight: 500;
         font-size: 0.9rem;
     }
-    /* Botón azul corporativo */
     .stButton button {
         background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%) !important;
         color: white !important;
@@ -212,7 +220,6 @@ if not st.session_state.auth:
         transform: translateY(-2px);
         box-shadow: 0 8px 20px rgba(21,101,192,0.3) !important;
     }
-    /* Inputs con borde azul */
     .stTextInput input {
         border: 1px solid #BBDEFB !important;
         border-radius: 12px !important;
@@ -224,12 +231,10 @@ if not st.session_state.auth:
         box-shadow: 0 0 0 2px rgba(30,136,229,0.2) !important;
         transform: translateY(-2px);
     }
-    /* Label de inputs en negro */
     .stTextInput label {
         color: #1A1A2E !important;
         font-weight: 500 !important;
     }
-    /* Footer */
     .login-footer {
         margin-top: 2rem;
         padding-top: 1rem;
@@ -237,7 +242,6 @@ if not st.session_state.auth:
         font-size: 0.7rem;
         color: #1565C0 !important;
     }
-    /* Animación */
     @keyframes fadeInUp {
         from {
             opacity: 0;
@@ -254,12 +258,10 @@ if not st.session_state.auth:
     </style>
     """, unsafe_allow_html=True)
     
-    # Espaciado para centrar verticalmente
     st.markdown("<br><br>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 2.5, 1])
     with col2:
-        # Tarjeta blanca
         st.markdown("""
         <div class="login-card">
             <h1>QTC Smart Sales</h1>
@@ -267,23 +269,11 @@ if not st.session_state.auth:
         </div>
         """, unsafe_allow_html=True)
         
-        # Campos de login
-        user = st.text_input(
-            "👤 USUARIO", 
-            placeholder="Ingresa tu usuario", 
-            key="login_user"
-        )
-        
-        pw = st.text_input(
-            "🔒 CONTRASEÑA", 
-            type="password", 
-            placeholder="Ingresa tu contraseña", 
-            key="login_pass"
-        )
+        user = st.text_input("👤 USUARIO", placeholder="Ingresa tu usuario", key="login_user")
+        pw = st.text_input("🔒 CONTRASEÑA", type="password", placeholder="Ingresa tu contraseña", key="login_pass")
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Botón azul
         if st.button("🚀 INGRESAR", use_container_width=True):
             if user == "admin" and pw == "qtc2026":
                 st.session_state.auth = True
@@ -292,7 +282,6 @@ if not st.session_state.auth:
                 st.error("❌ Credenciales incorrectas")
                 st.info("💡 Usuario: admin | Contraseña: qtc2026")
         
-        # Footer
         st.markdown("""
         <div class="login-footer">
             ⚡ QTC Smart Sales Pro
@@ -302,6 +291,7 @@ if not st.session_state.auth:
     
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.stop()
+
 # ============================================
 # FUNCIONES DE LA APLICACIÓN
 # ============================================
@@ -492,18 +482,11 @@ def buscar_stock_xiaomi(stocks, sku):
                 origen_yessica = stock['nombre']
     
     stock_total = stock_apri004 + stock_yessica
-    detalles = {}
-    if stock_apri004 > 0:
-        detalles[origen_apri004] = stock_apri004
-    if stock_yessica > 0:
-        detalles[origen_yessica] = stock_yessica
-    
-    return stock_total, detalles, stock_apri004, stock_yessica
+    return stock_total, stock_apri004, stock_yessica
 
 def buscar_stock_general(stocks, sku):
     sku_limpio = sku.strip().upper()
     stock_total = 0
-    detalles = {}
     
     for stock in stocks:
         hoja = stock['hoja'].upper()
@@ -512,10 +495,9 @@ def buscar_stock_general(stocks, sku):
             if not stock['df'][mask].empty:
                 row = stock['df'][mask].iloc[0]
                 stock_total = int(corregir_numero(row[stock['col_stock']]))
-                detalles[stock['nombre']] = stock_total
                 break
     
-    return stock_total, detalles
+    return stock_total, 0, 0
 
 def buscar_en_catalogos(catalogos, termino, stocks, col_precio_consulta=None, tipo_cotizacion="XIAOMI"):
     resultados_dict = {}
@@ -546,11 +528,9 @@ def buscar_en_catalogos(catalogos, termino, stocks, col_precio_consulta=None, ti
                             precio = 0
                     
                     if tipo_cotizacion == "XIAOMI":
-                        stock_total, stock_detalle, stock_apri004, stock_yessica = buscar_stock_xiaomi(stocks, sku)
+                        stock_total, stock_apri004, stock_yessica = buscar_stock_xiaomi(stocks, sku)
                     else:
-                        stock_total, stock_detalle = buscar_stock_general(stocks, sku)
-                        stock_apri004 = 0
-                        stock_yessica = 0
+                        stock_total, stock_apri004, stock_yessica = buscar_stock_general(stocks, sku)
                     
                     resultados_dict[sku] = {
                         'SKU': sku,
@@ -560,7 +540,6 @@ def buscar_en_catalogos(catalogos, termino, stocks, col_precio_consulta=None, ti
                         'Stock_Total': stock_total,
                         'Stock_APRI004': stock_apri004,
                         'Stock_YESSICA': stock_yessica,
-                        'Stock_Detalle': stock_detalle
                     }
     
     return list(resultados_dict.values())
@@ -612,7 +591,6 @@ def generar_excel(items, cliente, ruc):
     return output.getvalue()
 
 def obtener_clase_stock(stock):
-    """Devuelve la clase CSS según la cantidad de stock"""
     if stock == 0:
         return "stock-rojo"
     elif stock <= 5:
@@ -621,7 +599,6 @@ def obtener_clase_stock(stock):
         return "stock-verde"
 
 def obtener_icono_stock(stock):
-    """Devuelve el ícono según la cantidad de stock"""
     if stock == 0:
         return "❌"
     elif stock <= 5:
@@ -630,7 +607,6 @@ def obtener_icono_stock(stock):
         return "✅"
 
 def obtener_mensaje_stock(stock):
-    """Devuelve el mensaje de tooltip según la cantidad de stock"""
     if stock == 0:
         return "Sin stock disponible"
     elif stock <= 5:
@@ -651,20 +627,22 @@ try:
         st.markdown(f"""
         <div style="text-align: right; background: white; padding: 8px 15px; border-radius: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
             <span style="font-weight: 600;">👤 admin</span><br>
-            <span style="font-size: 0.7rem; color: #4CAF50;">Administrador</span>
+            <span style="font-size: 0.7rem; color: #1565C0;">Administrador</span>
         </div>
         """, unsafe_allow_html=True)
         if st.button("🚪 Cerrar Sesión", key="logout"):
             st.session_state.auth = False
+            st.session_state.tipo_cotizacion = None
+            st.session_state.resultados = None
             st.rerun()
 except:
     st.title("QTC Smart Sales Pro")
 
 st.markdown("---")
 
-if 'tipo_cotizacion' not in st.session_state:
-    st.session_state.tipo_cotizacion = None
-
+# ============================================
+# SELECCIÓN DE MODO (solo si no hay modo seleccionado)
+# ============================================
 if st.session_state.tipo_cotizacion is None:
     st.markdown("### 🎯 ¿Qué vas a cotizar hoy?")
     col1, col2 = st.columns(2)
@@ -678,6 +656,41 @@ if st.session_state.tipo_cotizacion is None:
             st.rerun()
     st.stop()
 
+# ============================================
+# BARRA LATERAL
+# ============================================
+with st.sidebar:
+    try:
+        st.image("logo.png", use_container_width=True)
+    except:
+        st.markdown("## 💚 QTC Pro")
+    st.markdown("---")
+    
+    if "cotizaciones" in st.session_state:
+        st.metric("📄 Cotizaciones", st.session_state.get("cotizaciones", 0))
+        st.metric("📦 Productos", st.session_state.get("total_prods", 0))
+    
+    st.markdown("---")
+    
+    # Botón para cambiar de modo
+    if st.button("🔄 Cambiar Modo de Cotización", use_container_width=True):
+        st.session_state.tipo_cotizacion = None
+        st.session_state.resultados = None
+        st.rerun()
+    
+    # Mostrar modo actual
+    if st.session_state.tipo_cotizacion == "XIAOMI":
+        st.info("🔋 Modo XIAOMI activo")
+    else:
+        st.info("💼 Modo GENERAL activo")
+    
+    st.markdown("---")
+    
+    if "debug_mode" not in st.session_state:
+        st.session_state.debug_mode = False
+    st.session_state.debug_mode = st.checkbox("🔧 Modo Depuración", value=st.session_state.debug_mode)
+
+# Mostrar modo actual en la página principal
 if st.session_state.tipo_cotizacion == "XIAOMI":
     st.success("🔋 **Modo XIAOMI** - Buscará stock en: **APRI.004** y **YESSICA SEPARADO** (suma ambas)")
 else:
@@ -685,19 +698,9 @@ else:
 
 st.markdown("---")
 
-if 'catalogos' not in st.session_state:
-    st.session_state.catalogos = []
-if 'stocks' not in st.session_state:
-    st.session_state.stocks = []
-if 'resultados' not in st.session_state:
-    st.session_state.resultados = None
-if 'cotizaciones' not in st.session_state:
-    st.session_state.cotizaciones = 0
-if 'total_prods' not in st.session_state:
-    st.session_state.total_prods = 0
-if 'productos_seleccionados' not in st.session_state:
-    st.session_state.productos_seleccionados = {}
-
+# ============================================
+# TABS PRINCIPALES
+# ============================================
 tab_cotizacion, tab_buscar, tab_dashboard = st.tabs(["📦 Cotización", "🔍 Buscar Productos", "📊 Dashboard"])
 
 with tab_cotizacion:
@@ -806,11 +809,9 @@ with tab_cotizacion:
                             precio_info['descripcion'] = buscar_descripcion_en_stock(st.session_state.stocks, sku)
                         
                         if st.session_state.tipo_cotizacion == "XIAOMI":
-                            stock_total, stock_detalle, stock_apri004, stock_yessica = buscar_stock_xiaomi(st.session_state.stocks, sku)
+                            stock_total, stock_apri004, stock_yessica = buscar_stock_xiaomi(st.session_state.stocks, sku)
                         else:
-                            stock_total, stock_detalle = buscar_stock_general(st.session_state.stocks, sku)
-                            stock_apri004 = 0
-                            stock_yessica = 0
+                            stock_total, stock_apri004, stock_yessica = buscar_stock_general(st.session_state.stocks, sku)
                         
                         if cant > stock_total and stock_total > 0:
                             advertencias_stock.append(f"⚠️ **{sku}**: Stock insuficiente. Solicitado: {cant} | Disponible: {stock_total}. Se cotizarán {stock_total} unidades.")
@@ -877,7 +878,7 @@ with tab_cotizacion:
             st.markdown("### 📊 Resultados")
             
             html = '<div style="overflow-x: auto;"><table style="width:100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; table-layout: fixed;">'
-            html += '<thead><tr style="background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%); color: white;">'
+            html += '<thead><tr style="background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%); color: white;">'
             html += '<th style="width: 12%; padding: 10px; text-align: left;">SKU</th>'
             html += '<th style="width: 28%; padding: 10px; text-align: left;">Descripción</th>'
             html += '<th style="width: 10%; padding: 10px; text-align: center;">Precio</th>'
@@ -887,7 +888,7 @@ with tab_cotizacion:
             html += '<th style="width: 8%; padding: 10px; text-align: center;">A Cotizar</th>'
             html += '<th style="width: 8%; padding: 10px; text-align: center;">Total</th>'
             html += '<th style="width: 8%; padding: 10px; text-align: center;">Estado</th>'
-            html += '<tr></thead><tbody>'
+            html += '</tr></thead><tbody>'
             
             for item in st.session_state.resultados:
                 precio_str = f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio"
@@ -912,7 +913,7 @@ with tab_cotizacion:
             st.markdown(html, unsafe_allow_html=True)
             
             # ============================================
-            # TABLA DE AJUSTAR CANTIDADES (EDITABLE CON SEMÁFORO)
+            # TABLA DE AJUSTAR CANTIDADES
             # ============================================
             st.markdown("---")
             st.markdown("### ✏️ Ajustar cantidades")
@@ -1054,13 +1055,11 @@ with tab_buscar:
                         if res.get('Stock_YESSICA', 0) > 0:
                             stock_detalle += f'<span class="origin-badge origin-yessica">📋 YESSICA: {res["Stock_YESSICA"]}</span> '
                     else:
-                        for origen, stock in res['Stock_Detalle'].items():
-                            if stock > 0:
-                                stock_detalle += f'<span class="origin-badge origin-both">📁 {origen}: {stock}</span> '
+                        pass
                     
                     st.markdown(f"""
-                    <div style="background: white; border-radius: 12px; padding: 1rem; margin: 0.5rem 0; border-left: 4px solid #4CAF50; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                        <div><span style="font-family: monospace; font-weight: bold; font-size: 1rem;">📦 {res['SKU']}</span><br><span style="font-size: 0.85rem; color: #555;">{res['Descripcion']}</span><br><span style="font-weight: bold; color: #4CAF50;">{f'S/. {res["Precio"]:,.2f}' if res["Precio"] else "💰 Sin precio"}</span></div>
+                    <div style="background: white; border-radius: 12px; padding: 1rem; margin: 0.5rem 0; border-left: 4px solid #1565C0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div><span style="font-family: monospace; font-weight: bold; font-size: 1rem;">📦 {res['SKU']}</span><br><span style="font-size: 0.85rem; color: #555;">{res['Descripcion']}</span><br><span style="font-weight: bold; color: #1565C0;">{f'S/. {res["Precio"]:,.2f}' if res["Precio"] else "💰 Sin precio"}</span></div>
                         <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
                             <span class="{stock_clase}" title="{obtener_mensaje_stock(res['Stock_Total'])}">{stock_icono} Stock: {res['Stock_Total']}</span><br>
                             {stock_detalle}
@@ -1087,9 +1086,9 @@ with tab_buscar:
             seleccionados_lista = []
             for sku, cant in st.session_state.productos_seleccionados.items():
                 if st.session_state.tipo_cotizacion == "XIAOMI":
-                    stock_total, _, _, _ = buscar_stock_xiaomi(st.session_state.stocks, sku)
+                    stock_total, _, _ = buscar_stock_xiaomi(st.session_state.stocks, sku)
                 else:
-                    stock_total, _ = buscar_stock_general(st.session_state.stocks, sku)
+                    stock_total, _, _ = buscar_stock_general(st.session_state.stocks, sku)
                 seleccionados_lista.append({'SKU': sku, 'Cantidad': cant, 'Stock disponible': stock_total})
             
             st.dataframe(pd.DataFrame(seleccionados_lista), use_container_width=True)
