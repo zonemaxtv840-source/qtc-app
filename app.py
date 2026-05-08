@@ -679,7 +679,7 @@ def generar_excel(items, cliente, ruc):
     ws.write('B3', ruc)
     
     ws.merge_range('F1:H1', 'DATOS BANCARIOS', fmt_header)
-    ws.write('F2', 'BBVA SOLES:', workbook.add_format({'font_color': 'red', 'bold': True', 'border': 1}))
+    ws.write('F2', 'BBVA SOLES:', workbook.add_format({'font_color': 'red', 'bold': True, 'border': 1}))
     ws.write('G2', '0011-0616-0100012617', fmt_border)
     
     headers = ['Código SAP', 'Descripción', 'Cantidad', 'Precio Unit.', 'Total']
