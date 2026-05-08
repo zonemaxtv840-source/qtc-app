@@ -466,60 +466,6 @@ def cargar_catalogo(archivo):
     except Exception as e:
         st.error(f"Error en {archivo.name}: {str(e)[:100]}")
         return None
-            
-def limpiar_cabeceras(df):
-    # Buscar la fila que contiene "SKU" en cualquier columna
-    for i in range(min(50, len(df))):
-        # Recorrer cada celda de la fila
-        for celda in df.iloc[i].values:
-            if celda is not None and pd.notna(celda):
-                celda_str = str(celda).upper().strip()
-                if 'SKU' in celda_str:
-                    nuevas_columnas = []
-                    for col_val in df.iloc[i].values:
-                        if col_val is not None and pd.notna(col_val) and str(col_val).strip() != '':
-                            nuevas_columnas.append(str(col_val).strip())
-                        else:
-                            nuevas_columnas.append(f"Col_{len(nuevas_columnas)}")
-                    df.columns = nuevas_columnas
-                    return df.iloc[i+1:].reset_index(drop=True)
-    return df
-        posibles_skus = ['SKU', 'COD', 'CODIGO', 'SAP', 'NUMERO', 'ARTICULO', 'COD SAP']
-        posibles_desc = ['DESC', 'DESCRIPCION', 'NOMBRE', 'PRODUCTO', 'NOMBRE PRODUCTO']
-        
-        col_sku = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_skus)), df.columns[0])
-        col_desc = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_desc)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
-        
-        columnas_precio = {}
-        col_ir = mapear_columna_precio(df.columns, "P. IR")
-        if col_ir:
-            columnas_precio['P. IR'] = col_ir
-        col_box = mapear_columna_precio(df.columns, "P. BOX")
-        if col_box:
-            columnas_precio['P. BOX'] = col_box
-        col_vip = mapear_columna_precio(df.columns, "P. VIP")
-        if col_vip:
-            columnas_precio['P. VIP'] = col_vip
-        if not columnas_precio:
-            for c in df.columns:
-                if 'PRECIO' in str(c).upper():
-                    columnas_precio['PRECIO'] = c
-                    break
-        
-        with st.sidebar.expander(f"📋 {archivo.name[:25]}..."):
-            st.caption(f"SKU: {col_sku} | Desc: {col_desc}")
-            st.caption(f"Precios: {', '.join(columnas_precio.keys()) if columnas_precio else 'No detectados'}")
-        
-        return {
-            'nombre': f"{archivo.name} [{hoja_seleccionada}]",
-            'df': df,
-            'col_sku': col_sku,
-            'col_desc': col_desc,
-            'columnas_precio': columnas_precio
-        }
-    except Exception as e:
-        st.error(f"Error en {archivo.name}: {str(e)[:100]}")
-        return None
 
 def cargar_stock_completo(archivo):
     try:
@@ -590,7 +536,7 @@ def cargar_stock_completo(archivo):
         return todas_hojas
     except Exception as e:
         st.error(f"Error cargando {archivo.name}: {str(e)[:100]}")
-        return []               
+        return []
 
 def buscar_precio(catalogos, sku, col_precio_seleccionada):
     sku_limpio = sku.strip().upper()
@@ -666,11 +612,18 @@ def buscar_stock_xiaomi(stocks, sku):
                 origen_yessica = stock['nombre']
     
     stock_total = stock_apri004 + stock_yessica
-    return stock_total, stock_apri004, stock_yessica
+    detalles = {}
+    if stock_apri004 > 0:
+        detalles[origen_apri004] = stock_apri004
+    if stock_yessica > 0:
+        detalles[origen_yessica] = stock_yessica
+    
+    return stock_total, detalles, stock_apri004, stock_yessica
 
 def buscar_stock_general(stocks, sku):
     sku_limpio = sku.strip().upper()
     stock_total = 0
+    detalles = {}
     
     for stock in stocks:
         hoja = stock['hoja'].upper()
@@ -679,9 +632,10 @@ def buscar_stock_general(stocks, sku):
             if not stock['df'][mask].empty:
                 row = stock['df'][mask].iloc[0]
                 stock_total = int(corregir_numero(row[stock['col_stock']]))
+                detalles[stock['nombre']] = stock_total
                 break
     
-    return stock_total, 0, 0
+    return stock_total, detalles
 
 def buscar_en_catalogos(catalogos, termino, stocks, col_precio_consulta=None, tipo_cotizacion="XIAOMI"):
     resultados_dict = {}
@@ -712,9 +666,11 @@ def buscar_en_catalogos(catalogos, termino, stocks, col_precio_consulta=None, ti
                             precio = 0
                     
                     if tipo_cotizacion == "XIAOMI":
-                        stock_total, stock_apri004, stock_yessica = buscar_stock_xiaomi(stocks, sku)
+                        stock_total, stock_detalle, stock_apri004, stock_yessica = buscar_stock_xiaomi(stocks, sku)
                     else:
-                        stock_total, stock_apri004, stock_yessica = buscar_stock_general(stocks, sku)
+                        stock_total, stock_detalle = buscar_stock_general(stocks, sku)
+                        stock_apri004 = 0
+                        stock_yessica = 0
                     
                     resultados_dict[sku] = {
                         'SKU': sku,
@@ -724,6 +680,7 @@ def buscar_en_catalogos(catalogos, termino, stocks, col_precio_consulta=None, ti
                         'Stock_Total': stock_total,
                         'Stock_APRI004': stock_apri004,
                         'Stock_YESSICA': stock_yessica,
+                        'Stock_Detalle': stock_detalle
                     }
     
     return list(resultados_dict.values())
@@ -773,30 +730,6 @@ def generar_excel(items, cliente, ruc):
     
     writer.close()
     return output.getvalue()
-
-def obtener_clase_stock(stock):
-    if stock == 0:
-        return "stock-rojo"
-    elif stock <= 5:
-        return "stock-amarillo"
-    else:
-        return "stock-verde"
-
-def obtener_icono_stock(stock):
-    if stock == 0:
-        return "❌"
-    elif stock <= 5:
-        return "⚠️"
-    else:
-        return "✅"
-
-def obtener_mensaje_stock(stock):
-    if stock == 0:
-        return "Sin stock disponible"
-    elif stock <= 5:
-        return f"¡Stock bajo! Solo quedan {stock} unidades"
-    else:
-        return "Stock suficiente"
 
 # ============================================
 # HEADER
