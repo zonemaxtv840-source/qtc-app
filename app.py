@@ -663,6 +663,7 @@ with tab_cotizacion:
             # ============================================
             # AJUSTE DE CANTIDADES
             # ============================================
+            st.markdown("---")
                        st.markdown("### ✏️ Ajustar cantidades")
             st.caption("💡 Modifica las cantidades directamente en la tabla - Haz clic en la celda 'A Cotizar'")
             
