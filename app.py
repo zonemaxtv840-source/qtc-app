@@ -383,14 +383,17 @@ def mapear_columna_precio(columnas, nombre_buscar):
         if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
     return None
-
-        
+def cargar_catalogo(archivo):
+    try:
+        # Detectar si es CSV por el nombre
+        if archivo.name.lower().endswith('.csv'):
+            contenido = archivo.getvalue()
             
             # Leer todo el archivo como líneas para encontrar la cabecera real
             contenido_str = contenido.decode('utf-8', errors='ignore')
             lineas = contenido_str.split('\n')
             
-            # Buscar la línea que contiene "Columna1;PICK;BOX;NO.;MODEL MARK"
+            # Buscar la línea que contiene "Columna1;PICK;BOX;NO.;MODEL MARK" o "SKU"
             header_row_index = None
             for i, linea in enumerate(lineas):
                 if 'Columna1;PICK;BOX;NO.;MODEL MARK' in linea or 'SKU' in linea:
@@ -459,6 +462,10 @@ def mapear_columna_precio(columnas, nombre_buscar):
         st.error(f"Error en {archivo.name}: {str(e)[:100]}")
         return None
 
+def cargar_stock_completo(archivo):
+    try:
+        todas_hojas = []
+        
         if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
             
@@ -524,7 +531,7 @@ def mapear_columna_precio(columnas, nombre_buscar):
         return todas_hojas
     except Exception as e:
         st.error(f"Error cargando {archivo.name}: {str(e)[:100]}")
-        return []
+        return []               
 
 def buscar_precio(catalogos, sku, col_precio_seleccionada):
     sku_limpio = sku.strip().upper()
