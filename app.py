@@ -45,7 +45,7 @@ st.markdown("""
 
 /* Tipografía */
 h1, h2, h3, h4, h5, h6 { color: #F0F4F8 !important; font-family: 'Segoe UI', sans-serif; }
-p, div, span, label, .stMarkdown { color: #2E7D32 !important; }
+p, div, span, label, .stMarkdown { color: #FCF5E5 !important; }
 
 /* Sidebar premium */
 [data-testid="stSidebar"] { background: linear-gradient(180deg, #0D3B0F 50%, #1B5E20 100%) !important; }
