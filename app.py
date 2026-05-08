@@ -385,7 +385,7 @@ def mapear_columna_precio(columnas, nombre_buscar):
 def cargar_catalogo(archivo):
     try:
         # Detectar si es CSV por el nombre o extensión
-                if archivo.name.lower().endswith('.csv'):
+        if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
             # Probar diferentes parámetros para leer CSV problemático
             try:
