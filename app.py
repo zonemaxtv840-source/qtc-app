@@ -35,43 +35,19 @@ div[data-baseweb="select"] li[aria-selected="true"] { background-color: #4CAF50 
 .stTabs [data-baseweb="tab-list"] { background-color: white !important; border-radius: 12px !important; padding: 6px !important; }
 .stTabs [data-baseweb="tab"] { color: #1B5E20 !important; background-color: #F5F5F5 !important; border-radius: 10px !important; padding: 10px 20px !important; }
 .stTabs [aria-selected="true"] { background-color: #4CAF50 !important; color: white !important; }
+/* Estilos para el data_editor */
+.stDataFrame { border-radius: 12px !important; overflow: hidden !important; }
+.stDataFrame thead th { background-color: #1B5E20 !important; color: white !important; font-weight: 600 !important; }
+.badge-apri004 { background-color: #E1BEE7; color: #4A148C; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
+.badge-yessica { background-color: #BBDEFB; color: #0D47A1; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
+.badge-both { background-color: #C8E6C9; color: #1B5E20; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
+.badge-general { background-color: #C8E6C9; color: #1B5E20; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-ok { background-color: #C8E6C9; color: #1B5E20; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-warning { background-color: #FFF3E0; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-danger { background-color: #FFCDD2; color: #C62828; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
-.badge-stock-insuficiente { background-color: #FFE0B2; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .metric-card { background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.05); border: 1px solid #C8E6C9; }
 .metric-value { font-size: 2.2rem; font-weight: bold; color: #4CAF50 !important; }
-.origin-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.65rem; font-weight: 600; margin-right: 5px; }
-.origin-apri004 { background-color: #E1BEE7; color: #4A148C; }
-.origin-yessica { background-color: #BBDEFB; color: #0D47A1; }
-.origin-both { background-color: #C8E6C9; color: #1B5E20; }
 </style>
-
-<script>
-function updateRow(sku, newQuantity, maxStock, precio) {
-    // Validar que no supere el stock
-    if (newQuantity > maxStock) {
-        newQuantity = maxStock;
-        document.getElementById('qty_' + sku).value = newQuantity;
-    }
-    // Actualizar total
-    const total = (newQuantity * precio).toFixed(2);
-    document.getElementById('total_' + sku).innerHTML = 'S/. ' + total;
-    
-    // Actualizar estado
-    const estadoSpan = document.getElementById('estado_' + sku);
-    if (newQuantity > 0) {
-        estadoSpan.innerHTML = '<span class="badge-ok" style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">✅ OK</span>';
-        estadoSpan.className = 'badge-ok';
-    } else {
-        estadoSpan.innerHTML = '<span class="badge-warning" style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">⚠️ Sin stock</span>';
-        estadoSpan.className = 'badge-warning';
-    }
-    
-    // Guardar en session state (se envía al backend con un input oculto)
-    document.getElementById('save_' + sku).value = newQuantity;
-}
-</script>
 """, unsafe_allow_html=True)
 
 with st.sidebar:
@@ -522,7 +498,7 @@ with tab_cotizacion:
         
         st.markdown("---")
         st.markdown("### 📝 Ingresa los productos")
-        st.caption("Formato: SKU:CANTIDAD (uno por línea) - Edita las cantidades directamente en la tabla de resultados")
+        st.caption("Formato: SKU:CANTIDAD (uno por línea)")
         
         if 'skus_transferidos' in st.session_state:
             texto_defecto = "\n".join([f"{sku}:{cant}" for sku, cant in st.session_state.skus_transferidos.items()])
@@ -585,56 +561,41 @@ with tab_cotizacion:
                         # Validación de stock
                         if cant > stock_total and stock_total > 0:
                             advertencias_stock.append(f"⚠️ **{sku}**: Stock insuficiente. Solicitado: {cant} | Disponible: {stock_total}. Se cotizarán {stock_total} unidades.")
-                            badge_extra = "badge-stock-insuficiente"
-                            estado_extra = "⚠️ Stock insuficiente"
+                            badge_estado = "badge-warning"
+                            estado_texto = "⚠️ Stock insuficiente"
                         elif cant > stock_total and stock_total == 0:
                             advertencias_stock.append(f"❌ **{sku}**: Sin stock disponible. Producto no se puede cotizar.")
-                            badge_extra = "badge-danger"
-                            estado_extra = "❌ Sin stock"
+                            badge_estado = "badge-danger"
+                            estado_texto = "❌ Sin stock"
                         else:
-                            badge_extra = ""
-                            estado_extra = ""
+                            badge_estado = "badge-ok"
+                            estado_texto = "✅ OK"
                         
-                        icono = "🔋" if st.session_state.tipo_cotizacion == "XIAOMI" else "💼"
-                        
-                        # Crear texto de origen con badges
+                        # Crear badge de origen
                         if st.session_state.tipo_cotizacion == "XIAOMI":
                             if stock_apri004 > 0 and stock_yessica > 0:
-                                origen_texto = f"📦 APRI.004: {stock_apri004} | 📋 YESSICA: {stock_yessica}"
-                                origen_clase = "origin-both"
+                                badge_origen = f'<span class="badge-both">🟣 APRI.004: {stock_apri004} | 🔵 YESSICA: {stock_yessica}</span>'
                             elif stock_apri004 > 0:
-                                origen_texto = f"📦 APRI.004: {stock_apri004}"
-                                origen_clase = "origin-apri004"
+                                badge_origen = f'<span class="badge-apri004">🟣 APRI.004: {stock_apri004}</span>'
                             elif stock_yessica > 0:
-                                origen_texto = f"📋 YESSICA: {stock_yessica}"
-                                origen_clase = "origin-yessica"
+                                badge_origen = f'<span class="badge-yessica">🔵 YESSICA: {stock_yessica}</span>'
                             else:
-                                origen_texto = "❌ Sin stock"
-                                origen_clase = ""
+                                badge_origen = '<span class="badge-danger">❌ Sin stock</span>'
                         else:
-                            origen_texto = f"📦 Stock: {stock_total}" if stock_total > 0 else "❌ Sin stock"
-                            origen_clase = "origin-both" if stock_total > 0 else ""
+                            badge_origen = f'<span class="badge-general">🟢 Stock: {stock_total}</span>' if stock_total > 0 else '<span class="badge-danger">❌ Sin stock</span>'
                         
                         if precio_info['encontrado'] and stock_total > 0:
                             a_cotizar = min(cant, stock_total)
                             total = precio_info['precio'] * a_cotizar
-                            badge = badge_extra if badge_extra else "badge-ok"
-                            estado = estado_extra if estado_extra else "✅ OK"
-                        elif precio_info['encontrado'] and stock_total == 0:
-                            a_cotizar = 0
-                            total = 0
-                            badge = "badge-warning"
-                            estado = "⚠️ Sin stock"
-                        elif not precio_info['encontrado'] and stock_total > 0:
-                            a_cotizar = 0
-                            total = 0
-                            badge = "badge-warning"
-                            estado = "⚠️ Sin precio"
                         else:
                             a_cotizar = 0
                             total = 0
-                            badge = "badge-danger"
-                            estado = "❌ No encontrado"
+                            if not precio_info['encontrado']:
+                                badge_estado = "badge-warning"
+                                estado_texto = "⚠️ Sin precio"
+                            elif stock_total == 0:
+                                badge_estado = "badge-warning"
+                                estado_texto = "⚠️ Sin stock"
                         
                         resultados.append({
                             'SKU': sku,
@@ -642,14 +603,11 @@ with tab_cotizacion:
                             'Precio': precio_info['precio'],
                             'Pedido': cant,
                             'Stock': stock_total,
-                            'Stock_APRI004': stock_apri004,
-                            'Stock_YESSICA': stock_yessica,
-                            'Origen_Texto': origen_texto,
-                            'Origen_Clase': origen_clase,
+                            'Origen': badge_origen,
                             'A Cotizar': a_cotizar,
                             'Total': total,
-                            'Estado': estado,
-                            'Badge': badge
+                            'Estado': estado_texto,
+                            'Badge_Estado': badge_estado
                         })
                     
                     for adv in advertencias_stock:
@@ -662,159 +620,91 @@ with tab_cotizacion:
         
         if st.session_state.resultados:
             st.markdown("---")
-            st.markdown("### 📊 Resultados - Edita las cantidades directamente en la columna 'A Cotizar'")
-            st.caption("💡 Haz clic en el número de la columna 'A Cotizar', cámbialo y pulsa Enter. El total se actualizará automáticamente.")
+            st.markdown("### 📊 Resultados - Edita las cantidades directamente en la tabla")
+            st.caption("💡 Haz clic en la columna 'A Cotizar', cambia el número y presiona Enter. El total se actualizará automáticamente.")
             
-            # Generar tabla HTML interactiva
-            html = f'''
-            <div style="overflow-x: auto; margin-bottom: 2rem;">
-                <table style="width:100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; table-layout: fixed;">
-                    <thead>
-                        <tr style="background-color: #4CAF50; color: white;">
-                            <th style="width: 12%; padding: 10px; text-align: left;">SKU</th>
-                            <th style="width: 28%; padding: 10px; text-align: left;">Descripción</th>
-                            <th style="width: 10%; padding: 10px; text-align: center;">Precio</th>
-                            <th style="width: 5%; padding: 10px; text-align: center;">Pedido</th>
-                            <th style="width: 8%; padding: 10px; text-align: center;">Stock</th>
-                            <th style="width: 18%; padding: 10px; text-align: left;">Origen</th>
-                            <th style="width: 8%; padding: 10px; text-align: center;">A Cotizar</th>
-                            <th style="width: 8%; padding: 10px; text-align: center;">Total</th>
-                            <th style="width: 8%; padding: 10px; text-align: center;">Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            '''
+            # Preparar DataFrame para data_editor
+            df_display = pd.DataFrame(st.session_state.resultados)
             
-            for idx, item in enumerate(st.session_state.resultados):
-                precio_str = f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio"
-                total_str = f"S/. {item['Total']:,.2f}"
-                origen_html = f'<span class="origin-badge {item["Origen_Clase"]}" style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">{item["Origen_Texto"]}</span>' if item["Origen_Clase"] else f'<span style="color: #999;">{item["Origen_Texto"]}</span>'
-                estado_badge = f'<span class="{item["Badge"]}" style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">{item["Estado"]}</span>'
-                
-                max_stock = item['Stock']
-                precio_num = item['Precio']
-                sku_clean = item['SKU'].replace(' ', '_')
-                
-                html += f'''
-                    <tr style="border-bottom: 1px solid #E8F5E9;" id="row_{idx}">
-                        <td style="padding: 10px; font-family: monospace; word-wrap: break-word;">{item['SKU']}</td>
-                        <td style="padding: 10px; word-wrap: break-word;">{item['Descripción'][:60]}{"..." if len(item['Descripción']) > 60 else ""}</td>
-                        <td style="padding: 10px; text-align: center;">{precio_str}</td>
-                        <td style="padding: 10px; text-align: center;">{item['Pedido']}</td>
-                        <td style="padding: 10px; text-align: center;"><strong>{item['Stock']}</strong></td>
-                        <td style="padding: 10px;">{origen_html}</td>
-                        <td style="padding: 10px; text-align: center;">
-                            <input type="number" 
-                                   id="qty_{idx}" 
-                                   value="{item['A Cotizar']}" 
-                                   min="0" 
-                                   max="{max_stock}" 
-                                   style="width: 70px; padding: 4px; border-radius: 6px; border: 1px solid #ccc; text-align: center;"
-                                   onchange="updateRow({idx}, this.value, {max_stock}, {precio_num})">
-                        </td>
-                        <td style="padding: 10px; text-align: center;">
-                            <strong id="total_{idx}">{total_str}</strong>
-                        </td>
-                        <td style="padding: 10px; text-align: center;">
-                            <span id="estado_{idx}" class="{item['Badge']}" style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">{item['Estado']}</span>
-                        </td>
-                    </tr>
-                '''
+            # Formatear columnas
+            df_display['Precio'] = df_display['Precio'].apply(lambda x: f"S/. {x:,.2f}" if x > 0 else "Sin precio")
+            df_display['Total'] = df_display['Total'].apply(lambda x: f"S/. {x:,.2f}")
             
-            html += '''
-                    </tbody>
-                </table>
-            </div>
-            '''
+            # Renombrar columnas para mostrar
+            df_display = df_display.rename(columns={
+                'Pedido': 'Pedido',
+                'A Cotizar': '🚀 A Cotizar',
+                'Total': '💰 Total',
+                'Estado': '✅ Estado'
+            })
             
-            st.markdown(html, unsafe_allow_html=True)
+            # Seleccionar columnas a mostrar
+            columnas_mostrar = ['SKU', 'Descripción', 'Precio', 'Pedido', 'Stock', 'Origen', '🚀 A Cotizar', '💰 Total', '✅ Estado']
+            df_editor = df_display[columnas_mostrar].copy()
             
-            # JavaScript para actualizar dinámicamente
-            update_js = """
-            <script>
-            function updateRow(idx, newQuantity, maxStock, precio) {
-                // Validar que no supere el stock
-                var qtyInput = document.getElementById('qty_' + idx);
-                if (newQuantity > maxStock) {
-                    newQuantity = maxStock;
-                    qtyInput.value = newQuantity;
-                }
-                if (newQuantity < 0) {
-                    newQuantity = 0;
-                    qtyInput.value = 0;
-                }
-                // Actualizar total
-                var total = (newQuantity * precio).toFixed(2);
-                document.getElementById('total_' + idx).innerHTML = 'S/. ' + total.toLocaleString('es-PE');
-                
-                // Actualizar estado
-                var estadoSpan = document.getElementById('estado_' + idx);
-                if (newQuantity > 0) {
-                    estadoSpan.innerHTML = '✅ OK';
-                    estadoSpan.className = 'badge-ok';
-                    estadoSpan.style.cssText = 'display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;';
-                } else {
-                    estadoSpan.innerHTML = '⚠️ Sin stock';
-                    estadoSpan.className = 'badge-warning';
-                    estadoSpan.style.cssText = 'display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;';
-                }
+            # Configurar columnas del data_editor
+            column_config = {
+                "SKU": st.column_config.TextColumn("SKU", width="small", disabled=True),
+                "Descripción": st.column_config.TextColumn("Descripción", width="large", disabled=True),
+                "Precio": st.column_config.TextColumn("Precio", width="small", disabled=True),
+                "Pedido": st.column_config.NumberColumn("Pedido", width="small", disabled=True),
+                "Stock": st.column_config.NumberColumn("Stock", width="small", disabled=True),
+                "Origen": st.column_config.TextColumn("Origen", width="medium", disabled=True),
+                "🚀 A Cotizar": st.column_config.NumberColumn(
+                    "🚀 A Cotizar",
+                    width="small",
+                    min_value=0,
+                    step=1,
+                    required=True
+                ),
+                "💰 Total": st.column_config.TextColumn("💰 Total", width="small", disabled=True),
+                "✅ Estado": st.column_config.TextColumn("✅ Estado", width="small", disabled=True),
             }
-            </script>
-            """
-            st.markdown(update_js, unsafe_allow_html=True)
             
-            # Capturar valores editados desde los inputs
-            resultados_editados = []
-            for idx, item in enumerate(st.session_state.resultados):
-                # Usar el valor del input si está presente en el POST
-                qty_key = f"qty_actualizada_{idx}"
-                if qty_key in st.session_state:
-                    nueva_cant = st.session_state[qty_key]
-                else:
-                    nueva_cant = item['A Cotizar']
-                
-                # También podemos usar query params, pero por ahora mantenemos simple
-                resultados_editados.append(item)
+            # Mostrar data_editor editable
+            edited_df = st.data_editor(
+                df_editor,
+                column_config=column_config,
+                use_container_width=True,
+                hide_index=True,
+                key="tabla_resultados_editor"
+            )
             
-            # Actualizar session state con los valores de los inputs
-            # Usamos un formulario oculto para capturar cambios
-            with st.form(key="update_form"):
-                for idx, item in enumerate(st.session_state.resultados):
-                    nueva_cant = st.number_input(
-                        f"cant_{idx}",
-                        value=item['A Cotizar'],
-                        min_value=0,
-                        max_value=item['Stock'],
-                        step=1,
-                        key=f"qty_actualizada_{idx}",
-                        label_visibility="collapsed"
-                    )
-                    if st.session_state[f"qty_actualizada_{idx}"] != item['A Cotizar']:
-                        item['A Cotizar'] = nueva_cant
-                        if item['Precio'] > 0:
-                            item['Total'] = item['Precio'] * nueva_cant
+            # Actualizar valores editados
+            for idx, row in edited_df.iterrows():
+                if idx < len(st.session_state.resultados):
+                    nueva_cant = row['🚀 A Cotizar']
+                    st.session_state.resultados[idx]['A Cotizar'] = nueva_cant
+                    if st.session_state.resultados[idx]['Precio'] > 0:
+                        st.session_state.resultados[idx]['Total'] = st.session_state.resultados[idx]['Precio'] * nueva_cant
+                        # Actualizar estado según nueva cantidad
+                        if nueva_cant > 0:
+                            st.session_state.resultados[idx]['Estado'] = "✅ OK"
+                            st.session_state.resultados[idx]['Badge_Estado'] = "badge-ok"
                         else:
-                            item['Total'] = 0
-                st.form_submit_button("Actualizar", type="primary", use_container_width=True)
+                            st.session_state.resultados[idx]['Estado'] = "⚠️ Sin stock"
+                            st.session_state.resultados[idx]['Badge_Estado'] = "badge-warning"
+                    else:
+                        st.session_state.resultados[idx]['Total'] = 0
             
-            resultados_editados = st.session_state.resultados.copy()
+            # Calcular totales actualizados
+            items_validos = [r for r in st.session_state.resultados if r['A Cotizar'] > 0 and r['Precio'] > 0]
+            total_general = sum(r['Total'] for r in items_validos)
+            items_con_issues = [r for r in st.session_state.resultados if r['A Cotizar'] == 0 or r['Precio'] == 0]
+            
+            # Métricas
+            st.markdown("---")
+            col_m1, col_m2, col_m3 = st.columns(3)
+            col_m1.metric("✅ A cotizar", len(items_validos))
+            col_m2.metric("💰 Total", f"S/. {total_general:,.2f}")
+            col_m3.metric("⚠️ Excluidos", len(items_con_issues))
             
             # ============================================
             # REPORTE DE PRODUCTOS CON ISSUES
             # ============================================
-            st.markdown("---")
-            st.markdown("### ⚠️ Productos con Issues (No Cotizables)")
-            
-            items_con_issues = [r for r in resultados_editados if r['A Cotizar'] == 0 or r['Precio'] == 0]
-            items_validos = [r for r in resultados_editados if r['A Cotizar'] > 0 and r['Precio'] > 0]
-            total_general = sum(r['Total'] for r in items_validos)
-            
-            col1, col2, col3 = st.columns(3)
-            col1.metric("✅ A cotizar", len(items_validos))
-            col2.metric("💰 Total", f"S/. {total_general:,.2f}")
-            col3.metric("⚠️ Excluidos", len(resultados_editados) - len(items_validos))
-            
             if items_con_issues:
+                st.markdown("---")
+                st.markdown("### ⚠️ Productos con Issues (No Cotizables)")
                 for item in items_con_issues:
                     if item['Precio'] == 0:
                         motivo = "💰 Sin precio en catálogo"
@@ -839,7 +729,13 @@ with tab_cotizacion:
                 if st.button("📥 GENERAR EXCEL", use_container_width=True, type="primary"):
                     items_excel = [{'sku': r['SKU'], 'desc': r['Descripción'], 'cant': r['A Cotizar'], 'p_u': r['Precio'], 'total': r['Total']} for r in items_validos]
                     excel = generar_excel(items_excel, cliente, ruc_cliente)
-                    st.download_button("💾 DESCARGAR", data=excel, file_name=f"Cotizacion_{cliente}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx", use_container_width=True, key="download_btn")
+                    st.download_button(
+                        "💾 DESCARGAR", 
+                        data=excel, 
+                        file_name=f"Cotizacion_{cliente}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx", 
+                        use_container_width=True,
+                        key="download_btn"
+                    )
                     st.session_state.cotizaciones += 1
                     st.session_state.total_prods = len(items_validos)
                     st.balloons()
@@ -885,13 +781,13 @@ with tab_buscar:
                     stock_detalle = ""
                     if st.session_state.tipo_cotizacion == "XIAOMI":
                         if res.get('Stock_APRI004', 0) > 0:
-                            stock_detalle += f'<span class="stock-badge" style="background:#E1BEE7;">📦 APRI.004: {res["Stock_APRI004"]}</span> '
+                            stock_detalle += f'<span class="badge-apri004">📦 APRI.004: {res["Stock_APRI004"]}</span> '
                         if res.get('Stock_YESSICA', 0) > 0:
-                            stock_detalle += f'<span class="stock-badge" style="background:#BBDEFB;">📋 YESSICA: {res["Stock_YESSICA"]}</span> '
+                            stock_detalle += f'<span class="badge-yessica">📋 YESSICA: {res["Stock_YESSICA"]}</span> '
                     else:
                         for origen, stock in res['Stock_Detalle'].items():
                             if stock > 0:
-                                stock_detalle += f'<span class="stock-badge">📁 {origen}: {stock}</span> '
+                                stock_detalle += f'<span class="badge-general">📁 {origen}: {stock}</span> '
                     
                     st.markdown(f"""
                     <div style="background: white; border-radius: 12px; padding: 1rem; margin: 0.5rem 0; border-left: 4px solid #4CAF50; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
