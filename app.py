@@ -39,7 +39,7 @@ if "productos_seleccionados" not in st.session_state:
 st.markdown("""
 <style>
 /* Fondo general */
-.stApp { background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%) !important; }
+.stApp { background: linear-gradient(135deg, #E8F5E9 50%, #C8E6C9 100%) !important; }
 .main .block-container { background-color: transparent !important; }
 
 /* Tipografía */
@@ -47,7 +47,7 @@ h1, h2, h3, h4, h5, h6 { color: #1B5E20 !important; font-family: 'Segoe UI', san
 p, div, span, label, .stMarkdown { color: #2E7D32 !important; }
 
 /* Sidebar premium */
-[data-testid="stSidebar"] { background: linear-gradient(180deg, #0D3B0F 0%, #1B5E20 100%) !important; }
+[data-testid="stSidebar"] { background: linear-gradient(180deg, #0D3B0F 50%, #1B5E20 100%) !important; }
 [data-testid="stSidebar"] * { color: #FFFFFF !important; }
 [data-testid="stSidebar"] .stMarkdown, 
 [data-testid="stSidebar"] p, 
@@ -177,7 +177,7 @@ if not st.session_state.auth:
     st.markdown("""
     <style>
     .stApp {
-        background: linear-gradient(135deg, #1B5E20 0%, #4CAF50 50%, #A5D6A7 100%) !important;
+        background: linear-gradient(135deg, #1B5E20 10%, #4CAF50 50%, #A5D6A7 100%) !important;
     }
     .main .block-container {
         background-color: transparent !important;
@@ -191,7 +191,7 @@ if not st.session_state.auth:
         col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
         with col_logo2:
             try:
-                st.image("logo.png", width=100)
+                st.image("logo.png", width=150)
             except:
                 st.markdown("<h2 style='text-align: center; color: #4CAF50;'>💚 QTC</h2>", unsafe_allow_html=True)
         
