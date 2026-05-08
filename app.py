@@ -386,9 +386,8 @@ def mapear_columna_precio(columnas, nombre_buscar):
             return col
         if nombre_buscar.upper() == "P. VIP" and ("VIP" in col_upper or "P.VIP" in col_upper):
             return col
-        if archivo.name.lower().endswith('.csv'):
-            contenido = archivo.getvalue()
     return None
+
 def cargar_catalogo(archivo):
     try:
         # Detectar si es CSV por el nombre
@@ -421,6 +420,52 @@ def cargar_catalogo(archivo):
                     df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8', sep=';', on_bad_lines='skip')
                 except:
                     df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', sep=';', on_bad_lines='skip')
+            
+            df = limpiar_cabeceras(df)
+            hoja_seleccionada = "CSV"
+        else:
+            xls = pd.ExcelFile(archivo)
+            hojas = xls.sheet_names
+            hoja_seleccionada = st.sidebar.selectbox(f"📗 Hoja {archivo.name}:", hojas, key=f"cat_{archivo.name}")
+            df = pd.read_excel(archivo, sheet_name=hoja_seleccionada)
+            df = limpiar_cabeceras(df)
+        
+        posibles_skus = ['SKU', 'COD', 'CODIGO', 'SAP', 'NUMERO', 'ARTICULO', 'COD SAP']
+        posibles_desc = ['DESC', 'DESCRIPCION', 'NOMBRE', 'PRODUCTO', 'NOMBRE PRODUCTO']
+        
+        col_sku = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_skus)), df.columns[0])
+        col_desc = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_desc)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
+        
+        columnas_precio = {}
+        col_ir = mapear_columna_precio(df.columns, "P. IR")
+        if col_ir:
+            columnas_precio['P. IR'] = col_ir
+        col_box = mapear_columna_precio(df.columns, "P. BOX")
+        if col_box:
+            columnas_precio['P. BOX'] = col_box
+        col_vip = mapear_columna_precio(df.columns, "P. VIP")
+        if col_vip:
+            columnas_precio['P. VIP'] = col_vip
+        if not columnas_precio:
+            for c in df.columns:
+                if 'PRECIO' in str(c).upper():
+                    columnas_precio['PRECIO'] = c
+                    break
+        
+        with st.sidebar.expander(f"📋 {archivo.name[:25]}..."):
+            st.caption(f"SKU: {col_sku} | Desc: {col_desc}")
+            st.caption(f"Precios: {', '.join(columnas_precio.keys()) if columnas_precio else 'No detectados'}")
+        
+        return {
+            'nombre': f"{archivo.name} [{hoja_seleccionada}]",
+            'df': df,
+            'col_sku': col_sku,
+            'col_desc': col_desc,
+            'columnas_precio': columnas_precio
+        }
+    except Exception as e:
+        st.error(f"Error en {archivo.name}: {str(e)[:100]}")
+        return None
             
 def limpiar_cabeceras(df):
     # Buscar la fila que contiene "SKU" en cualquier columna
