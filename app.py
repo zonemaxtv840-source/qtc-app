@@ -31,7 +31,7 @@ p, div, span, label, .stMarkdown { color: #1A1A2E !important; }
 /* ============================================ */
 /* Header con fondo azul */
 .stApp > header {
-    background-color: #0D47A1 !important;
+    background-color: #E65100  !important;
     z-index: 100 !important;
 }
 /* Botón de hamburguesa (sidebar toggle) */
