@@ -188,7 +188,7 @@ if not st.session_state.auth:
     col1, col2, col3 = st.columns([1, 4, 1])
     with col2:
         # Logo centrado
-        col_logo1, col_logo2, col_logo3 = st.columns([1, 4, 1])
+        col_logo1, col_logo2, col_logo3 = st.columns([1, 1, 1])
         with col_logo2:
             try:
                 st.image("logo.png", width=150)
