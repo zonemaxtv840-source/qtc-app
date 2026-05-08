@@ -177,7 +177,7 @@ if not st.session_state.auth:
     st.markdown("""
     <style>
     .stApp {
-        background: linear-gradient(135deg, #1B5E20 10%, #4CAF50 50%, #A5D6A7 100%) !important;
+        background: linear-gradient(135deg, #1B5E20 30%, #4CAF50 50%, #A5D6A7 100%) !important;
     }
     .main .block-container {
         background-color: transparent !important;
