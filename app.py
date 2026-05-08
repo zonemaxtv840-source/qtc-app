@@ -24,7 +24,7 @@ st.markdown("""
 
 /* Tipografía NEGRA */
 h1, h2, h3, h4, h5, h6 { color: #1A1A2E !important; font-family: 'Segoe UI', sans-serif; }
-p, div, span, label, .stMarkdown { color: #E65100 !important; }
+p, div, span, label, .stMarkdown { color: #F5F5F5 !important; }
 
 /* ============================================ */
 /* HEADER Y BOTÓN DEL SIDEBAR - VISIBLE */
