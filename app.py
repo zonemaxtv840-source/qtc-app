@@ -362,17 +362,26 @@ def corregir_numero(valor):
         return 0.0
 
 def limpiar_cabeceras(df):
-    # Convertir todas las celdas a string para comparar
+    # Recorrer las primeras 50 filas
     for i in range(min(50, len(df))):
-        # Buscar si en alguna celda de esta fila aparece "SKU"
-        fila = df.iloc[i].astype(str).values
-        for celda in fila:
-            if 'SKU' in celda.upper():
-                # Encontramos la fila cabecera
-                nuevas_columnas = [str(c).strip() if pd.notna(c) else f"Col_{j}" for j, c in enumerate(df.iloc[i].values)]
-                df.columns = nuevas_columnas
-                # Devolver desde la siguiente fila (donde empiezan los datos)
-                return df.iloc[i+1:].reset_index(drop=True)
+        # Obtener la fila como strings, manejando cualquier tipo de dato
+        fila = [str(x).upper() for x in df.iloc[i].values if x is not None]
+        
+        # Verificar si "SKU" está en alguna celda de esta fila
+        if any('SKU' in str(cell) for cell in fila):
+            # Usar toda la fila como cabecera
+            nuevas_columnas = []
+            for val in df.iloc[i].values:
+                if pd.isna(val) or str(val).strip() == '':
+                    nuevas_columnas.append(f"Col_{len(nuevas_columnas)}")
+                else:
+                    nuevas_columnas.append(str(val).strip())
+            df.columns = nuevas_columnas
+            # Eliminar filas vacías y resetear
+            df = df.iloc[i+1:].reset_index(drop=True)
+            # Eliminar columnas completamente vacías
+            df = df.dropna(axis=1, how='all')
+            return df
     return df
 
 def mapear_columna_precio(columnas, nombre_buscar):
