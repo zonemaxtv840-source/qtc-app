@@ -362,11 +362,17 @@ def corregir_numero(valor):
         return 0.0
 
 def limpiar_cabeceras(df):
-    for i in range(min(20, len(df))):
-        fila = [str(x).upper() for x in df.iloc[i].values]
-        if any(h in item for h in ['SKU', 'COD', 'SAP', 'NUMERO', 'ARTICULO', 'COD SAP'] for item in fila):
-            df.columns = [str(c).strip() for c in df.iloc[i]]
-            return df.iloc[i+1:].reset_index(drop=True)
+    # Convertir todas las celdas a string para comparar
+    for i in range(min(50, len(df))):
+        # Buscar si en alguna celda de esta fila aparece "SKU"
+        fila = df.iloc[i].astype(str).values
+        for celda in fila:
+            if 'SKU' in celda.upper():
+                # Encontramos la fila cabecera
+                nuevas_columnas = [str(c).strip() if pd.notna(c) else f"Col_{j}" for j, c in enumerate(df.iloc[i].values)]
+                df.columns = nuevas_columnas
+                # Devolver desde la siguiente fila (donde empiezan los datos)
+                return df.iloc[i+1:].reset_index(drop=True)
     return df
 
 def mapear_columna_precio(columnas, nombre_buscar):
