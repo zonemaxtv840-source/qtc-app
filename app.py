@@ -39,21 +39,21 @@ if "productos_seleccionados" not in st.session_state:
 # ============================================
 st.markdown("""
 <style>
-/* Fondo principal crema */
-.stApp { background-color: #FFF8E1 !important; }
-.main .block-container { background-color: #FFF8E1 !important; }
+/* Fondo principal gris muy claro */
+.stApp { background-color: #F5F7FA !important; }
+.main .block-container { background-color: #F5F7FA !important; }
 
-/* Tipografía en tonos naranja */
-h1, h2, h3, h4, h5, h6 { color: #E65100 !important; font-family: 'Segoe UI', sans-serif; }
-p, div, span, label, .stMarkdown { color: #F57C00 !important; }
+/* Tipografía NEGRA */
+h1, h2, h3, h4, h5, h6 { color: #1A1A2E !important; font-family: 'Segoe UI', sans-serif; }
+p, div, span, label, .stMarkdown { color: #1A1A2E !important; }
 
-/* Sidebar naranja gradiente */
-[data-testid="stSidebar"] { background: linear-gradient(180deg, #BF360C 0%, #E65100 100%) !important; }
-[data-testid="stSidebar"] * { color: #FFF8E1 !important; }
+/* Sidebar azul corporativo */
+[data-testid="stSidebar"] { background: linear-gradient(180deg, #0D47A1 0%, #1565C0 100%) !important; }
+[data-testid="stSidebar"] * { color: #FFFFFF !important; }
 
-/* Botones naranja */
+/* Botones azules */
 .stButton > button { 
-    background: linear-gradient(135deg, #E65100 0%, #FF9800 100%) !important; 
+    background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%) !important; 
     color: white !important; 
     border-radius: 12px; 
     font-weight: 600; 
@@ -62,66 +62,66 @@ p, div, span, label, .stMarkdown { color: #F57C00 !important; }
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 .stButton > button:hover { 
-    background: linear-gradient(135deg, #BF360C 0%, #E65100 100%) !important; 
+    background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%) !important; 
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(230,81,0,0.3);
+    box-shadow: 0 4px 12px rgba(21,101,192,0.3);
 }
 
 /* Selectores */
-.stSelectbox > div > div { background-color: white !important; border: 1px solid #FFE0B2 !important; border-radius: 10px !important; }
-.stSelectbox label { color: #E65100 !important; }
-div[data-baseweb="select"] ul { background-color: white !important; border: 1px solid #FFE0B2 !important; border-radius: 10px !important; }
-div[data-baseweb="select"] li { color: #E65100 !important; background-color: white !important; }
-div[data-baseweb="select"] li:hover { background-color: #FFF8E1 !important; }
-div[data-baseweb="select"] li[aria-selected="true"] { background: linear-gradient(135deg, #E65100 0%, #FF9800 100%) !important; color: white !important; }
+.stSelectbox > div > div { background-color: white !important; border: 1px solid #BBDEFB !important; border-radius: 10px !important; }
+.stSelectbox label { color: #1A1A2E !important; }
+div[data-baseweb="select"] ul { background-color: white !important; border: 1px solid #BBDEFB !important; border-radius: 10px !important; }
+div[data-baseweb="select"] li { color: #1A1A2E !important; background-color: white !important; }
+div[data-baseweb="select"] li:hover { background-color: #E3F2FD !important; }
+div[data-baseweb="select"] li[aria-selected="true"] { background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%) !important; color: white !important; }
 
 /* File uploader */
-.stFileUploader > div > div { background-color: white !important; border: 1px dashed #FF9800 !important; border-radius: 12px !important; }
-.stFileUploader button { background-color: #E65100 !important; color: white !important; }
+.stFileUploader > div > div { background-color: white !important; border: 1px dashed #1E88E5 !important; border-radius: 12px !important; }
+.stFileUploader button { background-color: #1565C0 !important; color: white !important; }
 
 /* Inputs */
 .stTextInput input, .stTextArea textarea, .stNumberInput input { 
-    color: #E65100 !important; 
+    color: #1A1A2E !important; 
     background-color: white !important; 
-    border: 1px solid #FFE0B2 !important; 
+    border: 1px solid #BBDEFB !important; 
     border-radius: 10px !important;
     transition: all 0.3s ease;
 }
 .stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus {
-    border-color: #E65100 !important;
-    box-shadow: 0 0 0 2px rgba(230,81,0,0.2);
+    border-color: #1E88E5 !important;
+    box-shadow: 0 0 0 2px rgba(30,136,229,0.2);
 }
 
 /* Tabs */
 .stTabs [data-baseweb="tab-list"] { background-color: white !important; border-radius: 12px !important; padding: 6px !important; }
-.stTabs [data-baseweb="tab"] { color: #E65100 !important; background-color: #FFF8E1 !important; border-radius: 10px !important; padding: 10px 20px !important; }
-.stTabs [aria-selected="true"] { background: linear-gradient(135deg, #E65100 0%, #FF9800 100%) !important; color: white !important; }
+.stTabs [data-baseweb="tab"] { color: #1A1A2E !important; background-color: #F5F7FA !important; border-radius: 10px !important; padding: 10px 20px !important; }
+.stTabs [aria-selected="true"] { background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%) !important; color: white !important; }
 
-/* Badges de estado (se mantienen) */
+/* Badges de estado */
 .badge-ok { background-color: #C8E6C9; color: #1B5E20; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-warning { background-color: #FFF3E0; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-danger { background-color: #FFCDD2; color: #C62828; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-stock-bajo { background-color: #FFE0B2; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 
-/* Badges de origen (mantener colores originales) */
+/* Badges de origen */
 .origin-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-right: 5px; }
 .origin-apri004 { background-color: #E1BEE7; color: #4A148C; }
 .origin-yessica { background-color: #BBDEFB; color: #0D47A1; }
 .origin-both { background-color: #C8E6C9; color: #1B5E20; }
 
 /* Métricas */
-.metric-card { background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #FFE0B2; }
-.metric-value { font-size: 2.2rem; font-weight: bold; color: #E65100 !important; }
+.metric-card { background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #BBDEFB; }
+.metric-value { font-size: 2.2rem; font-weight: bold; color: #1565C0 !important; }
 
 /* Data editor */
 .stDataFrame { border-radius: 12px !important; overflow: hidden !important; }
-.stDataFrame thead th { background: linear-gradient(135deg, #BF360C 0%, #E65100 100%) !important; color: white !important; font-weight: 600 !important; }
+.stDataFrame thead th { background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%) !important; color: white !important; font-weight: 600 !important; }
 
 /* Text area para SKUs */
 .stTextArea textarea {
-    color: #E65100 !important;
+    color: #1A1A2E !important;
     background-color: white !important;
-    border: 2px solid #FFE0B2 !important;
+    border: 2px solid #BBDEFB !important;
     border-radius: 12px !important;
     font-family: monospace !important;
     font-size: 14px !important;
@@ -129,20 +129,20 @@ div[data-baseweb="select"] li[aria-selected="true"] { background: linear-gradien
 
 /* Expander en sidebar */
 [data-testid="stSidebar"] .streamlit-expanderHeader {
-    color: #FFF8E1 !important;
+    color: #FFFFFF !important;
 }
 [data-testid="stSidebar"] .streamlit-expanderContent {
-    color: #FFF8E1 !important;
+    color: #FFFFFF !important;
 }
 
 /* Placeholder color */
 .stTextInput input::placeholder,
 .stTextArea textarea::placeholder {
-    color: #FFCC80 !important;
+    color: #90CAF9 !important;
     opacity: 1;
 }
 
-/* Indicadores de stock - se mantienen */
+/* Indicadores de stock */
 .stock-verde { color: #2E7D32; font-weight: bold; background-color: #C8E6C9; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 .stock-amarillo { color: #E65100; font-weight: bold; background-color: #FFE0B2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 .stock-rojo { color: #C62828; font-weight: bold; background-color: #FFCDD2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
