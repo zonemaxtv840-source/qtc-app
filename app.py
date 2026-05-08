@@ -471,23 +471,22 @@ def cargar_stock_completo(archivo):
     try:
         todas_hojas = []
         
+        # Leer el archivo según su extensión
         if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
-            
             contenido_str = contenido.decode('utf-8', errors='ignore')
             lineas = contenido_str.split('\n')
             
             # Buscar línea con SKU o similar
             header_row_index = None
             for i, linea in enumerate(lineas):
-                if 'SKU' in linea or 'COD' in linea or 'Columna1' in linea:
+                if 'SKU' in linea or 'COD' in linea or 'ARTICULO' in linea:
                     header_row_index = i
                     break
             
             if header_row_index is not None:
                 lineas_limpias = lineas[header_row_index:]
                 contenido_limpio = '\n'.join(lineas_limpias).encode('utf-8')
-                
                 try:
                     df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='utf-8', sep=';', on_bad_lines='skip')
                 except:
@@ -500,38 +499,78 @@ def cargar_stock_completo(archivo):
             
             df = limpiar_cabeceras(df)
             
-            posibles_skus = ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO']
-            posibles_stock = ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO', 'EN STOCK']
+            # Identificar columnas de SKU y STOCK
+            col_sku = None
+            col_stock = None
             
-            col_sku = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_skus)), df.columns[0])
-            col_stock = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_stock)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
+            for col in df.columns:
+                col_upper = str(col).upper()
+                if any(p in col_upper for p in ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO']):
+                    if col_sku is None:
+                        col_sku = col
+                if any(p in col_upper for p in ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO']):
+                    if col_stock is None:
+                        col_stock = col
             
-            todas_hojas.append({
-                'nombre': f"{archivo.name} [CSV]",
-                'df': df,
-                'col_sku': col_sku,
-                'col_stock': col_stock,
-                'hoja': "CSV"
-            })
-        else:
-            xls = pd.ExcelFile(archivo)
-            for hoja in xls.sheet_names:
-                df = pd.read_excel(archivo, sheet_name=hoja)
-                df = limpiar_cabeceras(df)
-                
-                posibles_skus = ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO']
-                posibles_stock = ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO', 'EN STOCK']
-                
-                col_sku = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_skus)), df.columns[0])
-                col_stock = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_stock)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
-                
+            # Si no se encontraron, usar primeras columnas
+            if col_sku is None and len(df.columns) > 0:
+                col_sku = df.columns[0]
+            if col_stock is None and len(df.columns) > 1:
+                col_stock = df.columns[1]
+            
+            # Agregar a la lista solo si hay datos válidos
+            if df is not None and len(df) > 0:
                 todas_hojas.append({
-                    'nombre': f"{archivo.name} [{hoja}]",
+                    'nombre': f"{archivo.name} [CSV]",
                     'df': df,
                     'col_sku': col_sku,
                     'col_stock': col_stock,
-                    'hoja': hoja
+                    'hoja': "CSV"
                 })
+        else:
+            # Para archivos Excel
+            xls = pd.ExcelFile(archivo)
+            for hoja in xls.sheet_names:
+                try:
+                    df = pd.read_excel(archivo, sheet_name=hoja)
+                    df = limpiar_cabeceras(df)
+                    
+                    # Identificar columnas de SKU y STOCK
+                    col_sku = None
+                    col_stock = None
+                    
+                    for col in df.columns:
+                        col_upper = str(col).upper()
+                        if any(p in col_upper for p in ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO']):
+                            if col_sku is None:
+                                col_sku = col
+                        if any(p in col_upper for p in ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO']):
+                            if col_stock is None:
+                                col_stock = col
+                    
+                    # Si no se encontraron, usar primeras columnas
+                    if col_sku is None and len(df.columns) > 0:
+                        col_sku = df.columns[0]
+                    if col_stock is None and len(df.columns) > 1:
+                        col_stock = df.columns[1]
+                    
+                    # Agregar a la lista solo si hay datos válidos
+                    if df is not None and len(df) > 0:
+                        todas_hojas.append({
+                            'nombre': f"{archivo.name} [{hoja}]",
+                            'df': df,
+                            'col_sku': col_sku,
+                            'col_stock': col_stock,
+                            'hoja': hoja
+                        })
+                        st.success(f"✅ Hoja '{hoja}' cargada: {len(df)} filas")
+                except Exception as e:
+                    st.warning(f"⚠️ Error en hoja '{hoja}': {str(e)[:50]}")
+        
+        if len(todas_hojas) == 0:
+            st.error(f"❌ No se pudo leer ninguna hoja del archivo {archivo.name}")
+        else:
+            st.success(f"✅ Total: {len(todas_hojas)} hojas cargadas")
         
         return todas_hojas
     except Exception as e:
