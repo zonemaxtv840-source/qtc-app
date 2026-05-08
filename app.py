@@ -12,7 +12,7 @@ try:
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon=img_logo, layout="wide")
 except:
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon="💼", layout="wide")
-    if "auth" not in st.session_state:
+if "auth" not in st.session_state:
     st.session_state.auth = False
 if "tipo_cotizacion" not in st.session_state:
     st.session_state.tipo_cotizacion = None
