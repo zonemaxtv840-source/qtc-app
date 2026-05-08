@@ -173,48 +173,165 @@ p, div, span, label, .stMarkdown { color: #2E7D32 !important; }
 # LOGIN PREMIUM (CORREGIDO - SIN CAMPOS DUPLICADOS)
 # ============================================
 if not st.session_state.auth:
-    # Fondo de la página de login
+    # Fondo elegante con gradiente y efecto de ondas
     st.markdown("""
     <style>
     .stApp {
-        background: linear-gradient(135deg, #1B5E20 30%, #4CAF50 50%, #A5D6A7 100%) !important;
+        background: linear-gradient(135deg, #0D3B0F 0%, #1B5E20 50%, #2E7D32 100%) !important;
     }
     .main .block-container {
         background-color: transparent !important;
     }
+    /* Efecto de ondas de fondo */
+    .stApp::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: radial-gradient(circle at 10% 20%, rgba(255,255,255,0.05) 2%, transparent 2.5%);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+    }
+    /* Animación de entrada */
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .login-moderno {
+        animation: slideUp 0.6s ease-out;
+    }
+    /* Efecto hover en inputs */
+    .login-input {
+        transition: all 0.3s ease !important;
+    }
+    .login-input:focus {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15) !important;
+    }
     </style>
     """, unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 4, 1])
-    with col2:
-        # Logo centrado
-        col_logo1, col_logo2, col_logo3 = st.columns([1, 1, 1])
-        with col_logo2:
-            try:
-                st.image("logo.png", width=150)
-            except:
-                st.markdown("<h2 style='text-align: center; color: #4CAF50;'>💚 QTC</h2>", unsafe_allow_html=True)
+    # Centrado vertical y horizontal
+    col_vacio1, col_centro, col_vacio2 = st.columns([1, 2, 1])
+    with col_centro:
+        # Espaciado superior para centrar verticalmente
+        st.markdown("<br><br>", unsafe_allow_html=True)
         
-        # Tarjeta blanca
+        # Tarjeta flotante con efecto glassmorphism
         st.markdown("""
-        <div style="background: white; padding: 2rem; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); text-align: center; margin-top: 1rem;">
-            <h1 style="color: #1B5E20; margin-bottom: 0.5rem;">QTC Smart Sales</h1>
-            <p style="color: #2E7D32; margin-bottom: 1.5rem;">Sistema Profesional de Cotización</p>
-        </div>
+        <div class="login-moderno" style="
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 32px;
+            padding: 2.5rem;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.3);
+        ">
         """, unsafe_allow_html=True)
         
-        user = st.text_input("👤 Usuario", placeholder="Ingresa tu usuario", key="login_user")
-        pw = st.text_input("🔒 Contraseña", type="password", placeholder="Ingresa tu contraseña", key="login_pass")
+        # Logo centrado con animación
+        col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
+        with col_logo2:
+            try:
+                st.image("logo.png", width=90)
+            except:
+                st.markdown("""
+                <div style="
+                    width: 80px;
+                    height: 80px;
+                    background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+                    border-radius: 25px;
+                    margin: 0 auto;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+                ">
+                    <span style="font-size: 40px; font-weight: bold; color: white;">Q</span>
+                </div>
+                """, unsafe_allow_html=True)
         
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Título con gradiente
+        st.markdown("""
+        <h1 style="
+            background: linear-gradient(135deg, #1B5E20 0%, #4CAF50 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+        ">QTC Smart Sales</h1>
+        <p style="color: #2E7D32; margin-bottom: 2rem; font-weight: 500;">Sistema Profesional de Cotización</p>
+        """, unsafe_allow_html=True)
+        
+        # Campos de login con estilo moderno
+        user = st.text_input(
+            "👤 USUARIO", 
+            placeholder="Ingresa tu usuario", 
+            key="login_user",
+            help="Contacta al administrador si no tienes acceso"
+        )
+        
+        pw = st.text_input(
+            "🔒 CONTRASEÑA", 
+            type="password", 
+            placeholder="Ingresa tu contraseña", 
+            key="login_pass",
+            help="Tu contraseña es personal e intransferible"
+        )
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Botón de ingreso con diseño moderno
         col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
         with col_btn2:
-            if st.button("🚀 INGRESAR", use_container_width=True):
+            if st.button("✨ INGRESAR AL SISTEMA ✨", use_container_width=True, type="primary"):
                 if user == "admin" and pw == "qtc2026":
                     st.session_state.auth = True
                     st.rerun()
                 else:
-                    st.error("❌ Credenciales incorrectas")
-                    st.markdown("<p style='text-align: center; font-size: 0.8rem; margin-top: 1rem;'>💡 Usuario: admin | Contraseña: qtc2026</p>", unsafe_allow_html=True)
+                    st.error("❌ Acceso denegado. Credenciales incorrectas.")
+                    st.markdown("""
+                    <div style="
+                        background: #FFF3E0;
+                        padding: 0.8rem;
+                        border-radius: 12px;
+                        margin-top: 0.5rem;
+                        text-align: center;
+                    ">
+                        <span style="color: #E65100;">💡 Usuario: <strong>admin</strong> | Contraseña: <strong>qtc2026</strong></span>
+                    </div>
+                    """, unsafe_allow_html=True)
+        
+        # Footer decorativo
+        st.markdown("""
+        <div style="
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #E8F5E9;
+            font-size: 0.7rem;
+            color: #9E9E9E;
+        ">
+            <span>⚡ Powered by QTC Smart Sales Pro</span><br>
+            <span>© 2024 - Todos los derechos reservados</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("<br><br>", unsafe_allow_html=True)
+    
     st.stop()
    
 # ============================================
