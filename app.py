@@ -26,34 +26,56 @@ st.markdown("""
 h1, h2, h3, h4, h5, h6 { color: #1A1A2E !important; font-family: 'Segoe UI', sans-serif; }
 p, div, span, label, .stMarkdown { color: #1A1A2E !important; }
 
-/* Sidebar azul corporativo */
+/* ============================================ */
+/* HEADER Y BOTÓN DEL SIDEBAR - VISIBLE */
+/* ============================================ */
+/* Header con fondo azul */
+.stApp > header {
+    background-color: #0D47A1 !important;
+    z-index: 100 !important;
+}
+/* Botón de hamburguesa (sidebar toggle) */
+.stApp > header button {
+    background-color: #FF9800 !important;
+    border-radius: 8px !important;
+    border: none !important;
+    margin-left: 10px !important;
+    padding: 5px 10px !important;
+}
+.stApp > header button:hover {
+    background-color: #E65100 !important;
+    transform: scale(1.05);
+}
+/* Ícono del botón (blanco) */
+.stApp > header button svg {
+    fill: white !important;
+    stroke: white !important;
+}
+/* Botón cuando el sidebar está colapsado */
+.stApp > header button[kind="header"] {
+    background-color: #FF9800 !important;
+}
+
+/* ============================================ */
+/* SIDEBAR AZUL CORPORATIVO */
+/* ============================================ */
 [data-testid="stSidebar"] { background: linear-gradient(180deg, #0D47A1 0%, #1565C0 100%) !important; }
 [data-testid="stSidebar"] * { color: #FFFFFF !important; }
 
-/* Botón de expansión del sidebar - visible */
-button[data-testid="baseButton-header"] {
-    background-color: #1565C0 !important;
-    color: white !important;
-    border-radius: 8px !important;
-    margin: 5px !important;
-    padding: 5px 10px !important;
+/* Botones en sidebar */
+[data-testid="stSidebar"] .stButton button {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%) !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
 }
-button[data-testid="baseButton-header"]:hover {
-    background-color: #0D47A1 !important;
-    transform: scale(1.05);
-}
-/* También el botón cuando está colapsado */
-button[kind="header"] {
-    background-color: #FF9800 !important;
-    color: white !important;
-    border-radius: 20px !important;
-    margin: 5px !important;
-    padding: 5px 12px !important;
-    font-weight: bold !important;
-
+[data-testid="stSidebar"] .stButton button:hover {
+    background: linear-gradient(135deg, #F57C00 0%, #E65100 100%) !important;
+    transform: translateY(-2px);
 }
 
-/* Botones principales */
+/* ============================================ */
+/* BOTONES PRINCIPALES */
+/* ============================================ */
 .stButton > button { 
     background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%) !important; 
     color: white !important; 
@@ -69,18 +91,9 @@ button[kind="header"] {
     box-shadow: 0 4px 12px rgba(21,101,192,0.3);
 }
 
-/* Botón cambiar modo en sidebar */
-[data-testid="stSidebar"] .stButton button {
-    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%) !important;
-    border-radius: 12px !important;
-    font-weight: 600 !important;
-}
-[data-testid="stSidebar"] .stButton button:hover {
-    background: linear-gradient(135deg, #F57C00 0%, #E65100 100%) !important;
-    transform: translateY(-2px);
-}
-
-/* Selectores */
+/* ============================================ */
+/* SELECTORES */
+/* ============================================ */
 .stSelectbox > div > div { background-color: white !important; border: 1px solid #BBDEFB !important; border-radius: 10px !important; }
 .stSelectbox label { color: #1A1A2E !important; }
 div[data-baseweb="select"] ul { background-color: white !important; border: 1px solid #BBDEFB !important; border-radius: 10px !important; }
@@ -88,11 +101,15 @@ div[data-baseweb="select"] li { color: #1A1A2E !important; background-color: whi
 div[data-baseweb="select"] li:hover { background-color: #E3F2FD !important; }
 div[data-baseweb="select"] li[aria-selected="true"] { background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%) !important; color: white !important; }
 
-/* File uploader */
+/* ============================================ */
+/* FILE UPLOADER */
+/* ============================================ */
 .stFileUploader > div > div { background-color: white !important; border: 1px dashed #1E88E5 !important; border-radius: 12px !important; }
 .stFileUploader button { background-color: #1565C0 !important; color: white !important; }
 
-/* Inputs */
+/* ============================================ */
+/* INPUTS */
+/* ============================================ */
 .stTextInput input, .stTextArea textarea, .stNumberInput input { 
     color: #1A1A2E !important; 
     background-color: white !important; 
@@ -105,32 +122,51 @@ div[data-baseweb="select"] li[aria-selected="true"] { background: linear-gradien
     box-shadow: 0 0 0 2px rgba(30,136,229,0.2);
 }
 
-/* Tabs */
+/* Placeholder color */
+.stTextInput input::placeholder,
+.stTextArea textarea::placeholder {
+    color: #90CAF9 !important;
+    opacity: 1;
+}
+
+/* ============================================ */
+/* TABS */
+/* ============================================ */
 .stTabs [data-baseweb="tab-list"] { background-color: white !important; border-radius: 12px !important; padding: 6px !important; }
 .stTabs [data-baseweb="tab"] { color: #1A1A2E !important; background-color: #F5F7FA !important; border-radius: 10px !important; padding: 10px 20px !important; }
 .stTabs [aria-selected="true"] { background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%) !important; color: white !important; }
 
-/* Badges de estado */
+/* ============================================ */
+/* BADGES DE ESTADO */
+/* ============================================ */
 .badge-ok { background-color: #C8E6C9; color: #1B5E20; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-warning { background-color: #FFF3E0; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-danger { background-color: #FFCDD2; color: #C62828; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-stock-bajo { background-color: #FFE0B2; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 
-/* Badges de origen */
+/* ============================================ */
+/* BADGES DE ORIGEN */
+/* ============================================ */
 .origin-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-right: 5px; }
 .origin-apri004 { background-color: #E1BEE7; color: #4A148C; }
 .origin-yessica { background-color: #BBDEFB; color: #0D47A1; }
 .origin-both { background-color: #C8E6C9; color: #1B5E20; }
 
-/* Métricas */
+/* ============================================ */
+/* MÉTRICAS */
+/* ============================================ */
 .metric-card { background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #BBDEFB; }
 .metric-value { font-size: 2.2rem; font-weight: bold; color: #1565C0 !important; }
 
-/* Data editor */
+/* ============================================ */
+/* DATA EDITOR */
+/* ============================================ */
 .stDataFrame { border-radius: 12px !important; overflow: hidden !important; }
 .stDataFrame thead th { background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%) !important; color: white !important; font-weight: 600 !important; }
 
-/* Text area para SKUs */
+/* ============================================ */
+/* TEXT AREA PARA SKUS */
+/* ============================================ */
 .stTextArea textarea {
     color: #1A1A2E !important;
     background-color: white !important;
@@ -140,7 +176,9 @@ div[data-baseweb="select"] li[aria-selected="true"] { background: linear-gradien
     font-size: 14px !important;
 }
 
-/* Expander en sidebar */
+/* ============================================ */
+/* EXPANDER EN SIDEBAR */
+/* ============================================ */
 [data-testid="stSidebar"] .streamlit-expanderHeader {
     color: #FFFFFF !important;
 }
@@ -148,45 +186,14 @@ div[data-baseweb="select"] li[aria-selected="true"] { background: linear-gradien
     color: #FFFFFF !important;
 }
 
-/* Placeholder color */
-.stTextInput input::placeholder,
-.stTextArea textarea::placeholder {
-    color: #90CAF9 !important;
-    opacity: 1;
-}
-
-/* Indicadores de stock */
+/* ============================================ */
+/* INDICADORES DE STOCK (SEMÁFORO) */
+/* ============================================ */
 .stock-verde { color: #2E7D32; font-weight: bold; background-color: #C8E6C9; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 .stock-amarillo { color: #E65100; font-weight: bold; background-color: #FFE0B2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 .stock-rojo { color: #C62828; font-weight: bold; background-color: #FFCDD2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
-/* Forzar visibilidad del botón del sidebar */
-.stApp > header {
-    background-color: #0D47A1 !important;
-    z-index: 100 !important;
-}
-.stApp > header button {
-    background-color: #FF9800 !important;
-    color: white !important;
-    border-radius: 50% !important;
-    width: 32px !important;
-    height: 32px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    margin-left: 10px !important;
-}
-.stApp > header button:hover {
-    background-color: #E65100 !important;
-    transform: scale(1.1);
-}
-/* Icono del botón */
-.stApp > header button svg {
-    fill: white !important;
-    stroke: white !important;
-}
 </style>
 """, unsafe_allow_html=True)
-
 # ============================================
 # INICIALIZACIÓN DE VARIABLES DE SESIÓN
 # ============================================
