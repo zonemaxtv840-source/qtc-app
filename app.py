@@ -485,7 +485,7 @@ def obtener_mensaje_stock(stock: int) -> str:
     return "Stock suficiente"
 
 # ============================================
-# CONFIGURACIÓN DE PÁGINA
+# CONFIGURACIÓN DE PÁGINA Y CSS COMPLETO
 # ============================================
 
 try:
@@ -494,15 +494,169 @@ try:
 except:
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon="💼", layout="wide")
 
+# CSS COMPLETO - Reemplaza TODO el CSS anterior
 st.markdown("""
 <style>
+/* Fondo general */
 .stApp { background: linear-gradient(135deg, #E8F5E9 50%, #C8E6C9 100%) !important; }
 .main .block-container { background-color: transparent !important; }
+
+/* Tipografía general */
 h1, h2, h3, h4, h5, h6 { color: #0A0A0A !important; font-family: 'Segoe UI', sans-serif; }
-[data-testid="stSidebar"] { background: linear-gradient(180deg, #0D3B0F 50%, #1B5E20 100%) !important; }
-[data-testid="stSidebar"] * { color: #FFFFFF !important; }
-.stButton > button { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important; color: white !important; border-radius: 12px; font-weight: 600; border: none; transition: all 0.3s ease; }
-.stButton > button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+p, div, span, label, .stMarkdown { color: #0A0A0A !important; }
+
+/* ========== SIDEBAR MEJORADO (FONDO MARRÓN, TEXTO MARRÓN CLARO) ========== */
+[data-testid="stSidebar"] { 
+    background: linear-gradient(180deg, #3E2723 0%, #4E342E 100%) !important;
+}
+
+/* Todo el texto del sidebar en marrón claro tipo latte */
+[data-testid="stSidebar"] * { 
+    color: #D7CCC8 !important;
+}
+
+[data-testid="stSidebar"] .stMarkdown, 
+[data-testid="stSidebar"] p, 
+[data-testid="stSidebar"] div,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] .stMarkdown p {
+    color: #D7CCC8 !important;
+}
+
+/* Títulos del sidebar en ámbar suave */
+[data-testid="stSidebar"] h1, 
+[data-testid="stSidebar"] h2, 
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] .stMarkdown h3 {
+    color: #FFCC80 !important;
+    font-weight: 600 !important;
+}
+
+/* Inputs en sidebar - fondo claro */
+[data-testid="stSidebar"] .stTextInput input,
+[data-testid="stSidebar"] .stTextArea textarea,
+[data-testid="stSidebar"] .stNumberInput input {
+    color: #3E2723 !important;
+    background-color: #FFF8E1 !important;
+    border-radius: 10px !important;
+    border: 1px solid #FFB74D !important;
+}
+
+[data-testid="stSidebar"] .stTextInput input:focus,
+[data-testid="stSidebar"] .stTextArea textarea:focus {
+    border-color: #FF9800 !important;
+    box-shadow: 0 0 0 2px rgba(255,152,0,0.2) !important;
+}
+
+/* Placeholder */
+[data-testid="stSidebar"] .stTextInput input::placeholder,
+[data-testid="stSidebar"] .stTextArea textarea::placeholder {
+    color: #A1887F !important;
+}
+
+/* Selectores */
+[data-testid="stSidebar"] .stSelectbox > div > div {
+    background-color: #FFF8E1 !important;
+    border: 1px solid #FFB74D !important;
+    border-radius: 10px !important;
+    color: #3E2723 !important;
+}
+
+[data-testid="stSidebar"] .stSelectbox label {
+    color: #D7CCC8 !important;
+}
+
+/* File uploader */
+[data-testid="stSidebar"] .stFileUploader > div > div {
+    background-color: #FFF8E1 !important;
+    border: 1px dashed #FFB74D !important;
+    border-radius: 12px !important;
+}
+
+[data-testid="stSidebar"] .stFileUploader button {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%) !important;
+    color: #3E2723 !important;
+    font-weight: 600 !important;
+}
+
+/* Expander */
+[data-testid="stSidebar"] .streamlit-expanderHeader {
+    color: #D7CCC8 !important;
+    background-color: rgba(255,255,255,0.05) !important;
+    border-radius: 8px !important;
+}
+
+[data-testid="stSidebar"] .streamlit-expanderHeader:hover {
+    color: #FFCC80 !important;
+    background-color: rgba(255,255,255,0.1) !important;
+}
+
+[data-testid="stSidebar"] .streamlit-expanderContent {
+    color: #D7CCC8 !important;
+}
+
+/* Alertas en sidebar */
+[data-testid="stSidebar"] .stAlert {
+    background-color: #3E2723 !important;
+    border-left-color: #FF9800 !important;
+}
+
+[data-testid="stSidebar"] .stAlert [data-testid="stMarkdown"] {
+    color: #FFF8E1 !important;
+}
+
+/* Caption */
+[data-testid="stSidebar"] .stCaption, 
+[data-testid="stSidebar"] caption {
+    color: #BCAAA4 !important;
+}
+
+/* Botones en sidebar */
+[data-testid="stSidebar"] .stButton > button {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%) !important;
+    color: #3E2723 !important;
+    font-weight: 600 !important;
+}
+
+[data-testid="stSidebar"] .stButton > button:hover {
+    background: linear-gradient(135deg, #F57C00 0%, #E65100 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Botón primario (activo) */
+[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, #FFB74D 0%, #FF9800 100%) !important;
+    color: #3E2723 !important;
+    border: 1px solid #FFE0B2 !important;
+}
+
+/* Botón secundario (inactivo) */
+[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
+    background: rgba(255,255,255,0.1) !important;
+    color: #D7CCC8 !important;
+    border: 1px solid #FFB74D !important;
+}
+
+/* ========== FIN SIDEBAR ========== */
+
+/* Botones principales fuera del sidebar */
+.stButton > button { 
+    background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important; 
+    color: white !important; 
+    border-radius: 12px; 
+    font-weight: 600; 
+    border: none; 
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.stButton > button:hover { 
+    background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%) !important; 
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Badges */
 .badge-ok { background-color: #C8E6C9; color: #1B5E20; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-warning { background-color: #FFF3E0; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
 .badge-danger { background-color: #FFCDD2; color: #C62828; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
@@ -513,8 +667,15 @@ h1, h2, h3, h4, h5, h6 { color: #0A0A0A !important; font-family: 'Segoe UI', san
 .stock-verde { color: #2E7D32; font-weight: bold; background-color: #C8E6C9; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 .stock-amarillo { color: #E65100; font-weight: bold; background-color: #FFE0B2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 .stock-rojo { color: #C62828; font-weight: bold; background-color: #FFCDD2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
+
+/* Data editor */
 .stDataFrame { border-radius: 12px !important; overflow: hidden !important; }
 .stDataFrame thead th { background-color: #1B5E20 !important; color: white !important; }
+
+/* Tabs */
+.stTabs [data-baseweb="tab-list"] { background-color: white !important; border-radius: 12px !important; padding: 6px !important; }
+.stTabs [data-baseweb="tab"] { color: #1B5E20 !important; background-color: #F5F5F5 !important; border-radius: 10px !important; padding: 10px 20px !important; }
+.stTabs [aria-selected="true"] { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important; color: white !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -594,21 +755,21 @@ except:
 
 st.markdown("---")
 
+# Selección inicial de modo (solo si es None)
 if st.session_state.tipo_cotizacion is None:
     st.markdown("### 🎯 ¿Qué vas a cotizar hoy?")
     col1, col2 = st.columns(2)
     with col1:
         if st.button("🔋 XIAOMI", use_container_width=True):
             st.session_state.tipo_cotizacion = ModoCotizacion.XIAOMI
-            st.session_state.stocks = []
             st.rerun()
     with col2:
         if st.button("💼 GENERAL", use_container_width=True):
             st.session_state.tipo_cotizacion = ModoCotizacion.GENERAL
-            st.session_state.stocks = []
             st.rerun()
     st.stop()
 
+# Mostrar modo actual
 if st.session_state.tipo_cotizacion == ModoCotizacion.XIAOMI:
     st.success("🔋 **Modo XIAOMI** - Stock en APRI.004 + YESSICA")
 else:
@@ -617,7 +778,7 @@ else:
 st.markdown("---")
 
 # ============================================
-# SIDEBAR
+# SIDEBAR (CON SELECTOR DE MODO)
 # ============================================
 
 with st.sidebar:
@@ -663,8 +824,9 @@ with st.sidebar:
     archivos_stock = st.file_uploader("Excel", type=['xlsx', 'xls'], accept_multiple_files=True, key="stock_upload")
     if archivos_stock:
         st.session_state.stocks = cargar_stocks(archivos_stock, st.session_state.tipo_cotizacion)
+
 # ============================================
-# TABS
+# TABS PRINCIPALES
 # ============================================
 
 tab_cotizacion, tab_buscar, tab_dashboard = st.tabs(["📦 Cotización", "🔍 Buscar Productos", "📊 Dashboard"])
@@ -741,7 +903,7 @@ with tab_cotizacion:
             html += '<thead><tr style="background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%); color: white;">'
             html += '<th style="padding: 10px;">SKU</th><th style="padding: 10px;">Descripción</th><th style="padding: 10px;">Precio</th>'
             html += '<th style="padding: 10px;">Pedido</th><th style="padding: 10px;">Stock</th><th style="padding: 10px;">Origen</th>'
-            html += '<th style="padding: 10px;">A Cotizar</th><th style="padding: 10px;">Total</th><th style="padding: 10px;">Estado</th><tr></thead><tbody>'
+            html += '<th style="padding: 10px;">A Cotizar</th><th style="padding: 10px;">Total</th><th style="padding: 10px;">Estado</th></tr></thead><tbody>'
             
             for item in st.session_state.resultados:
                 precio_str = f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio"
