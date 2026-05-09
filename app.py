@@ -116,7 +116,7 @@ def cargar_archivo_dataframe(archivo, tipo="catalogo"):
             if tipo == "catalogo":
                 xls = pd.ExcelFile(archivo)
                 hojas = xls.sheet_names
-                hoja_seleccionada = st.sidebar.selectbox(f"📗 Hoja {archivo.name}:", hojas, key=f"cat_{archivo.name}_{tipo}")
+                hoja_seleccionada = st.sidebar.selectbox(f"Hoja {archivo.name}:", hojas, key=f"cat_{archivo.name}_{tipo}")
                 df = pd.read_excel(archivo, sheet_name=hoja_seleccionada)
             else:
                 df = pd.read_excel(archivo)
@@ -688,7 +688,7 @@ with col2:
     </div>
     """, unsafe_allow_html=True)
 with col3:
-    st.markdown(f"""
+    st.markdown("""
     <div style="text-align: right; background: white; padding: 10px 20px; border-radius: 30px; margin-top: 10px;">
         <span style="font-weight: 600;">👤 Admin</span><br>
         <span style="font-size: 0.7rem; color: #4CAF50;">● Activo</span>
@@ -811,7 +811,7 @@ with tab_cotizacion:
                 st.markdown(f"**Stocks:** {len(st.session_state.stocks)} secciones")
     
     if not st.session_state.catalogos:
-        st.warning("Bienvenido a QTC Smart Sales Pro - Carga tus catalagos de precios en el panel izquierdo")
+        st.warning("Bienvenido a QTC Smart Sales Pro - Carga tus catalogos de precios en el panel izquierdo")
         
         with st.expander("Guia: Como cargar archivos CSV correctamente", expanded=True):
             st.markdown("""
