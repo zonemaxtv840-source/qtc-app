@@ -284,7 +284,9 @@ def cargar_stocks(archivos, modo: str) -> List[Dict]:
             st.error(f"Error en {archivo.name}: {str(e)[:100]}")
     
     return stocks_cargados
-def buscar_stock(stocks: List[Dict], sku: str, modo: str) -> Tuple[int, Dict, int, int, Dict]:
+    
+    
+    def buscar_stock(stocks: List[Dict], sku: str, modo: str) -> Tuple[int, Dict, int, int, Dict]:
     """
     Busca stock según el modo.
     Retorna: (stock_total, detalles, stock_apri004, stock_yessica, detalles_completos)
