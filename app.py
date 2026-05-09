@@ -621,6 +621,31 @@ st.markdown("---")
 # ============================================
 
 with st.sidebar:
+    # ===== SELECTOR DE MODO =====
+    st.markdown("### 🎯 Modo de Cotización")
+    modo_actual = st.session_state.tipo_cotizacion
+    
+    col_m1, col_m2 = st.columns(2)
+    with col_m1:
+        if st.button("🔋 XIAOMI", use_container_width=True, 
+                    type="primary" if modo_actual == ModoCotizacion.XIAOMI else "secondary"):
+            if modo_actual != ModoCotizacion.XIAOMI:
+                st.session_state.tipo_cotizacion = ModoCotizacion.XIAOMI
+                st.session_state.stocks = []
+                st.session_state.resultados = None
+                st.rerun()
+    with col_m2:
+        if st.button("💼 GENERAL", use_container_width=True,
+                    type="primary" if modo_actual == ModoCotizacion.GENERAL else "secondary"):
+            if modo_actual != ModoCotizacion.GENERAL:
+                st.session_state.tipo_cotizacion = ModoCotizacion.GENERAL
+                st.session_state.stocks = []
+                st.session_state.resultados = None
+                st.rerun()
+    
+    st.markdown("---")
+    
+    # ===== ARCHIVOS =====
     st.markdown("### 📂 Archivos")
     
     st.markdown("**📚 Catálogos de Precios**")
@@ -638,7 +663,6 @@ with st.sidebar:
     archivos_stock = st.file_uploader("Excel", type=['xlsx', 'xls'], accept_multiple_files=True, key="stock_upload")
     if archivos_stock:
         st.session_state.stocks = cargar_stocks(archivos_stock, st.session_state.tipo_cotizacion)
-
 # ============================================
 # TABS
 # ============================================
