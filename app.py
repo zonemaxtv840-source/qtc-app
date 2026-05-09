@@ -72,6 +72,7 @@ TIPOS_CATALOGO = {
         }
     }
 }
+
 # ============================================
 # FUNCIONES DE UTILIDAD
 # ============================================
@@ -170,10 +171,6 @@ def detectar_precio_inteligente(df: pd.DataFrame, tipo_precio: str, tipo_catalog
                 return col_limpio
     return None
 
-# ============================================
-# FUNCIONES DE CARGA
-# ============================================
-
 def cargar_catalogo(archivo) -> Optional[Dict]:
     """Carga un catálogo con detección inteligente."""
     df = cargar_archivo_datos(archivo)
@@ -216,7 +213,7 @@ def cargar_catalogo(archivo) -> Optional[Dict]:
     }
 
 def cargar_stocks(archivos, modo: str) -> List[Dict]:
-    """Carga archivos de stock y detecta columnas específicas según el modo."""
+    """Carga archivos de stock y filtra hojas según el modo."""
     stocks_cargados = []
     for archivo in archivos:
         try:
@@ -239,57 +236,25 @@ def cargar_stocks(archivos, modo: str) -> List[Dict]:
                 
                 col_sku = detectar_columna_inteligente(
                     df, 
-                    ['SKU', 'COD', 'NUMERO', 'NÚMERO DE ARTÍCULO', 'CODIGO', 'ARTICULO']
+                    ['SKU', 'COD', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO', 'CODIGO']
                 )
-                
-                # DETECCIÓN INTELIGENTE DE COLUMNAS DE STOCK
-                col_en_stock = detectar_columna_inteligente(
+                col_stock = detectar_columna_inteligente(
                     df, 
-                    ['EN STOCK', 'STOCK', 'DISPONIBLE', 'CANTIDAD', 'CANT']
+                    ['STOCK', 'DISPONIBLE', 'CANTIDAD', 'CANT', 'SALDO', 'UNIDADES']
                 )
-                col_comprometido = detectar_columna_inteligente(
-                    df, 
-                    ['COMPROMETIDO', 'RESERVADO', 'APARTADO']
-                )
-                col_solicitado = detectar_columna_inteligente(
-                    df, 
-                    ['SOLICITADO', 'SOLICITADA', 'PEDIDO', 'ORDENADO']
-                )
-                col_disponible = detectar_columna_inteligente(
-                    df, 
-                    ['DISPONIBLE', 'LIBRE', 'NETO']
-                )
-                
-                # ✅ CORREGIDO: Para modo GENERAL, la columna principal es DISPONIBLE
-                col_stock_principal = col_disponible if modo == ModoCotizacion.GENERAL else col_en_stock
-                
-                # ✅ CORREGIDO: Si no encontró Disponible, usar En Stock como fallback
-                if modo == ModoCotizacion.GENERAL and not col_stock_principal:
-                    col_stock_principal = col_en_stock
-                    st.warning(f"⚠️ En {hoja} no se encontró columna 'Disponible', usando 'En stock' como referencia.")
                 
                 stocks_cargados.append({
                     'nombre': f"{archivo.name} [{hoja}]",
                     'df': df,
                     'col_sku': col_sku,
-                    'col_en_stock': col_en_stock,
-                    'col_comprometido': col_comprometido,
-                    'col_solicitado': col_solicitado,
-                    'col_disponible': col_disponible,
-                    'col_stock_principal': col_stock_principal,
-                    'hoja': hoja,
-                    'modo': modo
+                    'col_stock': col_stock,
+                    'hoja': hoja
                 })
                 st.success(f"✅ {archivo.name} → Hoja: {hoja}")
-                st.caption(f"   📊 Stock: {'Disponible' if modo == ModoCotizacion.GENERAL else 'En stock'} como principal")
         except Exception as e:
             st.error(f"Error en {archivo.name}: {str(e)[:100]}")
     
     return stocks_cargados
-
-# ============================================
-# FUNCIONES DE BÚSQUEDA (precio y stock)
-# ============================================
 
 def buscar_precio(catalogos: List[Dict], sku: str, col_precio_seleccionada: str) -> Dict:
     """Busca precio en catálogos."""
@@ -323,66 +288,38 @@ def buscar_precio(catalogos: List[Dict], sku: str, col_precio_seleccionada: str)
             }
     return {'encontrado': False, 'precio': 0.0, 'descripcion': ""}
 
-def buscar_stock(stocks: List[Dict], sku: str, modo: str) -> Tuple[int, Dict, int, int, Dict]:
-    """
-    Busca stock según el modo.
-    Retorna: (stock_total, detalles, stock_apri004, stock_yessica, detalles_completos)
-    
-    - Modo XIAOMI: Suma stock de APRI.004 + YESSICA (usa columna EN STOCK)
-    - Modo GENERAL: Usa columna DISPONIBLE de APRI.001 como stock principal
-    """
+def buscar_stock(stocks: List[Dict], sku: str, modo: str) -> Tuple[int, Dict, int, int]:
+    """Busca stock según el modo."""
     sku_limpio = sku.strip().upper()
     stock_total = 0
     stock_apri004 = 0
     stock_yessica = 0
     detalles = {}
-    detalles_completos = {}
     
     for stock in stocks:
         hoja = stock['hoja'].upper()
         mask = stock['df'][stock['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
         if mask.any():
             row = stock['df'][mask].iloc[0]
+            cantidad = int(corregir_numero(row[stock['col_stock']]))
             
-            # ========== MODO GENERAL (APRI.001) ==========
-            if modo == ModoCotizacion.GENERAL and 'APRI.001' in hoja:
-                # Obtener valores de las columnas específicas
-                en_stock = int(corregir_numero(row[stock['col_en_stock']])) if stock.get('col_en_stock') else 0
-                comprometido = int(corregir_numero(row[stock['col_comprometido']])) if stock.get('col_comprometido') else 0
-                solicitado = int(corregir_numero(row[stock['col_solicitado']])) if stock.get('col_solicitado') else 0
-                disponible = int(corregir_numero(row[stock['col_disponible']])) if stock.get('col_disponible') else 0
-                
-                # ✅ USAR DISPONIBLE como stock principal para cotizar
-                stock_total = disponible
-                
-                # Guardar todos los detalles para mostrar en la tabla
-                detalles_completos = {
-                    'En Stock': en_stock,
-                    'Comprometido': comprometido,
-                    'Solicitado': solicitado,
-                    'Disponible': disponible
-                }
-                detalles[stock['nombre']] = stock_total
-                return stock_total, detalles, 0, 0, detalles_completos
-            
-            # ========== MODO XIAOMI (APRI.004 / YESSICA) ==========
-            elif modo == ModoCotizacion.XIAOMI:
-                # Usar columna EN STOCK como principal
-                col_stock_principal = stock.get('col_stock_principal', stock.get('col_en_stock'))
-                cantidad = int(corregir_numero(row[col_stock_principal])) if col_stock_principal else 0
-                
+            if modo == ModoCotizacion.XIAOMI:
                 if 'APRI.004' in hoja:
                     stock_apri004 = cantidad
                     detalles['APRI.004'] = cantidad
                 elif 'YESSICA' in hoja:
                     stock_yessica = cantidad
                     detalles['YESSICA'] = cantidad
+            else:
+                if 'APRI.001' in hoja:
+                    stock_total = cantidad
+                    detalles[stock['nombre']] = cantidad
+                    return stock_total, detalles, 0, 0
     
-    # Para modo XIAOMI, sumar ambos stocks
     if modo == ModoCotizacion.XIAOMI:
         stock_total = stock_apri004 + stock_yessica
     
-    return stock_total, detalles, stock_apri004, stock_yessica, detalles_completos
+    return stock_total, detalles, stock_apri004, stock_yessica
 
 def obtener_descripcion_fallback(stocks: List[Dict], sku: str) -> str:
     """Obtiene descripción de archivos de stock."""
@@ -399,6 +336,154 @@ def obtener_descripcion_fallback(stocks: List[Dict], sku: str) -> str:
                         return desc[:100]
             return f"SKU: {sku}"
     return f"SKU: {sku}"
+
+def procesar_pedidos(pedidos: List[Dict], catalogos: List[Dict], stocks: List[Dict], 
+                     col_precio: str, modo: str) -> Tuple[List[Dict], List[str]]:
+    """Procesa el listado de pedidos."""
+    resultados = []
+    advertencias = []
+    
+    for pedido in pedidos:
+        sku = pedido['sku']
+        cant_solicitada = pedido['cantidad']
+        
+        precio_info = buscar_precio(catalogos, sku, col_precio)
+        stock_total, stock_detalle, stock_apri004, stock_yessica = buscar_stock(stocks, sku, modo)
+        
+        descripcion = precio_info['descripcion']
+        if not descripcion or descripcion == '':
+            descripcion = obtener_descripcion_fallback(stocks, sku)
+        
+        precio = precio_info['precio']
+        sin_precio = not precio_info['encontrado'] or precio == 0
+        sin_stock = stock_total == 0
+        
+        if sin_precio and sin_stock:
+            estado = "❌ Sin precio y sin stock"
+            badge_estado = "badge-danger"
+            a_cotizar = 0
+            total = 0
+            advertencias.append(f"❌ **{sku}**: Sin precio y sin stock")
+        elif sin_precio:
+            estado = "⚠️ Sin precio"
+            badge_estado = "badge-warning"
+            a_cotizar = 0
+            total = 0
+            advertencias.append(f"⚠️ **{sku}**: Sin precio en catálogo")
+        elif sin_stock:
+            estado = "❌ Sin stock"
+            badge_estado = "badge-danger"
+            a_cotizar = 0
+            total = 0
+            advertencias.append(f"❌ **{sku}**: Sin stock disponible")
+        elif cant_solicitada > stock_total:
+            a_cotizar = stock_total
+            total = precio * a_cotizar
+            estado = f"⚠️ Stock insuficiente ({stock_total}/{cant_solicitada})"
+            badge_estado = "badge-warning"
+            advertencias.append(f"⚠️ **{sku}**: Stock insuficiente. Solicitado: {cant_solicitada} | Disponible: {stock_total}")
+        else:
+            a_cotizar = cant_solicitada
+            total = precio * a_cotizar
+            estado = "✅ OK"
+            badge_estado = "badge-ok"
+        
+        if modo == ModoCotizacion.XIAOMI:
+            if stock_apri004 > 0 and stock_yessica > 0:
+                badge_origen = f'<span class="origin-badge origin-both">🟣 APRI.004: {stock_apri004} | 🔵 YESSICA: {stock_yessica}</span>'
+            elif stock_apri004 > 0:
+                badge_origen = f'<span class="origin-badge origin-apri004">🟣 APRI.004: {stock_apri004}</span>'
+            elif stock_yessica > 0:
+                badge_origen = f'<span class="origin-badge origin-yessica">🔵 YESSICA: {stock_yessica}</span>'
+            else:
+                badge_origen = '<span class="badge-danger">❌ Sin stock</span>'
+        else:
+            badge_origen = f'<span class="origin-badge origin-both">🟢 Stock: {stock_total}</span>' if stock_total > 0 else '<span class="badge-danger">❌ Sin stock</span>'
+        
+        resultados.append({
+            'SKU': sku,
+            'Descripción': descripcion[:80],
+            'Precio': precio,
+            'Pedido': cant_solicitada,
+            'Stock': stock_total,
+            'Stock_APRI004': stock_apri004,
+            'Stock_YESSICA': stock_yessica,
+            'Origen': badge_origen,
+            'A Cotizar': a_cotizar,
+            'Total': total,
+            'Estado': estado,
+            'Badge_Estado': badge_estado
+        })
+    
+    return resultados, advertencias
+
+def generar_excel(items: List[Dict], cliente: str, ruc: str) -> bytes:
+    """Genera archivo Excel con formato profesional."""
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        pd.DataFrame(items).to_excel(writer, sheet_name='Cotizacion', index=False, startrow=5)
+        
+        workbook = writer.book
+        ws = writer.sheets['Cotizacion']
+        
+        fmt_header = workbook.add_format({'bg_color': '#F79646', 'bold': True, 'border': 1, 'align': 'center', 'font_color': 'white'})
+        fmt_money = workbook.add_format({'num_format': '"S/." #,##0.00', 'border': 1, 'align': 'right'})
+        fmt_border = workbook.add_format({'border': 1})
+        fmt_bold = workbook.add_format({'bold': True})
+        
+        ws.set_column('A:A', 20)
+        ws.set_column('B:B', 75)
+        ws.set_column('C:C', 12)
+        ws.set_column('D:D', 18)
+        ws.set_column('E:E', 18)
+        
+        ws.write('A1', 'FECHA:', fmt_bold)
+        ws.write('B1', datetime.now().strftime("%d/%m/%Y"))
+        ws.write('A2', 'CLIENTE:', fmt_bold)
+        ws.write('B2', cliente.upper())
+        ws.write('A3', 'RUC:', fmt_bold)
+        ws.write('B3', ruc)
+        
+        ws.merge_range('F1:H1', 'DATOS BANCARIOS', fmt_header)
+        ws.write('F2', 'BBVA SOLES:', workbook.add_format({'font_color': 'red', 'bold': True, 'border': 1}))
+        ws.write('G2', '0011-0616-0100012617', fmt_border)
+        
+        headers = ['Código SAP', 'Descripción', 'Cantidad', 'Precio Unit.', 'Total']
+        for i, header in enumerate(headers):
+            ws.write(5, i, header, fmt_header)
+        
+        for row_idx, item in enumerate(items):
+            ws.write_row(row_idx + 6, 0, [item['sku'], item['desc'], item['cant'], item['p_u'], item['total']], fmt_border)
+            ws.write(row_idx + 6, 3, item['p_u'], fmt_money)
+            ws.write(row_idx + 6, 4, item['total'], fmt_money)
+        
+        total_row = len(items) + 6
+        ws.write(total_row, 3, 'TOTAL S/.', fmt_header)
+        ws.write(total_row, 4, sum(item['total'] for item in items), fmt_money)
+    
+    return output.getvalue()
+
+def obtener_clase_stock(stock: int) -> str:
+    if stock == 0:
+        return "stock-rojo"
+    elif stock <= 5:
+        return "stock-amarillo"
+    return "stock-verde"
+
+def obtener_icono_stock(stock: int) -> str:
+    if stock == 0:
+        return "❌"
+    elif stock <= 5:
+        return "⚠️"
+    return "✅"
+
+def obtener_mensaje_stock(stock: int) -> str:
+    if stock == 0:
+        return "Sin stock disponible"
+    elif stock <= 5:
+        return f"¡Stock bajo! Solo quedan {stock} unidades"
+    return "Stock suficiente"
+
 # ============================================
 # CONFIGURACIÓN DE PÁGINA Y CSS COMPLETO
 # ============================================
@@ -833,7 +918,7 @@ with tab_cotizacion:
                 html += f'<td style="padding: 10px; text-align: center;">{precio_str}</td>'
                 html += f'<td style="padding: 10px; text-align: center;">{item["Pedido"]}</td>'
                 html += f'<td style="padding: 10px; text-align: center;">{stock_html}</td>'
-                html += f'<td style="padding: 10px;">{item["Origen"]}<br>{item.get("Detalle_Stock_HTML", "")}</td>'
+                html += f'<td style="padding: 10px;">{item["Origen"]}</td>'
                 html += f'<td style="padding: 10px; text-align: center;"><strong>{item["A Cotizar"]}</strong></td>'
                 html += f'<td style="padding: 10px; text-align: center;"><strong>{total_str}</strong></td>'
                 html += f'<td style="padding: 10px; text-align: center;"><span class="{item["Badge_Estado"]}">{item["Estado"]}</span></td>'
