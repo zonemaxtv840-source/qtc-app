@@ -235,7 +235,6 @@ def corregir_numero(valor):
         return 0.0
 
 def limpiar_cabeceras(df):
-    """Busca la fila que contiene SKU y la usa como cabecera"""
     for i in range(min(20, len(df))):
         fila = [str(x).upper() for x in df.iloc[i].values]
         if any(h in item for h in ['SKU', 'COD', 'ARTICULO', 'NUMERO', 'SAP'] for item in fila):
@@ -244,7 +243,6 @@ def limpiar_cabeceras(df):
     return df
 
 def mapear_columna_precio(columnas, nombre_buscar):
-    """Mapea nombres amigables a columnas reales del CSV"""
     mapeo = {
         "P. IR": ["MAYOR", "MAYORISTA", "P.IR", "P IR"],
         "P. BOX": ["CAJA", "BOX", "P.BOX", "P BOX"],
@@ -265,7 +263,6 @@ def cargar_catalogo(archivo):
     try:
         if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
-            # Método robusto para CSV
             try:
                 df = pd.read_csv(io.BytesIO(contenido), sep=None, engine='python', encoding='latin1', on_bad_lines='skip')
             except:
@@ -666,6 +663,33 @@ with st.sidebar:
         st.info("🔋 Modo XIAOMI activo")
     else:
         st.info("💼 Modo GENERAL activo")
+    
+    # ============================================
+    # INDICADOR DE HOJA DE STOCK (VISIBLE)
+    # ============================================
+    st.markdown("---")
+    if st.session_state.tipo_cotizacion == "XIAOMI":
+        st.markdown("""
+        <div style="background-color: #E1BEE7; padding: 8px; border-radius: 10px; margin: 5px 0;">
+            <span style="color: #4A148C; font-weight: bold;">📊 STOCK XIAOMI</span><br>
+            <span style="font-size: 0.75rem;">📦 APRI.004 + 📋 YESSICA (suma ambas)</span>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div style="background-color: #BBDEFB; padding: 8px; border-radius: 10px; margin: 5px 0;">
+            <span style="color: #0D47A1; font-weight: bold;">📊 STOCK GENERAL</span><br>
+            <span style="font-size: 0.75rem;">📄 Hoja: APRI.001 → Columna "Disponible"</span>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Mostrar las hojas cargadas actualmente
+    if st.session_state.stocks:
+        st.caption(f"📁 Hojas cargadas: {len(st.session_state.stocks)}")
+        for stock in st.session_state.stocks[:3]:
+            st.caption(f"   └─ {stock['nombre']}")
+        if len(st.session_state.stocks) > 3:
+            st.caption(f"   └─ ... y {len(st.session_state.stocks) - 3} más")
     
     st.markdown("---")
     
