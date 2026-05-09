@@ -211,7 +211,6 @@ if not st.session_state.auth:
     
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.stop()
-
 # ============================================
 # FUNCIONES DE LA APLICACIÓN
 # ============================================
@@ -235,74 +234,41 @@ def corregir_numero(valor):
         return 0.0
 
 def limpiar_cabeceras(df):
-    """Busca la fila que contiene SKU y la usa como cabecera"""
-    # Convertir todo a string de forma segura
-    df = df.astype(str).replace('nan', '').replace('None', '')
-    
-    for i in range(min(50, len(df))):
-        fila = df.iloc[i].astype(str).values
-        for celda in fila:
-            if 'SKU' in celda.upper():
-                nuevas_columnas = []
-                for j, val in enumerate(df.iloc[i].values):
-                    if pd.notna(val) and str(val).strip() != '':
-                        nuevas_columnas.append(str(val).strip())
-                    else:
-                        nuevas_columnas.append(f"Col_{j}")
-                df.columns = nuevas_columnas
-                df = df.iloc[i+1:].reset_index(drop=True)
-                df = df.dropna(axis=1, how='all')
-                return df
-    return df
+    """Busca la fila que contiene SKU y la usa como cabecera (método Colab)"""
+    for i in range(min(15, len(df))):
+        fila_texto = [str(x).upper() for x in df.iloc[i].values]
+        if any(h in item for h in ['SKU', 'COD', 'ARTICULO', 'NUMERO', 'SAP'] for item in fila_texto):
+            df.columns = [str(c).strip() for c in df.iloc[i]]
+            df = df.iloc[i+1:].reset_index(drop=True)
+            break
+    df.columns = [str(c).strip() for c in df.columns]
+    return df.fillna('')
 
-def leer_csv_flexible(contenido):
-    """Lee CSV de forma flexible, detectando encoding, separador y cabecera"""
-    # Probar encodings
-    for encoding in ['utf-8-sig', 'latin-1', 'utf-8', 'cp1252']:
-        try:
-            texto = contenido.decode(encoding)
-            break
-        except:
-            continue
-    else:
-        texto = contenido.decode('utf-8', errors='ignore')
-    
-    lineas = texto.split('\n')
-    
-    # Buscar línea con SKU (ignorando mayúsculas/minúsculas)
-    start_row = 0
-    for i, linea in enumerate(lineas[:100]):
-        linea_upper = linea.upper()
-        if 'SKU' in linea_upper or 'ARTICULO' in linea_upper or 'NÚMERO' in linea_upper:
-            start_row = i
-            break
-    
-    # Si no encontró SKU, empezar desde la primera línea no vacía
-    if start_row == 0:
-        for i, linea in enumerate(lineas[:20]):
-            if linea.strip() and len(linea.split(';')) > 1:
-                start_row = i
-                break
-    
-    csv_limpio = '\n'.join(lineas[start_row:])
-    
-    # Probar separadores
-    for sep in [';', ',']:
-        try:
-            df = pd.read_csv(io.StringIO(csv_limpio), sep=sep, dtype=str, on_bad_lines='skip')
-            if len(df.columns) >= 2:
-                return df
-        except:
-            continue
-    
-    # Último recurso
-    return pd.read_csv(io.StringIO(csv_limpio), sep=';', dtype=str, on_bad_lines='skip', engine='python')
+def mapear_columna_precio(columnas, nombre_buscar):
+    for col in columnas:
+        col_upper = str(col).upper()
+        if nombre_buscar.upper() in col_upper:
+            return col
+        if nombre_buscar.upper() == "P. IR" and "MAYORISTA" in col_upper:
+            return col
+        if nombre_buscar.upper() == "P. BOX" and "CAJA" in col_upper:
+            return col
+        if nombre_buscar.upper() == "P. VIP" and ("VIP" in col_upper or "P.VIP" in col_upper):
+            return col
+    return None
 
 def cargar_catalogo(archivo):
     try:
         if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
-            df = leer_csv_flexible(contenido)
+            # Método que funciona en Colab
+            try:
+                df = pd.read_csv(io.BytesIO(contenido), sep=None, engine='python', encoding='latin1', on_bad_lines='skip')
+            except:
+                try:
+                    df = pd.read_csv(io.BytesIO(contenido), sep=None, engine='python', encoding='utf-8', on_bad_lines='skip')
+                except:
+                    df = pd.read_csv(io.BytesIO(contenido), sep=';', engine='python', encoding='latin1', on_bad_lines='skip')
             df = limpiar_cabeceras(df)
             hoja_seleccionada = "CSV"
         else:
@@ -358,14 +324,17 @@ def cargar_stock_completo(archivo):
         
         if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
-            df = leer_csv_flexible(contenido)
+            # Método que funciona en Colab
+            try:
+                df = pd.read_csv(io.BytesIO(contenido), sep=None, engine='python', encoding='latin1', on_bad_lines='skip')
+            except:
+                try:
+                    df = pd.read_csv(io.BytesIO(contenido), sep=None, engine='python', encoding='utf-8', on_bad_lines='skip')
+                except:
+                    df = pd.read_csv(io.BytesIO(contenido), sep=';', engine='python', encoding='latin1', on_bad_lines='skip')
             
-            # Normalizar nombres de columnas
+            df = limpiar_cabeceras(df)
             df.columns = [str(col).strip().upper() for col in df.columns]
-            
-            # Limpiar datos
-            df = df.replace('nan', '').replace('None', '')
-            df = df.dropna(axis=1, how='all')
             
             # Buscar columna SKU
             col_sku = None
@@ -381,7 +350,6 @@ def cargar_stock_completo(archivo):
                     col_stock = col
                     break
             
-            # Fallback
             if col_sku is None and len(df.columns) > 0:
                 col_sku = df.columns[0]
             if col_stock is None and len(df.columns) > 1:
@@ -401,8 +369,6 @@ def cargar_stock_completo(archivo):
                 df = pd.read_excel(archivo, sheet_name=hoja)
                 df = limpiar_cabeceras(df)
                 df.columns = [str(col).strip().upper() for col in df.columns]
-                df = df.replace('nan', '').replace('None', '')
-                df = df.dropna(axis=1, how='all')
                 
                 col_sku = None
                 for col in df.columns:
@@ -522,12 +488,6 @@ def buscar_stock_general(stocks, sku):
                 row = stock['df'][mask].iloc[0]
                 stock_total = int(corregir_numero(row[stock['col_stock']]))
                 break
-    
-    # Asegurar que stock_total sea un número entero
-    try:
-        stock_total = int(float(stock_total))
-    except:
-        stock_total = 0
     
     return stock_total, 0, 0
 
