@@ -255,59 +255,54 @@ def limpiar_cabeceras(df):
                 return df
     return df
 
-def leer_csv_seguro(contenido):
-    """Lee CSV probando diferentes encodings y separadores"""
-    # Probar encoding
-    try:
-        texto = contenido.decode('utf-8-sig')
-    except:
+def leer_csv_flexible(contenido):
+    """Lee CSV de forma flexible, detectando encoding, separador y cabecera"""
+    # Probar encodings
+    for encoding in ['utf-8-sig', 'latin-1', 'utf-8', 'cp1252']:
         try:
-            texto = contenido.decode('latin-1')
+            texto = contenido.decode(encoding)
+            break
         except:
-            texto = contenido.decode('utf-8', errors='ignore')
+            continue
+    else:
+        texto = contenido.decode('utf-8', errors='ignore')
     
     lineas = texto.split('\n')
     
-    # Buscar línea con SKU
+    # Buscar línea con SKU (ignorando mayúsculas/minúsculas)
     start_row = 0
-    for i, linea in enumerate(lineas[:50]):
-        if 'SKU' in linea.upper():
+    for i, linea in enumerate(lineas[:100]):
+        linea_upper = linea.upper()
+        if 'SKU' in linea_upper or 'ARTICULO' in linea_upper or 'NÚMERO' in linea_upper:
             start_row = i
             break
     
-    # Unir líneas desde la cabecera
+    # Si no encontró SKU, empezar desde la primera línea no vacía
+    if start_row == 0:
+        for i, linea in enumerate(lineas[:20]):
+            if linea.strip() and len(linea.split(';')) > 1:
+                start_row = i
+                break
+    
     csv_limpio = '\n'.join(lineas[start_row:])
     
-    # Probar diferentes separadores
+    # Probar separadores
     for sep in [';', ',']:
         try:
             df = pd.read_csv(io.StringIO(csv_limpio), sep=sep, dtype=str, on_bad_lines='skip')
-            if len(df.columns) > 1:
+            if len(df.columns) >= 2:
                 return df
         except:
             continue
     
-    # Último intento
+    # Último recurso
     return pd.read_csv(io.StringIO(csv_limpio), sep=';', dtype=str, on_bad_lines='skip', engine='python')
-
-def mapear_columna_precio(columnas, nombre_buscar):
-    for col in columnas:
-        col_upper = str(col).upper()
-        if nombre_buscar.upper() in col_upper:
-            return col
-        if nombre_buscar.upper() == "P. IR" and "MAYORISTA" in col_upper:
-            return col
-        if nombre_buscar.upper() == "P. BOX" and "CAJA" in col_upper:
-            return col
-        if nombre_buscar.upper() == "P. VIP" and ("VIP" in col_upper or "P.VIP" in col_upper):
-            return col
-    return None
 
 def cargar_catalogo(archivo):
     try:
         if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
-            df = leer_csv_seguro(contenido)
+            df = leer_csv_flexible(contenido)
             df = limpiar_cabeceras(df)
             hoja_seleccionada = "CSV"
         else:
@@ -317,11 +312,14 @@ def cargar_catalogo(archivo):
             df = pd.read_excel(archivo, sheet_name=hoja_seleccionada)
             df = limpiar_cabeceras(df)
         
+        # Normalizar nombres de columnas
+        df.columns = [str(col).strip().upper() for col in df.columns]
+        
         posibles_skus = ['SKU', 'COD', 'CODIGO', 'SAP', 'NUMERO', 'ARTICULO', 'COD SAP']
         posibles_desc = ['DESC', 'DESCRIPCION', 'NOMBRE', 'PRODUCTO', 'NOMBRE PRODUCTO', 'GOODS DESCRITPION']
         
-        col_sku = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_skus)), df.columns[0])
-        col_desc = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_desc)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
+        col_sku = next((c for c in df.columns if any(p in c for p in posibles_skus)), df.columns[0])
+        col_desc = next((c for c in df.columns if any(p in c for p in posibles_desc)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
         
         columnas_precio = {}
         col_ir = mapear_columna_precio(df.columns, "P. IR")
@@ -335,7 +333,7 @@ def cargar_catalogo(archivo):
             columnas_precio['P. VIP'] = col_vip
         if not columnas_precio:
             for c in df.columns:
-                if 'PRECIO' in str(c).upper() or 'MAYOR' in str(c).upper():
+                if 'PRECIO' in c or 'MAYOR' in c:
                     columnas_precio['PRECIO'] = c
                     break
         
@@ -360,14 +358,34 @@ def cargar_stock_completo(archivo):
         
         if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
-            df = leer_csv_seguro(contenido)
-            df = limpiar_cabeceras(df)
+            df = leer_csv_flexible(contenido)
             
-            posibles_skus = ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO']
-            posibles_stock = ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO', 'EN STOCK']
+            # Normalizar nombres de columnas
+            df.columns = [str(col).strip().upper() for col in df.columns]
             
-            col_sku = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_skus)), df.columns[0])
-            col_stock = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_stock)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
+            # Limpiar datos
+            df = df.replace('nan', '').replace('None', '')
+            df = df.dropna(axis=1, how='all')
+            
+            # Buscar columna SKU
+            col_sku = None
+            for col in df.columns:
+                if any(p in col for p in ['SKU', 'COD', 'CODIGO', 'ARTICULO', 'NUMERO']):
+                    col_sku = col
+                    break
+            
+            # Buscar columna STOCK
+            col_stock = None
+            for col in df.columns:
+                if any(p in col for p in ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO']):
+                    col_stock = col
+                    break
+            
+            # Fallback
+            if col_sku is None and len(df.columns) > 0:
+                col_sku = df.columns[0]
+            if col_stock is None and len(df.columns) > 1:
+                col_stock = df.columns[1]
             
             todas_hojas.append({
                 'nombre': f"{archivo.name} [CSV]",
@@ -376,17 +394,32 @@ def cargar_stock_completo(archivo):
                 'col_stock': col_stock,
                 'hoja': "CSV"
             })
+            st.success(f"✅ CSV cargado: {len(df)} filas")
         else:
             xls = pd.ExcelFile(archivo)
             for hoja in xls.sheet_names:
                 df = pd.read_excel(archivo, sheet_name=hoja)
                 df = limpiar_cabeceras(df)
+                df.columns = [str(col).strip().upper() for col in df.columns]
+                df = df.replace('nan', '').replace('None', '')
+                df = df.dropna(axis=1, how='all')
                 
-                posibles_skus = ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO']
-                posibles_stock = ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO', 'EN STOCK']
+                col_sku = None
+                for col in df.columns:
+                    if any(p in col for p in ['SKU', 'COD', 'CODIGO', 'ARTICULO', 'NUMERO']):
+                        col_sku = col
+                        break
                 
-                col_sku = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_skus)), df.columns[0])
-                col_stock = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_stock)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
+                col_stock = None
+                for col in df.columns:
+                    if any(p in col for p in ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO']):
+                        col_stock = col
+                        break
+                
+                if col_sku is None and len(df.columns) > 0:
+                    col_sku = df.columns[0]
+                if col_stock is None and len(df.columns) > 1:
+                    col_stock = df.columns[1]
                 
                 todas_hojas.append({
                     'nombre': f"{archivo.name} [{hoja}]",
@@ -407,6 +440,7 @@ def buscar_precio(catalogos, sku, col_precio_seleccionada):
     sku_limpio = sku.strip().upper()
     for cat in catalogos:
         df = cat['df']
+        # Búsqueda exacta
         mask = df[cat['col_sku']].astype(str).str.strip().str.upper() == sku_limpio
         if not df[mask].empty:
             row = df[mask].iloc[0]
@@ -421,6 +455,7 @@ def buscar_precio(catalogos, sku, col_precio_seleccionada):
                 'precio': precio,
                 'descripcion': str(row[cat['col_desc']])
             }
+        # Búsqueda parcial
         mask = df[cat['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
         if not df[mask].empty:
             row = df[mask].iloc[0]
@@ -446,7 +481,7 @@ def buscar_descripcion_en_stock(stocks, sku):
         if not df[mask].empty:
             row = df[mask].iloc[0]
             for col in df.columns:
-                if any(p in str(col).upper() for p in ['DESC', 'NOMBRE', 'PRODUCTO', 'DESCRIPCION', 'GOODS DESCRITPION']):
+                if any(p in col for p in ['DESC', 'NOMBRE', 'PRODUCTO', 'DESCRIPCION']):
                     desc = str(row[col])
                     if desc and desc != 'nan':
                         return desc[:100]
@@ -487,6 +522,12 @@ def buscar_stock_general(stocks, sku):
                 row = stock['df'][mask].iloc[0]
                 stock_total = int(corregir_numero(row[stock['col_stock']]))
                 break
+    
+    # Asegurar que stock_total sea un número entero
+    try:
+        stock_total = int(float(stock_total))
+    except:
+        stock_total = 0
     
     return stock_total, 0, 0
 
