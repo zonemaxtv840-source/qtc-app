@@ -982,7 +982,7 @@ with tab_cotizacion:
                 html += f'<td style="padding: 10px; text-align: center;">{precio_str}</td>'
                 html += f'<td style="padding: 10px; text-align: center;">{item["Pedido"]}</td>'
                 html += f'<td style="padding: 10px; text-align: center;">{stock_html}</td>'
-                html += f'<td style="padding: 10px;">{item["Origen"]}</td>'
+                html += f'<td style="padding: 10px;">{item["Origen"]}<br>{item.get("Detalle_Stock_HTML", "")}</td>'
                 html += f'<td style="padding: 10px; text-align: center;"><strong>{item["A Cotizar"]}</strong></td>'
                 html += f'<td style="padding: 10px; text-align: center;"><strong>{total_str}</strong></td>'
                 html += f'<td style="padding: 10px; text-align: center;"><span class="{item["Badge_Estado"]}">{item["Estado"]}</span></td>'
