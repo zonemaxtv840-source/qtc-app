@@ -34,7 +34,7 @@ if "productos_seleccionados" not in st.session_state:
     st.session_state.productos_seleccionados = {}
 
 # ============================================
-# ESTILOS CSS PERSONALIZADOS
+# ESTILOS CSS
 # ============================================
 st.markdown("""
 <style>
@@ -181,7 +181,7 @@ p, div, span, label, .stMarkdown { color: #1A1A2E !important; }
 """, unsafe_allow_html=True)
 
 # ============================================
-# LOGIN PREMIUM
+# LOGIN
 # ============================================
 if not st.session_state.auth:
     st.markdown("""
@@ -272,22 +272,23 @@ def corregir_numero(valor):
         return 0.0
 
 def limpiar_cabeceras(df):
-    """Busca la fila que contiene SKU y la usa como cabecera, saltando filas basura al inicio"""
+    """Busca la fila que contiene SKU y la usa como cabecera"""
+    # Convertir todo a string primero
+    df = df.astype(str)
+    df = df.replace('nan', '').replace('None', '')
+    
     for i in range(min(50, len(df))):
         fila = df.iloc[i].astype(str).values
-        # Buscar "SKU" en cualquier celda de la fila
         for celda in fila:
             if 'SKU' in celda.upper():
                 nuevas_columnas = []
-                for val in df.iloc[i].values:
+                for j, val in enumerate(df.iloc[i].values):
                     if pd.notna(val) and str(val).strip() != '':
                         nuevas_columnas.append(str(val).strip())
                     else:
-                        nuevas_columnas.append(f"Col_{len(nuevas_columnas)}")
+                        nuevas_columnas.append(f"Col_{j}")
                 df.columns = nuevas_columnas
-                # Eliminar filas basura y resetear índice
                 df = df.iloc[i+1:].reset_index(drop=True)
-                # Eliminar columnas completamente vacías
                 df = df.dropna(axis=1, how='all')
                 return df
     return df
@@ -307,13 +308,11 @@ def mapear_columna_precio(columnas, nombre_buscar):
 
 def cargar_catalogo(archivo):
     try:
-        # Detectar si es CSV por el nombre
         if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
             contenido_str = contenido.decode('utf-8', errors='ignore')
             lineas = contenido_str.split('\n')
             
-            # Buscar la línea que contiene "SKU" o "Columna1"
             header_row_index = None
             for i, linea in enumerate(lineas[:50]):
                 if 'SKU' in linea.upper() or 'Columna1' in linea:
@@ -326,18 +325,12 @@ def cargar_catalogo(archivo):
                 try:
                     df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='utf-8-sig', sep=';', on_bad_lines='skip')
                 except:
-                    try:
-                        df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='latin-1', sep=';', on_bad_lines='skip')
-                    except:
-                        df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='utf-8', sep=';', on_bad_lines='skip')
+                    df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='latin-1', sep=';', on_bad_lines='skip')
             else:
                 try:
                     df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8-sig', sep=';', on_bad_lines='skip')
                 except:
-                    try:
-                        df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', sep=';', on_bad_lines='skip')
-                    except:
-                        df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8', sep=';', on_bad_lines='skip')
+                    df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', sep=';', on_bad_lines='skip')
             
             df = limpiar_cabeceras(df)
             hoja_seleccionada = "CSV"
@@ -406,18 +399,12 @@ def cargar_stock_completo(archivo):
                 try:
                     df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='utf-8-sig', sep=';', on_bad_lines='skip')
                 except:
-                    try:
-                        df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='latin-1', sep=';', on_bad_lines='skip')
-                    except:
-                        df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='utf-8', sep=';', on_bad_lines='skip')
+                    df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='latin-1', sep=';', on_bad_lines='skip')
             else:
                 try:
                     df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8-sig', sep=';', on_bad_lines='skip')
                 except:
-                    try:
-                        df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', sep=';', on_bad_lines='skip')
-                    except:
-                        df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8', sep=';', on_bad_lines='skip')
+                    df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', sep=';', on_bad_lines='skip')
             
             df = limpiar_cabeceras(df)
             
@@ -465,7 +452,6 @@ def buscar_precio(catalogos, sku, col_precio_seleccionada):
     sku_limpio = sku.strip().upper()
     for cat in catalogos:
         df = cat['df']
-        # Búsqueda exacta
         mask = df[cat['col_sku']].astype(str).str.strip().str.upper() == sku_limpio
         if not df[mask].empty:
             row = df[mask].iloc[0]
@@ -480,7 +466,6 @@ def buscar_precio(catalogos, sku, col_precio_seleccionada):
                 'precio': precio,
                 'descripcion': str(row[cat['col_desc']])
             }
-        # Búsqueda parcial
         mask = df[cat['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
         if not df[mask].empty:
             row = df[mask].iloc[0]
@@ -692,7 +677,7 @@ except:
 st.markdown("---")
 
 # ============================================
-# SELECCIÓN DE MODO DE COTIZACIÓN
+# SELECCIÓN DE MODO
 # ============================================
 if st.session_state.tipo_cotizacion is None:
     st.markdown("### 🎯 ¿Qué vas a cotizar hoy?")
@@ -723,7 +708,6 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Botón para cambiar de modo
     if st.button("🔄 Cambiar Modo de Cotización", use_container_width=True):
         st.session_state.tipo_cotizacion = None
         st.session_state.resultados = None
