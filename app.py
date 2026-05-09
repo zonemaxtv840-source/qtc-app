@@ -235,6 +235,12 @@ def corregir_numero(valor):
         return 0.0
 
 def limpiar_cabeceras(df):
+            # DEBUG: Mostrar primeras filas y columnas
+        if st.session_state.debug_mode:
+            st.sidebar.write("=== DEBUG CATÁLOGO ===")
+            st.sidebar.write(f"Columnas: {list(df.columns)}")
+            st.sidebar.write(f"Primeras filas:")
+            st.sidebar.dataframe(df.head(3))
     for i in range(min(20, len(df))):
         fila = [str(x).upper() for x in df.iloc[i].values]
         if any(h in item for h in ['SKU', 'COD', 'ARTICULO', 'NUMERO', 'SAP'] for item in fila):
