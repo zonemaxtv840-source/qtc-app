@@ -376,8 +376,8 @@ def buscar_precio(catalogos: List[Dict], sku: str, col_precio_seleccionada: str)
             }
     return {'encontrado': False, 'precio': 0.0, 'descripcion': ""}
 
-# Para modo GENERAL (APRI.001) - capturar todas las columnas
-if modo == ModoCotizacion.GENERAL and 'APRI.001' in hoja:
+# Para modo GENERAL (APRI.001) - capturar todas las columnas}
+    if modo == ModoCotizacion.GENERAL and 'APRI.001' in hoja:
     en_stock = int(corregir_numero(row[stock['col_en_stock']])) if stock.get('col_en_stock') else 0
     comprometido = int(corregir_numero(row[stock['col_comprometido']])) if stock.get('col_comprometido') else 0
     solicitado = int(corregir_numero(row[stock['col_solicitado']])) if stock.get('col_solicitado') else 0
