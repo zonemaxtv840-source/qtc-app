@@ -284,8 +284,7 @@ def cargar_stocks(archivos, modo: str) -> List[Dict]:
             st.error(f"Error en {archivo.name}: {str(e)[:100]}")
     
     return stocks_cargados
-    
-    
+
     def buscar_stock(stocks: List[Dict], sku: str, modo: str) -> Tuple[int, Dict, int, int, Dict]:
     """
     Busca stock según el modo.
@@ -309,16 +308,13 @@ def cargar_stocks(archivos, modo: str) -> List[Dict]:
             
             # ========== MODO GENERAL (APRI.001) ==========
             if modo == ModoCotizacion.GENERAL and 'APRI.001' in hoja:
-                # Obtener valores de las columnas específicas
                 en_stock = int(corregir_numero(row[stock['col_en_stock']])) if stock.get('col_en_stock') else 0
                 comprometido = int(corregir_numero(row[stock['col_comprometido']])) if stock.get('col_comprometido') else 0
                 solicitado = int(corregir_numero(row[stock['col_solicitado']])) if stock.get('col_solicitado') else 0
                 disponible = int(corregir_numero(row[stock['col_disponible']])) if stock.get('col_disponible') else 0
                 
-                # ✅ USAR DISPONIBLE como stock principal para cotizar
                 stock_total = disponible
                 
-                # Guardar todos los detalles para mostrar en la tabla
                 detalles_completos = {
                     'En Stock': en_stock,
                     'Comprometido': comprometido,
@@ -330,7 +326,6 @@ def cargar_stocks(archivos, modo: str) -> List[Dict]:
             
             # ========== MODO XIAOMI (APRI.004 / YESSICA) ==========
             elif modo == ModoCotizacion.XIAOMI:
-                # Usar columna EN STOCK como principal
                 col_stock_principal = stock.get('col_stock_principal', stock.get('col_en_stock'))
                 cantidad = int(corregir_numero(row[col_stock_principal])) if col_stock_principal else 0
                 
@@ -341,9 +336,13 @@ def cargar_stocks(archivos, modo: str) -> List[Dict]:
                     stock_yessica = cantidad
                     detalles['YESSICA'] = cantidad
     
-    # Para modo XIAOMI, sumar ambos stocks
     if modo == ModoCotizacion.XIAOMI:
         stock_total = stock_apri004 + stock_yessica
+    
+    return stock_total, detalles, stock_apri004, stock_yessica, detalles_completos
+    
+    
+   
     
     return stock_total, detalles, stock_apri004, stock_yessica, detalles_completos
 def buscar_precio(catalogos: List[Dict], sku: str, col_precio_seleccionada: str) -> Dict:
