@@ -30,6 +30,14 @@ STOCK_HOJA_MAP = {
     ModoCotizacion.GENERAL: ["APRI.001"]
 }
 
+# Columnas de stock para modo GENERAL
+STOCK_COLUMNS_GENERAL = {
+    "total": ["En stock", "STOCK", "TOTAL", "INVENTARIO"],
+    "comprometido": ["Comprometido", "COMPROMETIDO", "RESERVADO", "APARTADO"],
+    "solicitado": ["Solicitado", "SOLICITADO", "PEDIDO"],
+    "disponible": ["Disponible", "DISPONIBLE", "STOCK REAL", "REAL"]  # ✅ PRIORIDAD
+}
+
 # ============================================
 # CONFIGURACIÓN DE PATRONES POR TIPO DE CATÁLOGO
 # ============================================
@@ -62,8 +70,8 @@ TIPOS_CATALOGO = {
     "GENERAL": {
         "patrones": [],
         "columnas": {
-            "sku": ["SKU", "COD", "SAP", "NUMERO", "ARTICULO", "COD SAP", "CODIGO"],
-            "descripcion": ["DESC", "DESCRIPCION", "NOMBRE", "GOODS DESCRIPTION", "NOMBRE PRODUCTO", "PRODUCTO"],
+            "sku": ["SKU", "COD", "SAP", "NUMERO", "ARTICULO", "COD SAP", "CODIGO", "Número de artículo"],
+            "descripcion": ["DESC", "DESCRIPCION", "NOMBRE", "GOODS DESCRIPTION", "NOMBRE PRODUCTO", "PRODUCTO", "Descripción del artículo"],
             "precios": {
                 "P. IR": ["P. IR", "IR", "MAYORISTA", "MAYOR"],
                 "P. BOX": ["P. BOX", "BOX", "CAJA"],
@@ -100,7 +108,7 @@ def limpiar_cabeceras(df: pd.DataFrame) -> pd.DataFrame:
     """Detecta la fila de encabezados y la establece como columnas."""
     for i in range(min(20, len(df))):
         fila = [str(x).upper() for x in df.iloc[i].values]
-        if any(h in item for h in ['SKU', 'COD', 'SAP', 'NUMERO', 'ARTICULO', 'COD SAP', 'GOODS', 'DESC'] for item in fila):
+        if any(h in item for h in ['SKU', 'COD', 'SAP', 'NUMERO', 'ARTICULO', 'COD SAP', 'GOODS', 'DESC', 'NÚMERO DE ARTÍCULO'] for item in fila):
             df.columns = [str(c).strip() for c in df.iloc[i]]
             return df.iloc[i+1:].reset_index(drop=True)
     return df
@@ -213,7 +221,9 @@ def cargar_catalogo(archivo) -> Optional[Dict]:
     }
 
 def cargar_stocks(archivos, modo: str) -> List[Dict]:
-    """Carga archivos de stock y filtra hojas según el modo."""
+    """Carga archivos de stock y filtra hojas según el modo.
+       Para modo GENERAL, detecta columnas: En stock, Comprometido, Solicitado, Disponible
+    """
     stocks_cargados = []
     for archivo in archivos:
         try:
@@ -236,32 +246,64 @@ def cargar_stocks(archivos, modo: str) -> List[Dict]:
                 
                 col_sku = detectar_columna_inteligente(
                     df, 
-                    ['SKU', 'COD', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO', 'CODIGO']
+                    ['SKU', 'COD', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO', 'CODIGO', 'Número de artículo']
                 )
-                col_stock = detectar_columna_inteligente(
-                    df, 
-                    ['STOCK', 'DISPONIBLE', 'CANTIDAD', 'CANT', 'SALDO', 'UNIDADES']
-                )
+                
+                # ✅ NUEVO: Detección específica para modo GENERAL
+                col_stock_total = None
+                col_stock_comprometido = None
+                col_stock_solicitado = None
+                col_stock_disponible = None
+                
+                if modo == ModoCotizacion.GENERAL:
+                    # Detectar columna "En stock" (Total)
+                    col_stock_total = detectar_columna_inteligente(df, STOCK_COLUMNS_GENERAL["total"])
+                    # Detectar columna "Comprometido"
+                    col_stock_comprometido = detectar_columna_inteligente(df, STOCK_COLUMNS_GENERAL["comprometido"])
+                    # Detectar columna "Solicitado"
+                    col_stock_solicitado = detectar_columna_inteligente(df, STOCK_COLUMNS_GENERAL["solicitado"])
+                    # ✅ Detectar columna "Disponible" (la más importante)
+                    col_stock_disponible = detectar_columna_inteligente(df, STOCK_COLUMNS_GENERAL["disponible"])
+                    
+                    # Si no encuentra Disponible, usa la columna stock normal como fallback
+                    if not col_stock_disponible:
+                        col_stock_disponible = detectar_columna_inteligente(df, ['STOCK', 'DISPONIBLE', 'CANTIDAD', 'CANT'])
+                        st.warning(f"⚠️ No se encontró columna 'Disponible' en {archivo.name} [{hoja}], usando stock general")
+                else:
+                    # Modo XIAOMI: detección normal
+                    col_stock_disponible = detectar_columna_inteligente(
+                        df, 
+                        ['STOCK', 'DISPONIBLE', 'CANTIDAD', 'CANT', 'SALDO', 'UNIDADES']
+                    )
                 
                 stocks_cargados.append({
                     'nombre': f"{archivo.name} [{hoja}]",
                     'df': df,
                     'col_sku': col_sku,
-                    'col_stock': col_stock,
-                    'hoja': hoja
+                    'col_stock_total': col_stock_total,
+                    'col_stock_comprometido': col_stock_comprometido,
+                    'col_stock_solicitado': col_stock_solicitado,
+                    'col_stock_disponible': col_stock_disponible,  # ✅ Este es el stock REAL
+                    'hoja': hoja,
+                    'modo': modo
                 })
                 st.success(f"✅ {archivo.name} → Hoja: {hoja}")
+                if modo == ModoCotizacion.GENERAL and col_stock_disponible:
+                    st.caption(f"   📊 Stock real desde columna: `{col_stock_disponible}`")
         except Exception as e:
             st.error(f"Error en {archivo.name}: {str(e)[:100]}")
     
     return stocks_cargados
 
 def buscar_precio(catalogos: List[Dict], sku: str, col_precio_seleccionada: str) -> Dict:
-    """Busca precio en catálogos."""
+    """Busca precio en catálogos con búsqueda EXACTA."""
     sku_limpio = sku.strip().upper()
     for cat in catalogos:
         df = cat['df']
-        mask = df[cat['col_sku']].astype(str).str.strip().str.upper() == sku_limpio
+        # ✅ Búsqueda EXACTA (no contains)
+        df_sku_limpio = df[cat['col_sku']].astype(str).str.strip().str.upper()
+        mask = df_sku_limpio == sku_limpio
+        
         if not df[mask].empty:
             row = df[mask].iloc[0]
             col_precio_real = cat['columnas_precio'].get(col_precio_seleccionada)
@@ -275,62 +317,84 @@ def buscar_precio(catalogos: List[Dict], sku: str, col_precio_seleccionada: str)
                 'precio': precio,
                 'descripcion': str(row[cat['col_desc']]) if pd.notna(row[cat['col_desc']]) else ""
             }
-        mask = df[cat['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
-        if not df[mask].empty:
-            row = df[mask].iloc[0]
-            col_precio_real = cat['columnas_precio'].get(col_precio_seleccionada)
-            precio = corregir_numero(row[col_precio_real]) if col_precio_real and col_precio_real in df.columns else 0.0
-            return {
-                'encontrado': True,
-                'catalogo': cat['nombre'],
-                'precio': precio,
-                'descripcion': str(row[cat['col_desc']]) if pd.notna(row[cat['col_desc']]) else ""
-            }
     return {'encontrado': False, 'precio': 0.0, 'descripcion': ""}
 
-def buscar_stock(stocks: List[Dict], sku: str, modo: str) -> Tuple[int, Dict, int, int]:
-    """Busca stock según el modo."""
+def buscar_stock(stocks: List[Dict], sku: str, modo: str) -> Tuple[int, Dict, int, int, Dict]:
+    """Busca stock según el modo.
+       Para modo GENERAL: usa la columna DISPONIBLE como stock real.
+       Retorna: (stock_disponible, detalles_completos, stock_apri004, stock_yessica, stock_detalle_columnas)
+    """
     sku_limpio = sku.strip().upper()
-    stock_total = 0
+    stock_total_disponible = 0
     stock_apri004 = 0
     stock_yessica = 0
     detalles = {}
+    stock_detalle_columnas = {}  # ✅ Para guardar breakdown de Total/Comprometido/Solicitado/Disponible
     
     for stock in stocks:
         hoja = stock['hoja'].upper()
-        mask = stock['df'][stock['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
+        
+        # ✅ Búsqueda EXACTA
+        df_sku_limpio = stock['df'][stock['col_sku']].astype(str).str.strip().str.upper()
+        mask = df_sku_limpio == sku_limpio
+        
         if mask.any():
-            row = stock['df'][mask].iloc[0]
-            cantidad = int(corregir_numero(row[stock['col_stock']]))
-            
-            if modo == ModoCotizacion.XIAOMI:
-                if 'APRI.004' in hoja:
-                    stock_apri004 = cantidad
-                    detalles['APRI.004'] = cantidad
-                elif 'YESSICA' in hoja:
-                    stock_yessica = cantidad
-                    detalles['YESSICA'] = cantidad
-            else:
-                if 'APRI.001' in hoja:
-                    stock_total = cantidad
-                    detalles[stock['nombre']] = cantidad
-                    return stock_total, detalles, 0, 0
+            # ✅ Suma TODAS las filas coincidentes
+            for _, row in stock['df'][mask].iterrows():
+                
+                if modo == ModoCotizacion.XIAOMI:
+                    cantidad = int(corregir_numero(row.get(stock.get('col_stock_disponible', ''), 0)))
+                    if 'APRI.004' in hoja:
+                        stock_apri004 += cantidad
+                        detalles[f'APRI.004 ({stock["nombre"]})'] = detalles.get(f'APRI.004 ({stock["nombre"]})', 0) + cantidad
+                    elif 'YESSICA' in hoja:
+                        stock_yessica += cantidad
+                        detalles[f'YESSICA ({stock["nombre"]})'] = detalles.get(f'YESSICA ({stock["nombre"]})', 0) + cantidad
+                
+                else:  # ✅ MODO GENERAL - Usa DISPONIBLE como stock real
+                    if 'APRI.001' in hoja:
+                        # Stock REAL desde columna Disponible
+                        disponible = int(corregir_numero(row.get(stock.get('col_stock_disponible', ''), 0)))
+                        stock_total_disponible += disponible
+                        
+                        # ✅ Capturar todas las columnas para badge detallado
+                        total = int(corregir_numero(row.get(stock.get('col_stock_total', ''), 0)))
+                        comprometido = int(corregir_numero(row.get(stock.get('col_stock_comprometido', ''), 0)))
+                        solicitado = int(corregir_numero(row.get(stock.get('col_stock_solicitado', ''), 0)))
+                        
+                        # Guardar breakdown
+                        origen_key = stock['nombre']
+                        if origen_key not in stock_detalle_columnas:
+                            stock_detalle_columnas[origen_key] = {
+                                'total': 0,
+                                'comprometido': 0,
+                                'solicitado': 0,
+                                'disponible': 0
+                            }
+                        stock_detalle_columnas[origen_key]['total'] += total
+                        stock_detalle_columnas[origen_key]['comprometido'] += comprometido
+                        stock_detalle_columnas[origen_key]['solicitado'] += solicitado
+                        stock_detalle_columnas[origen_key]['disponible'] += disponible
+                        
+                        detalles[stock['nombre']] = detalles.get(stock['nombre'], 0) + disponible
     
+    # Para modo XIAOMI, suma ambos orígenes
     if modo == ModoCotizacion.XIAOMI:
-        stock_total = stock_apri004 + stock_yessica
+        stock_total_disponible = stock_apri004 + stock_yessica
     
-    return stock_total, detalles, stock_apri004, stock_yessica
+    return stock_total_disponible, detalles, stock_apri004, stock_yessica, stock_detalle_columnas
 
 def obtener_descripcion_fallback(stocks: List[Dict], sku: str) -> str:
     """Obtiene descripción de archivos de stock."""
     sku_limpio = sku.strip().upper()
     for stock in stocks:
         df = stock['df']
-        mask = df[stock['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
+        df_sku_limpio = df[stock['col_sku']].astype(str).str.strip().str.upper()
+        mask = df_sku_limpio == sku_limpio
         if not df[mask].empty:
             row = df[mask].iloc[0]
             for col in df.columns:
-                if any(p in str(col).upper() for p in ['DESC', 'NOMBRE', 'GOODS', 'PRODUCTO']):
+                if any(p in str(col).upper() for p in ['DESC', 'NOMBRE', 'GOODS', 'PRODUCTO', 'DESCRIPCIÓN']):
                     desc = str(row[col])
                     if desc and desc != 'nan':
                         return desc[:100]
@@ -348,7 +412,7 @@ def procesar_pedidos(pedidos: List[Dict], catalogos: List[Dict], stocks: List[Di
         cant_solicitada = pedido['cantidad']
         
         precio_info = buscar_precio(catalogos, sku, col_precio)
-        stock_total, stock_detalle, stock_apri004, stock_yessica = buscar_stock(stocks, sku, modo)
+        stock_total, stock_detalle, stock_apri004, stock_yessica, stock_columnas = buscar_stock(stocks, sku, modo)
         
         descripcion = precio_info['descripcion']
         if not descripcion or descripcion == '':
@@ -371,11 +435,11 @@ def procesar_pedidos(pedidos: List[Dict], catalogos: List[Dict], stocks: List[Di
             total = 0
             advertencias.append(f"⚠️ **{sku}**: Sin precio en catálogo")
         elif sin_stock:
-            estado = "❌ Sin stock"
+            estado = "❌ Sin stock disponible"
             badge_estado = "badge-danger"
             a_cotizar = 0
             total = 0
-            advertencias.append(f"❌ **{sku}**: Sin stock disponible")
+            advertencias.append(f"❌ **{sku}**: Sin stock disponible (columna DISPONIBLE = 0)")
         elif cant_solicitada > stock_total:
             a_cotizar = stock_total
             total = precio * a_cotizar
@@ -388,6 +452,7 @@ def procesar_pedidos(pedidos: List[Dict], catalogos: List[Dict], stocks: List[Di
             estado = "✅ OK"
             badge_estado = "badge-ok"
         
+        # ✅ BADGE para MODO GENERAL con breakdown completo
         if modo == ModoCotizacion.XIAOMI:
             if stock_apri004 > 0 and stock_yessica > 0:
                 badge_origen = f'<span class="origin-badge origin-both">🟣 APRI.004: {stock_apri004} | 🔵 YESSICA: {stock_yessica}</span>'
@@ -398,7 +463,24 @@ def procesar_pedidos(pedidos: List[Dict], catalogos: List[Dict], stocks: List[Di
             else:
                 badge_origen = '<span class="badge-danger">❌ Sin stock</span>'
         else:
-            badge_origen = f'<span class="origin-badge origin-both">🟢 Stock: {stock_total}</span>' if stock_total > 0 else '<span class="badge-danger">❌ Sin stock</span>'
+            # ✅ MODO GENERAL - Badge premium con breakdown
+            if stock_total > 0 and stock_columnas:
+                # Construir badge con todas las columnas
+                badge_parts = []
+                for origen, datos in stock_columnas.items():
+                    badge_parts.append(
+                        f'<div style="font-size:0.7rem; line-height:1.4;">'
+                        f'📦 Total: {datos["total"]} | '
+                        f'🔒 Comp: {datos["comprometido"]} | '
+                        f'📋 Sol: {datos["solicitado"]} | '
+                        f'✅ Disp: <strong>{datos["disponible"]}</strong>'
+                        f'</div>'
+                    )
+                badge_origen = f'<div class="origin-badge origin-both" style="background:#E8F5E9; padding:6px 12px; border-radius:12px;">{"".join(badge_parts)}</div>'
+            elif stock_total > 0:
+                badge_origen = f'<span class="origin-badge origin-both">✅ Stock disponible: {stock_total}</span>'
+            else:
+                badge_origen = '<span class="badge-danger">❌ Sin stock disponible</span>'
         
         resultados.append({
             'SKU': sku,
@@ -408,6 +490,7 @@ def procesar_pedidos(pedidos: List[Dict], catalogos: List[Dict], stocks: List[Di
             'Stock': stock_total,
             'Stock_APRI004': stock_apri004,
             'Stock_YESSICA': stock_yessica,
+            'Stock_Detalle': stock_columnas,  # ✅ Guardar detalle para uso posterior
             'Origen': badge_origen,
             'A Cotizar': a_cotizar,
             'Total': total,
@@ -479,9 +562,9 @@ def obtener_icono_stock(stock: int) -> str:
 
 def obtener_mensaje_stock(stock: int) -> str:
     if stock == 0:
-        return "Sin stock disponible"
+        return "Sin stock disponible (columna DISPONIBLE = 0)"
     elif stock <= 5:
-        return f"¡Stock bajo! Solo quedan {stock} unidades"
+        return f"¡Stock bajo! Solo quedan {stock} unidades disponibles"
     return "Stock suficiente"
 
 # ============================================
@@ -494,7 +577,7 @@ try:
 except:
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon="💼", layout="wide")
 
-# CSS COMPLETO - Reemplaza TODO el CSS anterior
+# CSS COMPLETO
 st.markdown("""
 <style>
 /* Fondo general */
@@ -505,12 +588,11 @@ st.markdown("""
 h1, h2, h3, h4, h5, h6 { color: #0A0A0A !important; font-family: 'Segoe UI', sans-serif; }
 p, div, span, label, .stMarkdown { color: #0A0A0A !important; }
 
-/* ========== SIDEBAR MEJORADO (FONDO MARRÓN, TEXTO MARRÓN CLARO) ========== */
+/* ========== SIDEBAR MEJORADO ========== */
 [data-testid="stSidebar"] { 
     background: linear-gradient(180deg, #3E2723 0%, #4E342E 100%) !important;
 }
 
-/* Todo el texto del sidebar en marrón claro tipo latte */
 [data-testid="stSidebar"] * { 
     color: #D7CCC8 !important;
 }
@@ -523,7 +605,6 @@ p, div, span, label, .stMarkdown { color: #0A0A0A !important; }
     color: #D7CCC8 !important;
 }
 
-/* Títulos del sidebar en ámbar suave */
 [data-testid="stSidebar"] h1, 
 [data-testid="stSidebar"] h2, 
 [data-testid="stSidebar"] h3,
@@ -532,7 +613,6 @@ p, div, span, label, .stMarkdown { color: #0A0A0A !important; }
     font-weight: 600 !important;
 }
 
-/* Inputs en sidebar - fondo claro */
 [data-testid="stSidebar"] .stTextInput input,
 [data-testid="stSidebar"] .stTextArea textarea,
 [data-testid="stSidebar"] .stNumberInput input {
@@ -542,19 +622,6 @@ p, div, span, label, .stMarkdown { color: #0A0A0A !important; }
     border: 1px solid #FFB74D !important;
 }
 
-[data-testid="stSidebar"] .stTextInput input:focus,
-[data-testid="stSidebar"] .stTextArea textarea:focus {
-    border-color: #FF9800 !important;
-    box-shadow: 0 0 0 2px rgba(255,152,0,0.2) !important;
-}
-
-/* Placeholder */
-[data-testid="stSidebar"] .stTextInput input::placeholder,
-[data-testid="stSidebar"] .stTextArea textarea::placeholder {
-    color: #A1887F !important;
-}
-
-/* Selectores */
 [data-testid="stSidebar"] .stSelectbox > div > div {
     background-color: #FFF8E1 !important;
     border: 1px solid #FFB74D !important;
@@ -562,11 +629,6 @@ p, div, span, label, .stMarkdown { color: #0A0A0A !important; }
     color: #3E2723 !important;
 }
 
-[data-testid="stSidebar"] .stSelectbox label {
-    color: #D7CCC8 !important;
-}
-
-/* File uploader */
 [data-testid="stSidebar"] .stFileUploader > div > div {
     background-color: #FFF8E1 !important;
     border: 1px dashed #FFB74D !important;
@@ -579,81 +641,15 @@ p, div, span, label, .stMarkdown { color: #0A0A0A !important; }
     font-weight: 600 !important;
 }
 
-/* Expander */
-[data-testid="stSidebar"] .streamlit-expanderHeader {
-    color: #D7CCC8 !important;
-    background-color: rgba(255,255,255,0.05) !important;
-    border-radius: 8px !important;
-}
-
-[data-testid="stSidebar"] .streamlit-expanderHeader:hover {
-    color: #FFCC80 !important;
-    background-color: rgba(255,255,255,0.1) !important;
-}
-
-[data-testid="stSidebar"] .streamlit-expanderContent {
-    color: #D7CCC8 !important;
-}
-
-/* Alertas en sidebar */
-[data-testid="stSidebar"] .stAlert {
-    background-color: #3E2723 !important;
-    border-left-color: #FF9800 !important;
-}
-
-[data-testid="stSidebar"] .stAlert [data-testid="stMarkdown"] {
-    color: #FFF8E1 !important;
-}
-
-/* Caption */
-[data-testid="stSidebar"] .stCaption, 
-[data-testid="stSidebar"] caption {
-    color: #BCAAA4 !important;
-}
-
-/* Botones en sidebar */
 [data-testid="stSidebar"] .stButton > button {
     background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%) !important;
     color: #3E2723 !important;
     font-weight: 600 !important;
 }
 
-[data-testid="stSidebar"] .stButton > button:hover {
-    background: linear-gradient(135deg, #F57C00 0%, #E65100 100%) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-
-/* Botón primario (activo) */
 [data-testid="stSidebar"] .stButton > button[kind="primary"] {
     background: linear-gradient(135deg, #FFB74D 0%, #FF9800 100%) !important;
     color: #3E2723 !important;
-    border: 1px solid #FFE0B2 !important;
-}
-
-/* Botón secundario (inactivo) */
-[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
-    background: rgba(255,255,255,0.1) !important;
-    color: #D7CCC8 !important;
-    border: 1px solid #FFB74D !important;
-}
-
-/* ========== FIN SIDEBAR ========== */
-
-/* Botones principales fuera del sidebar */
-.stButton > button { 
-    background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important; 
-    color: white !important; 
-    border-radius: 12px; 
-    font-weight: 600; 
-    border: none; 
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-.stButton > button:hover { 
-    background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%) !important; 
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 /* Badges */
@@ -667,15 +663,6 @@ p, div, span, label, .stMarkdown { color: #0A0A0A !important; }
 .stock-verde { color: #2E7D32; font-weight: bold; background-color: #C8E6C9; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 .stock-amarillo { color: #E65100; font-weight: bold; background-color: #FFE0B2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
 .stock-rojo { color: #C62828; font-weight: bold; background-color: #FFCDD2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
-
-/* Data editor */
-.stDataFrame { border-radius: 12px !important; overflow: hidden !important; }
-.stDataFrame thead th { background-color: #1B5E20 !important; color: white !important; }
-
-/* Tabs */
-.stTabs [data-baseweb="tab-list"] { background-color: white !important; border-radius: 12px !important; padding: 6px !important; }
-.stTabs [data-baseweb="tab"] { color: #1B5E20 !important; background-color: #F5F5F5 !important; border-radius: 10px !important; padding: 10px 20px !important; }
-.stTabs [aria-selected="true"] { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important; color: white !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -773,16 +760,15 @@ if st.session_state.tipo_cotizacion is None:
 if st.session_state.tipo_cotizacion == ModoCotizacion.XIAOMI:
     st.success("🔋 **Modo XIAOMI** - Stock en APRI.004 + YESSICA")
 else:
-    st.info("💼 **Modo GENERAL** - Stock en APRI.001")
+    st.info("💼 **Modo GENERAL** - Stock desde columna DISPONIBLE (En stock - Comprometido - Solicitado)")
 
 st.markdown("---")
 
 # ============================================
-# SIDEBAR (CON SELECTOR DE MODO)
+# SIDEBAR
 # ============================================
 
 with st.sidebar:
-    # ===== SELECTOR DE MODO =====
     st.markdown("### 🎯 Modo de Cotización")
     modo_actual = st.session_state.tipo_cotizacion
     
@@ -806,7 +792,6 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # ===== ARCHIVOS =====
     st.markdown("### 📂 Archivos")
     
     st.markdown("**📚 Catálogos de Precios**")
@@ -820,7 +805,11 @@ with st.sidebar:
                 st.success(f"✅ {resultado['nombre'][:50]}")
     
     st.markdown("**📦 Reportes de Stock**")
-    st.caption(f"Modo {st.session_state.tipo_cotizacion}: {', '.join(STOCK_HOJA_MAP[st.session_state.tipo_cotizacion])}")
+    if st.session_state.tipo_cotizacion == ModoCotizacion.GENERAL:
+        st.caption("Modo GENERAL: Busca columna **DISPONIBLE** para stock real")
+    else:
+        st.caption(f"Modo {st.session_state.tipo_cotizacion}: {', '.join(STOCK_HOJA_MAP[st.session_state.tipo_cotizacion])}")
+    
     archivos_stock = st.file_uploader("Excel", type=['xlsx', 'xls'], accept_multiple_files=True, key="stock_upload")
     if archivos_stock:
         st.session_state.stocks = cargar_stocks(archivos_stock, st.session_state.tipo_cotizacion)
@@ -1022,7 +1011,7 @@ with tab_buscar:
                             col_precio_real = cat['columnas_precio'].get(precio_seleccionado)
                             if col_precio_real:
                                 precio = corregir_numero(row[col_precio_real])
-                        stock_total, stock_detalle, stock_apri004, stock_yessica = buscar_stock(st.session_state.stocks, sku, st.session_state.tipo_cotizacion)
+                        stock_total, stock_detalle, stock_apri004, stock_yessica, stock_columnas = buscar_stock(st.session_state.stocks, sku, st.session_state.tipo_cotizacion)
                         resultados_busqueda.append({
                             'SKU': sku,
                             'Descripcion': str(row[cat['col_desc']])[:100],
@@ -1030,7 +1019,7 @@ with tab_buscar:
                             'Stock_Total': stock_total,
                             'Stock_APRI004': stock_apri004,
                             'Stock_YESSICA': stock_yessica,
-                            'Stock_Detalle': stock_detalle
+                            'Stock_Detalle': stock_columnas
                         })
             
             if resultados_busqueda:
@@ -1039,11 +1028,21 @@ with tab_buscar:
                     stock_clase = obtener_clase_stock(res['Stock_Total'])
                     stock_icono = obtener_icono_stock(res['Stock_Total'])
                     
+                    # Badge detallado para modo GENERAL en búsqueda
+                    if st.session_state.tipo_cotizacion == ModoCotizacion.GENERAL and res.get('Stock_Detalle'):
+                        badge_detalle = '<br>'.join([
+                            f'📦 Total: {d["total"]} | 🔒 Comp: {d["comprometido"]} | 📋 Sol: {d["solicitado"]} | ✅ Disp: {d["disponible"]}'
+                            for d in res['Stock_Detalle'].values()
+                        ])
+                        stock_detalle_html = f'<div style="font-size:0.7rem; margin-top:4px;">{badge_detalle}</div>'
+                    else:
+                        stock_detalle_html = ''
+                    
                     st.markdown(f"""
                     <div style="background: white; border-radius: 12px; padding: 1rem; margin: 0.5rem 0; border-left: 4px solid #4CAF50;">
                         <div><strong>📦 {res['SKU']}</strong><br><span style="font-size:0.85rem;">{res['Descripcion']}</span><br>
                         <span style="color:#4CAF50;">{f'S/. {res["Precio"]:,.2f}' if res["Precio"] else "💰 Sin precio"}</span></div>
-                        <div style="margin-top:8px;"><span class="{stock_clase}">{stock_icono} Stock: {res['Stock_Total']}</span></div>
+                        <div style="margin-top:8px;"><span class="{stock_clase}">{stock_icono} Stock disponible: {res['Stock_Total']}</span>{stock_detalle_html}</div>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -1084,7 +1083,8 @@ with tab_dashboard:
     if st.session_state.tipo_cotizacion == ModoCotizacion.XIAOMI:
         st.markdown("🔋 **XIAOMI** → APRI.004 + YESSICA")
     else:
-        st.markdown("💼 **GENERAL** → APRI.001")
+        st.markdown("💼 **GENERAL** → Columna **DISPONIBLE** = Stock real")
+        st.markdown("   - En stock (Total) - Comprometido - Solicitado = Disponible")
 
 st.markdown("---")
 st.markdown("*💚 QTC Smart Sales Pro - Sistema Profesional de Cotización*")
