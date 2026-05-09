@@ -316,56 +316,23 @@ def buscar_precio(catalogos: List[Dict], sku: str, col_precio_seleccionada: str)
             }
     return {'encontrado': False, 'precio': 0.0, 'descripcion': ""}
 
-def buscar_stock(stocks: List[Dict], sku: str, modo: str) -> Tuple[int, Dict, int, int, Dict]:
-    """
-    Busca stock según el modo.
-    Retorna: (stock_total, detalles, stock_apri004, stock_yessica, detalles_completos)
-    """
-    sku_limpio = sku.strip().upper()
-    stock_total = 0
-    stock_apri004 = 0
-    stock_yessica = 0
-    detalles = {}
-    detalles_completos = {}
+# Para modo GENERAL (APRI.001) - capturar todas las columnas
+if modo == ModoCotizacion.GENERAL and 'APRI.001' in hoja:
+    en_stock = int(corregir_numero(row[stock['col_en_stock']])) if stock.get('col_en_stock') else 0
+    comprometido = int(corregir_numero(row[stock['col_comprometido']])) if stock.get('col_comprometido') else 0
+    solicitado = int(corregir_numero(row[stock['col_solicitado']])) if stock.get('col_solicitado') else 0
+    disponible = int(corregir_numero(row[stock['col_disponible']])) if stock.get('col_disponible') else 0
     
-    for stock in stocks:
-        hoja = stock['hoja'].upper()
-        mask = stock['df'][stock['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
-        if mask.any():
-            row = stock['df'][mask].iloc[0]
-            
-            # Para modo GENERAL (APRI.001) - capturar todas las columnas
-            if modo == ModoCotizacion.GENERAL and 'APRI.001' in hoja:
-                en_stock = int(corregir_numero(row[stock['col_en_stock']])) if stock.get('col_en_stock') else 0
-                comprometido = int(corregir_numero(row[stock['col_comprometido']])) if stock.get('col_comprometido') else 0
-                solicitado = int(corregir_numero(row[stock['col_solicitado']])) if stock.get('col_solicitado') else 0
-                disponible = int(corregir_numero(row[stock['col_disponible']])) if stock.get('col_disponible') else 0
-                
-                stock_total = solicitado  # Usar SOLICITADO como stock principal
-                
-                detalles_completos = {
-                    'En Stock': en_stock,
-                    'Comprometido': comprometido,
-                    'Solicitado': solicitado,
-                    'Disponible': disponible
-                }
-                detalles[stock['nombre']] = stock_total
-                return stock_total, detalles, 0, 0, detalles_completos
-            
-            # Para modo XIAOMI
-            elif modo == ModoCotizacion.XIAOMI:
-                cantidad = int(corregir_numero(row[stock.get('col_stock_principal', stock.get('col_en_stock'))]))
-                if 'APRI.004' in hoja:
-                    stock_apri004 = cantidad
-                    detalles['APRI.004'] = cantidad
-                elif 'YESSICA' in hoja:
-                    stock_yessica = cantidad
-                    detalles['YESSICA'] = cantidad
+    stock_total = disponible  # ✅ CAMBIADO: ahora usa DISPONIBLE
     
-    if modo == ModoCotizacion.XIAOMI:
-        stock_total = stock_apri004 + stock_yessica
-    
-    return stock_total, detalles, stock_apri004, stock_yessica, detalles_completos
+    detalles_completos = {
+        'En Stock': en_stock,
+        'Comprometido': comprometido,
+        'Solicitado': solicitado,
+        'Disponible': disponible  # Este es el que se usará para cotizar
+    }
+    detalles[stock['nombre']] = stock_total
+    return stock_total, detalles, 0, 0, detalles_completos
 
 def obtener_descripcion_fallback(stocks: List[Dict], sku: str) -> str:
     """Obtiene descripción de archivos de stock."""
