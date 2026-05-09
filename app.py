@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import re, io, chardet
+import re, io, csv
 from datetime import datetime
 from PIL import Image
 import numpy as np
@@ -41,51 +41,49 @@ if "skus_transferidos" not in st.session_state:
 # ============================================
 # FUNCIONES PARA LEER CSV CON DETECCIÓN DE ENCODING
 # ============================================
-def detectar_encoding(archivo):
-    """Detecta el encoding de un archivo"""
-    raw_data = archivo.read(10000)
-    archivo.seek(0)
-    resultado = chardet.detect(raw_data)
-    return resultado['encoding'] if resultado['encoding'] else 'utf-8'
+def detectar_encoding_sin_chardet(archivo):
+    """Detecta encoding sin necesidad de chardet"""
+    encodings = ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+    
+    for encoding in encodings:
+        try:
+            archivo.seek(0)
+            archivo.read(1000).decode(encoding)
+            archivo.seek(0)
+            return encoding
+        except:
+            continue
+    
+    return 'latin-1'
 
 def leer_archivo_flexible(archivo):
     """Lee archivos Excel o CSV de forma flexible"""
     nombre_archivo = archivo.name.lower()
     
-    # Para archivos CSV
     if nombre_archivo.endswith('.csv'):
-        try:
-            # Detectar encoding automáticamente
-            encoding = detectar_encoding(archivo)
-            st.caption(f"📄 Detectado encoding: {encoding}")
-            
-            # Intentar leer con diferentes separadores
-            separadores = [',', ';', '\t', '|']
-            df = None
-            
-            for sep in separadores:
-                try:
-                    archivo.seek(0)
-                    df = pd.read_csv(archivo, encoding=encoding, sep=sep, dtype=str)
-                    if df.shape[1] > 1:  # Si tiene más de 1 columna, probablemente es correcto
-                        break
-                except:
-                    continue
-            
-            if df is None or df.shape[1] == 1:
-                # Fallback: dejar que pandas detecte automáticamente
+        encodings = ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+        
+        for encoding in encodings:
+            try:
                 archivo.seek(0)
-                df = pd.read_csv(archivo, encoding=encoding, engine='python')
-            
-            # Limpiar nombres de columnas
-            df.columns = [str(col).strip().replace('\ufeff', '') for col in df.columns]
-            return df
-            
-        except Exception as e:
-            st.error(f"Error leyendo CSV: {str(e)}")
-            return None
+                for sep in [',', ';', '\t', '|']:
+                    try:
+                        archivo.seek(0)
+                        df = pd.read_csv(archivo, encoding=encoding, sep=sep, dtype=str, nrows=5)
+                        if df.shape[1] > 1:
+                            archivo.seek(0)
+                            df = pd.read_csv(archivo, encoding=encoding, sep=sep, dtype=str)
+                            df.columns = [str(col).strip().replace('\ufeff', '') for col in df.columns]
+                            return df
+                    except:
+                        continue
+            except:
+                continue
+        
+        archivo.seek(0)
+        df = pd.read_csv(archivo, encoding='latin-1', engine='python')
+        return df
     
-    # Para archivos Excel
     elif nombre_archivo.endswith(('.xlsx', '.xls')):
         try:
             return pd.read_excel(archivo, dtype=str)
@@ -94,15 +92,13 @@ def leer_archivo_flexible(archivo):
             return None
     
     else:
-        st.error(f"Formato no soportado: {nombre_archivo}. Use .xlsx, .xls o .csv")
+        st.error(f"Formato no soportado: {nombre_archivo}")
         return None
 
 def mapear_columnas_flexible(df, tipo_archivo="catalogo"):
     """Mapea columnas automáticamente según su contenido semántico"""
     
-    columnas = {str(col).upper().strip() for col in df.columns}
-    
-    # Mapeo de SKU (todas las variantes posibles)
+    # Mapeo de SKU
     sku_keywords = ['SKU', 'COD', 'CODIGO', 'SAP', 'NUMERO', 'ARTICULO', 'COD SAP', 
                     'NO.', 'MODEL', 'MODEL MARK', 'MODELO', 'PART NUMBER', 'PN']
     
@@ -110,7 +106,7 @@ def mapear_columnas_flexible(df, tipo_archivo="catalogo"):
     desc_keywords = ['DESC', 'DESCRIPCION', 'NOMBRE', 'PRODUCTO', 'GOODS', 
                      'GOODS DESCRIPTION', 'DESCRITPION', 'DESCRIPTION', 'ITEM NAME']
     
-    # Mapeo de precios para catálogo
+    # Mapeo de precios
     precio_keywords = {
         'Mayor': ['MAYOR', 'MAYORISTA', 'WHOLESALE', 'P.IR', 'P. IR', 'PRECIO MAYOR'],
         'Caja': ['CAJA', 'BOX', 'P.BOX', 'P. BOX', 'PRECIO CAJA', 'BOX PRICE'],
@@ -133,7 +129,7 @@ def mapear_columnas_flexible(df, tipo_archivo="catalogo"):
         if col_sku:
             break
     if not col_sku:
-        col_sku = df.columns[0]  # Usar primera columna como fallback
+        col_sku = df.columns[0]
     
     # Encontrar columna descripción
     col_desc = None
@@ -160,7 +156,6 @@ def mapear_columnas_flexible(df, tipo_archivo="catalogo"):
             if precio_tipo in columnas_precio:
                 break
     
-    # Si no se encontraron precios específicos, buscar cualquier columna con "PRECIO"
     if not columnas_precio and tipo_archivo == "catalogo":
         for col in df.columns:
             if 'PRECIO' in str(col).upper():
@@ -177,8 +172,6 @@ def mapear_columnas_flexible(df, tipo_archivo="catalogo"):
                 break
         if col_stock:
             break
-    if not col_stock:
-        col_stock = df.columns[-1] if len(df.columns) > 0 else None
     
     return {
         'col_sku': col_sku,
@@ -188,7 +181,7 @@ def mapear_columnas_flexible(df, tipo_archivo="catalogo"):
     }
 
 # ============================================
-# ESTILOS CSS (comprimido para ahorrar espacio)
+# ESTILOS CSS
 # ============================================
 st.markdown("""
 <style>
@@ -263,16 +256,12 @@ def corregir_numero(valor):
         return 0.0
 
 def cargar_catalogo_flexible(archivo):
-    """Carga catálogo desde Excel o CSV de forma flexible"""
     try:
         df = leer_archivo_flexible(archivo)
         if df is None:
             return None
         
-        # Limpiar datos nulos
         df = df.dropna(how='all')
-        
-        # Mapear columnas
         mapeo = mapear_columnas_flexible(df, tipo_archivo="catalogo")
         
         st.sidebar.success(f"✅ Detectado: SKU={mapeo['col_sku']}, Desc={mapeo['col_desc']}")
@@ -291,9 +280,7 @@ def cargar_catalogo_flexible(archivo):
         return None
 
 def cargar_stock_flexible(archivo):
-    """Carga stock desde Excel o CSV de forma flexible"""
     try:
-        # Si es CSV, cargar como una sola "hoja"
         if archivo.name.lower().endswith('.csv'):
             df = leer_archivo_flexible(archivo)
             if df is None:
@@ -308,8 +295,6 @@ def cargar_stock_flexible(archivo):
                 'col_stock': mapeo['col_stock'],
                 'hoja': archivo.name
             }]
-        
-        # Para Excel, cargar todas las hojas
         else:
             xls = pd.ExcelFile(archivo)
             todas_hojas = []
@@ -338,7 +323,6 @@ def buscar_precio(catalogos, sku, col_precio_seleccionada):
         df = cat['df']
         col_sku = cat['col_sku']
         
-        # Buscar coincidencia exacta
         mask = df[col_sku].astype(str).str.strip().str.upper() == sku_limpio
         if not df[mask].empty:
             row = df[mask].iloc[0]
@@ -354,7 +338,6 @@ def buscar_precio(catalogos, sku, col_precio_seleccionada):
                 'descripcion': str(row[cat['col_desc']]) if cat['col_desc'] in df.columns else f"SKU: {sku}"
             }
         
-        # Buscar coincidencia parcial
         mask = df[col_sku].astype(str).str.contains(sku_limpio, case=False, na=False)
         if not df[mask].empty:
             row = df[mask].iloc[0]
@@ -540,7 +523,6 @@ if st.session_state.tipo_cotizacion is None:
             st.rerun()
     st.stop()
 
-# Forzar modo GENERAL para tu caso
 st.session_state.tipo_cotizacion = "GENERAL"
 st.info("💼 **Modo GENERAL** - Compatible con archivos Excel y CSV (UTF-8, ANSI, Latin-1)")
 
@@ -597,7 +579,6 @@ with tab_cotizacion:
     if not st.session_state.catalogos:
         st.warning("🌿 Carga catálogos en el panel izquierdo (Excel o CSV)")
     else:
-        # Mostrar columnas detectadas
         with st.expander("📋 Columnas detectadas en catálogos"):
             for cat in st.session_state.catalogos:
                 st.markdown(f"**{cat['nombre']}**")
@@ -607,7 +588,6 @@ with tab_cotizacion:
                     st.caption(f"  Precios: {', '.join(cat['columnas_precio'].keys())}")
                 st.divider()
         
-        # Selección de columna de precio
         opciones_precio = set()
         for cat in st.session_state.catalogos:
             for col in cat['columnas_precio'].keys():
@@ -621,11 +601,11 @@ with tab_cotizacion:
             )
         else:
             col_precio = None
-            st.warning("⚠️ No se detectaron columnas de precio. Asegúrate que tu archivo tenga: Mayor, Caja, Vip o PVP")
+            st.warning("⚠️ No se detectaron columnas de precio")
         
         st.markdown("---")
         st.markdown("### 📝 Ingresa los productos")
-        st.caption("Formato: SKU:CANTIDAD (uno por línea) - Los SKUs duplicados se suman automáticamente")
+        st.caption("Formato: SKU:CANTIDAD (uno por línea)")
         
         if st.session_state.get('skus_transferidos'):
             texto_defecto = "\n".join([f"{sku}:{cant}" for sku, cant in st.session_state.skus_transferidos.items()])
@@ -634,7 +614,7 @@ with tab_cotizacion:
             texto_defecto = ""
         
         texto_skus = st.text_area("", height=150, value=texto_defecto, 
-                                   placeholder="Ejemplo:\nABC-123:5\nXYZ-789:2\nPROD-001:10")
+                                   placeholder="Ejemplo:\nABC-123:5\nXYZ-789:2")
         
         pedidos_dict = {}
         if texto_skus:
@@ -694,7 +674,6 @@ with tab_cotizacion:
                             a_cotizar = 0
                             total = 0
                         
-                        # Mostrar origen del stock
                         stock_origen = ""
                         if stock_detalle:
                             for origen, qty in stock_detalle.items():
@@ -721,7 +700,6 @@ with tab_cotizacion:
             st.markdown("---")
             st.markdown("### 📊 Resultados")
             
-            # Mostrar tabla de resultados
             for item in st.session_state.resultados:
                 precio_str = f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio"
                 total_str = f"S/. {item['Total']:,.2f}"
@@ -743,7 +721,6 @@ with tab_cotizacion:
                 st.markdown(f"**Origen Stock:** {item['Origen']}", unsafe_allow_html=True)
                 st.divider()
             
-            # Tabla editable para ajustar cantidades
             st.markdown("### ✏️ Ajustar cantidades")
             
             df_ajuste = pd.DataFrame(st.session_state.resultados)
@@ -762,10 +739,11 @@ with tab_cotizacion:
                 key="editor_cantidades"
             )
             
-            # Actualizar resultados
+            # ACTUALIZAR RESULTADOS - LÍNEA CORREGIDA
             for idx, row in edited_df.iterrows():
                 if idx < len(st.session_state.resultados):
-                    nueva_cant = int(row['A Cotizar']) if pd.notna(row['A Cotizar']) else 0                    stock_disp = st.session_state.resultados[idx]['Stock']
+                    nueva_cant = int(row['A Cotizar']) if pd.notna(row['A Cotizar']) else 0
+                    stock_disp = st.session_state.resultados[idx]['Stock']
                     precio = st.session_state.resultados[idx]['Precio']
                     
                     if nueva_cant > stock_disp and stock_disp > 0:
@@ -775,7 +753,6 @@ with tab_cotizacion:
                     st.session_state.resultados[idx]['A Cotizar'] = nueva_cant
                     st.session_state.resultados[idx]['Total'] = precio * nueva_cant if precio else 0
             
-            # Resumen y generación de Excel
             items_validos = [r for r in st.session_state.resultados if r['A Cotizar'] > 0 and r['Precio'] > 0]
             total_general = sum(r['Total'] for r in items_validos)
             
@@ -816,7 +793,7 @@ with tab_cotizacion:
                     st.success("✅ Cotización generada exitosamente")
 
 # ============================================
-# TAB 2: BUSCAR PRODUCTOS (simplificado)
+# TAB 2: BUSCAR PRODUCTOS
 # ============================================
 with tab_buscar:
     st.markdown("### 🔍 Buscar Productos")
@@ -833,7 +810,7 @@ with tab_buscar:
                     st.session_state.catalogos, 
                     busqueda, 
                     st.session_state.stocks, 
-                    None,  # No mostrar precio en búsqueda
+                    None,
                     "GENERAL"
                 )
             
@@ -845,7 +822,6 @@ with tab_buscar:
                         if res['Precio']:
                             st.markdown(f"**Precio:** S/. {res['Precio']:,.2f}")
                         
-                        # Botón para agregar
                         cantidad = st.number_input("Cantidad", min_value=0, max_value=res['Stock_Total'] if res['Stock_Total'] > 0 else 100, 
                                                     value=1, key=f"buscar_add_{res['SKU']}")
                         if st.button(f"➕ Agregar {res['SKU']}", key=f"btn_add_{res['SKU']}"):
@@ -858,7 +834,6 @@ with tab_buscar:
             else:
                 st.warning("No se encontraron productos")
         
-        # Mostrar productos seleccionados
         if st.session_state.productos_seleccionados:
             st.markdown("---")
             st.markdown("### 🛒 Productos seleccionados")
@@ -868,7 +843,7 @@ with tab_buscar:
             if st.button("📋 Transferir a Cotización", use_container_width=True):
                 st.session_state.skus_transferidos = st.session_state.productos_seleccionados.copy()
                 st.session_state.productos_seleccionados = {}
-                st.success("✅ Productos transferidos a la pestaña Cotización")
+                st.success("✅ Productos transferidos")
                 st.info("👉 Ve a la pestaña Cotización y haz clic en PROCESAR")
 
 # ============================================
@@ -894,4 +869,4 @@ with tab_dashboard:
         st.markdown(f"- {stock['nombre']}")
 
 st.markdown("---")
-st.markdown("*💚 QTC Smart Sales Pro - Multi-format (Excel/CSV) | Flexible Column Mapping*")
+st.markdown("*💚 QTC Smart Sales Pro - Multi-format (Excel/CSV)*")
