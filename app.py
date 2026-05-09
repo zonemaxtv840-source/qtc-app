@@ -34,7 +34,7 @@ if "productos_seleccionados" not in st.session_state:
     st.session_state.productos_seleccionados = {}
 
 # ============================================
-# ESTILOS CSS
+# CSS
 # ============================================
 st.markdown("""
 <style>
@@ -211,6 +211,7 @@ if not st.session_state.auth:
     
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.stop()
+
 # ============================================
 # FUNCIONES DE LA APLICACIÓN
 # ============================================
@@ -234,26 +235,29 @@ def corregir_numero(valor):
         return 0.0
 
 def limpiar_cabeceras(df):
-    """Busca la fila que contiene SKU y la usa como cabecera (método Colab)"""
-    for i in range(min(15, len(df))):
-        fila_texto = [str(x).upper() for x in df.iloc[i].values]
-        if any(h in item for h in ['SKU', 'COD', 'ARTICULO', 'NUMERO', 'SAP'] for item in fila_texto):
+    """Busca la fila que contiene SKU y la usa como cabecera"""
+    for i in range(min(20, len(df))):
+        fila = [str(x).upper() for x in df.iloc[i].values]
+        if any(h in item for h in ['SKU', 'COD', 'ARTICULO', 'NUMERO', 'SAP'] for item in fila):
             df.columns = [str(c).strip() for c in df.iloc[i]]
-            df = df.iloc[i+1:].reset_index(drop=True)
-            break
-    df.columns = [str(c).strip() for c in df.columns]
-    return df.fillna('')
+            return df.iloc[i+1:].reset_index(drop=True)
+    return df
 
 def mapear_columna_precio(columnas, nombre_buscar):
+    """Mapea nombres amigables a columnas reales del CSV"""
+    mapeo = {
+        "P. IR": ["MAYOR", "MAYORISTA", "P.IR", "P IR"],
+        "P. BOX": ["CAJA", "BOX", "P.BOX", "P BOX"],
+        "P. VIP": ["VIP", "P.VIP", "P VIP"],
+        "PRECIO": ["PRECIO", "PRICE", "COSTO"]
+    }
+    
     for col in columnas:
-        col_upper = str(col).upper()
-        if nombre_buscar.upper() in col_upper:
-            return col
-        if nombre_buscar.upper() == "P. IR" and "MAYORISTA" in col_upper:
-            return col
-        if nombre_buscar.upper() == "P. BOX" and "CAJA" in col_upper:
-            return col
-        if nombre_buscar.upper() == "P. VIP" and ("VIP" in col_upper or "P.VIP" in col_upper):
+        col_upper = str(col).upper().strip()
+        for key, patrones in mapeo.items():
+            if nombre_buscar.upper() in key.upper() or any(p in col_upper for p in patrones):
+                return col
+        if nombre_buscar.upper().replace("P. ", "") in col_upper:
             return col
     return None
 
@@ -261,7 +265,7 @@ def cargar_catalogo(archivo):
     try:
         if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
-            # Método que funciona en Colab
+            # Método robusto para CSV
             try:
                 df = pd.read_csv(io.BytesIO(contenido), sep=None, engine='python', encoding='latin1', on_bad_lines='skip')
             except:
@@ -278,7 +282,6 @@ def cargar_catalogo(archivo):
             df = pd.read_excel(archivo, sheet_name=hoja_seleccionada)
             df = limpiar_cabeceras(df)
         
-        # Normalizar nombres de columnas
         df.columns = [str(col).strip().upper() for col in df.columns]
         
         posibles_skus = ['SKU', 'COD', 'CODIGO', 'SAP', 'NUMERO', 'ARTICULO', 'COD SAP']
@@ -288,15 +291,10 @@ def cargar_catalogo(archivo):
         col_desc = next((c for c in df.columns if any(p in c for p in posibles_desc)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
         
         columnas_precio = {}
-        col_ir = mapear_columna_precio(df.columns, "P. IR")
-        if col_ir:
-            columnas_precio['P. IR'] = col_ir
-        col_box = mapear_columna_precio(df.columns, "P. BOX")
-        if col_box:
-            columnas_precio['P. BOX'] = col_box
-        col_vip = mapear_columna_precio(df.columns, "P. VIP")
-        if col_vip:
-            columnas_precio['P. VIP'] = col_vip
+        for precio_key in ["P. IR", "P. BOX", "P. VIP"]:
+            col = mapear_columna_precio(df.columns, precio_key)
+            if col:
+                columnas_precio[precio_key] = col
         if not columnas_precio:
             for c in df.columns:
                 if 'PRECIO' in c or 'MAYOR' in c:
@@ -324,7 +322,6 @@ def cargar_stock_completo(archivo):
         
         if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
-            # Método que funciona en Colab
             try:
                 df = pd.read_csv(io.BytesIO(contenido), sep=None, engine='python', encoding='latin1', on_bad_lines='skip')
             except:
@@ -336,14 +333,12 @@ def cargar_stock_completo(archivo):
             df = limpiar_cabeceras(df)
             df.columns = [str(col).strip().upper() for col in df.columns]
             
-            # Buscar columna SKU
             col_sku = None
             for col in df.columns:
                 if any(p in col for p in ['SKU', 'COD', 'CODIGO', 'ARTICULO', 'NUMERO']):
                     col_sku = col
                     break
             
-            # Buscar columna STOCK
             col_stock = None
             for col in df.columns:
                 if any(p in col for p in ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO']):
@@ -406,7 +401,6 @@ def buscar_precio(catalogos, sku, col_precio_seleccionada):
     sku_limpio = sku.strip().upper()
     for cat in catalogos:
         df = cat['df']
-        # Búsqueda exacta
         mask = df[cat['col_sku']].astype(str).str.strip().str.upper() == sku_limpio
         if not df[mask].empty:
             row = df[mask].iloc[0]
@@ -421,7 +415,6 @@ def buscar_precio(catalogos, sku, col_precio_seleccionada):
                 'precio': precio,
                 'descripcion': str(row[cat['col_desc']])
             }
-        # Búsqueda parcial
         mask = df[cat['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
         if not df[mask].empty:
             row = df[mask].iloc[0]
@@ -814,7 +807,6 @@ with tab_cotizacion:
                             badge_estado = "badge-ok"
                             estado_texto = "✅ OK"
                         
-                        # Badge de origen
                         if st.session_state.tipo_cotizacion == "XIAOMI":
                             if stock_apri004 > 0 and stock_yessica > 0:
                                 badge_origen = f'<span class="origin-badge origin-both">🟣 APRI.004: {stock_apri004} | 🔵 YESSICA: {stock_yessica}</span>'
@@ -878,7 +870,7 @@ with tab_cotizacion:
             html += '<th style="width: 8%; padding: 10px; text-align: center;">A Cotizar</th>'
             html += '<th style="width: 8%; padding: 10px; text-align: center;">Total</th>'
             html += '<th style="width: 8%; padding: 10px; text-align: center;">Estado</th>'
-            html += '</tr></thead><tbody>'
+            html += '<tr></thead><tbody>'
             
             for item in st.session_state.resultados:
                 precio_str = f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio"
@@ -891,7 +883,7 @@ with tab_cotizacion:
                 html += f'<td style="padding: 10px; font-family: monospace; word-wrap: break-word;">{item["SKU"]}</td>'
                 html += f'<td style="padding: 10px; word-wrap: break-word;">{item["Descripción"][:60]}{"..." if len(item["Descripción"]) > 60 else ""}</td>'
                 html += f'<td style="padding: 10px; text-align: center;">{precio_str}</td>'
-                html += f'<td style="padding: 10px; text-align: center;">{item["Pedido"]}</tr>'
+                html += f'<td style="padding: 10px; text-align: center;">{item["Pedido"]}</td>'
                 html += f'<td style="padding: 10px; text-align: center;">{stock_html}</td>'
                 html += f'<td style="padding: 10px;">{item["Origen"]}</td>'
                 html += f'<td style="padding: 10px; text-align: center;"><strong>{item["A Cotizar"]}</strong></td>'
