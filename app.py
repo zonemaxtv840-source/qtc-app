@@ -14,140 +14,6 @@ except:
     st.set_page_config(page_title="QTC Smart Sales Pro", page_icon="💼", layout="wide")
 
 # ============================================
-# CSS PRINCIPAL - AZUL CORPORATIVO CON TEXTO NEGRO
-# ============================================
-st.markdown("""
-<style>
-/* Fondo principal gris muy claro */
-.stApp { background-color: #F5F7FA !important; }
-.main .block-container { background-color: #F5F7FA !important; }
-
-/* Tipografía NEGRA */
-h1, h2, h3, h4, h5, h6 { color: #1A1A2E !important; font-family: 'Segoe UI', sans-serif; }
-p, div, span, label, .stMarkdown { color: #1A1A2E !important; }
-
-/* Sidebar azul corporativo */
-[data-testid="stSidebar"] { background: linear-gradient(180deg, #0D47A1 0%, #1565C0 100%) !important; }
-[data-testid="stSidebar"] * { color: #FFFFFF !important; }
-
-/* Botón de expansión del sidebar visible */
-button[kind="header"] {
-    background-color: #1565C0 !important;
-    color: white !important;
-    border-radius: 20px !important;
-    margin: 5px !important;
-}
-
-/* Botones principales */
-.stButton > button { 
-    background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%) !important; 
-    color: white !important; 
-    border-radius: 12px; 
-    font-weight: 600; 
-    border: none; 
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-.stButton > button:hover { 
-    background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%) !important; 
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(21,101,192,0.3);
-}
-
-/* Botón cambiar modo en sidebar */
-[data-testid="stSidebar"] .stButton button {
-    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%) !important;
-    border-radius: 12px !important;
-    font-weight: 600 !important;
-}
-[data-testid="stSidebar"] .stButton button:hover {
-    background: linear-gradient(135deg, #F57C00 0%, #E65100 100%) !important;
-    transform: translateY(-2px);
-}
-
-/* Selectores */
-.stSelectbox > div > div { background-color: white !important; border: 1px solid #BBDEFB !important; border-radius: 10px !important; }
-.stSelectbox label { color: #1A1A2E !important; }
-div[data-baseweb="select"] ul { background-color: white !important; border: 1px solid #BBDEFB !important; border-radius: 10px !important; }
-div[data-baseweb="select"] li { color: #1A1A2E !important; background-color: white !important; }
-div[data-baseweb="select"] li:hover { background-color: #E3F2FD !important; }
-div[data-baseweb="select"] li[aria-selected="true"] { background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%) !important; color: white !important; }
-
-/* File uploader */
-.stFileUploader > div > div { background-color: white !important; border: 1px dashed #1E88E5 !important; border-radius: 12px !important; }
-.stFileUploader button { background-color: #1565C0 !important; color: white !important; }
-
-/* Inputs */
-.stTextInput input, .stTextArea textarea, .stNumberInput input { 
-    color: #1A1A2E !important; 
-    background-color: white !important; 
-    border: 1px solid #BBDEFB !important; 
-    border-radius: 10px !important;
-    transition: all 0.3s ease;
-}
-.stTextInput input:focus, .stTextArea textarea:focus, .stNumberInput input:focus {
-    border-color: #1E88E5 !important;
-    box-shadow: 0 0 0 2px rgba(30,136,229,0.2);
-}
-
-/* Tabs */
-.stTabs [data-baseweb="tab-list"] { background-color: white !important; border-radius: 12px !important; padding: 6px !important; }
-.stTabs [data-baseweb="tab"] { color: #1A1A2E !important; background-color: #F5F7FA !important; border-radius: 10px !important; padding: 10px 20px !important; }
-.stTabs [aria-selected="true"] { background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%) !important; color: white !important; }
-
-/* Badges de estado */
-.badge-ok { background-color: #C8E6C9; color: #1B5E20; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
-.badge-warning { background-color: #FFF3E0; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
-.badge-danger { background-color: #FFCDD2; color: #C62828; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
-.badge-stock-bajo { background-color: #FFE0B2; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
-
-/* Badges de origen */
-.origin-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-right: 5px; }
-.origin-apri004 { background-color: #E1BEE7; color: #4A148C; }
-.origin-yessica { background-color: #BBDEFB; color: #0D47A1; }
-.origin-both { background-color: #C8E6C9; color: #1B5E20; }
-
-/* Métricas */
-.metric-card { background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #BBDEFB; }
-.metric-value { font-size: 2.2rem; font-weight: bold; color: #1565C0 !important; }
-
-/* Data editor */
-.stDataFrame { border-radius: 12px !important; overflow: hidden !important; }
-.stDataFrame thead th { background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%) !important; color: white !important; font-weight: 600 !important; }
-
-/* Text area para SKUs */
-.stTextArea textarea {
-    color: #1A1A2E !important;
-    background-color: white !important;
-    border: 2px solid #BBDEFB !important;
-    border-radius: 12px !important;
-    font-family: monospace !important;
-    font-size: 14px !important;
-}
-
-/* Expander en sidebar */
-[data-testid="stSidebar"] .streamlit-expanderHeader {
-    color: #FFFFFF !important;
-}
-[data-testid="stSidebar"] .streamlit-expanderContent {
-    color: #FFFFFF !important;
-}
-
-/* Placeholder color */
-.stTextInput input::placeholder,
-.stTextArea textarea::placeholder {
-    color: #90CAF9 !important;
-    opacity: 1;
-}
-
-/* Indicadores de stock */
-.stock-verde { color: #2E7D32; font-weight: bold; background-color: #C8E6C9; padding: 2px 8px; border-radius: 20px; display: inline-block; }
-.stock-amarillo { color: #E65100; font-weight: bold; background-color: #FFE0B2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
-.stock-rojo { color: #C62828; font-weight: bold; background-color: #FFCDD2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
-</style>
-""", unsafe_allow_html=True)
-
-# ============================================
 # INICIALIZACIÓN DE VARIABLES DE SESIÓN
 # ============================================
 if "auth" not in st.session_state:
@@ -168,22 +34,163 @@ if "productos_seleccionados" not in st.session_state:
     st.session_state.productos_seleccionados = {}
 
 # ============================================
-# LOGIN AZUL CORPORATIVO
+# ESTILOS CSS PERSONALIZADOS
+# ============================================
+st.markdown("""
+<style>
+/* Fondo general */
+.stApp { background-color: #F1F8E9 !important; }
+.main .block-container { background-color: #F1F8E9 !important; }
+
+/* Tipografía NEGRA legible */
+h1, h2, h3, h4, h5, h6 { color: #1A1A2E !important; font-family: 'Segoe UI', sans-serif; }
+p, div, span, label, .stMarkdown { color: #1A1A2E !important; }
+
+/* Sidebar premium */
+[data-testid="stSidebar"] { background: linear-gradient(180deg, #0D3B0F 0%, #1B5E20 100%) !important; }
+[data-testid="stSidebar"] * { color: #FFFFFF !important; }
+[data-testid="stSidebar"] .stMarkdown, 
+[data-testid="stSidebar"] p, 
+[data-testid="stSidebar"] div,
+[data-testid="stSidebar"] label { color: #FFFFFF !important; }
+
+/* Inputs en sidebar */
+[data-testid="stSidebar"] .stTextInput input,
+[data-testid="stSidebar"] .stTextArea textarea,
+[data-testid="stSidebar"] .stNumberInput input {
+    color: #1B5E20 !important;
+    background-color: white !important;
+    border-radius: 10px !important;
+    border: 1px solid #4CAF50 !important;
+}
+
+/* Inputs principales */
+.stTextInput input, 
+.stTextArea textarea, 
+.stNumberInput input { 
+    color: #1A1A2E !important;
+    background-color: white !important; 
+    border: 1px solid #C8E6C9 !important; 
+    border-radius: 10px !important;
+    transition: all 0.3s ease;
+}
+.stTextInput input:focus, 
+.stTextArea textarea:focus, 
+.stNumberInput input:focus {
+    border-color: #4CAF50 !important;
+    box-shadow: 0 0 0 2px rgba(76,175,80,0.2);
+}
+
+/* Placeholder */
+.stTextInput input::placeholder,
+.stTextArea textarea::placeholder {
+    color: #9E9E9E !important;
+    opacity: 1;
+}
+
+/* Botones */
+.stButton > button { 
+    background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important; 
+    color: white !important; 
+    border-radius: 12px; 
+    font-weight: 600; 
+    border: none; 
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.stButton > button:hover { 
+    background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%) !important; 
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Botón cambiar modo en sidebar */
+[data-testid="stSidebar"] .stButton button {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%) !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+}
+[data-testid="stSidebar"] .stButton button:hover {
+    background: linear-gradient(135deg, #F57C00 0%, #E65100 100%) !important;
+    transform: translateY(-2px);
+}
+
+/* Selectores */
+.stSelectbox > div > div { background-color: white !important; border: 1px solid #4CAF50 !important; border-radius: 10px !important; }
+.stSelectbox label { color: #1A1A2E !important; }
+
+/* File uploader */
+.stFileUploader > div > div { background-color: white !important; border: 1px dashed #4CAF50 !important; border-radius: 12px !important; }
+.stFileUploader button { background-color: #4CAF50 !important; color: white !important; }
+
+/* Tabs */
+.stTabs [data-baseweb="tab-list"] { background-color: white !important; border-radius: 12px !important; padding: 6px !important; }
+.stTabs [data-baseweb="tab"] { color: #1A1A2E !important; background-color: #F5F5F5 !important; border-radius: 10px !important; padding: 10px 20px !important; }
+.stTabs [aria-selected="true"] { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%) !important; color: white !important; }
+
+/* Badges */
+.badge-ok { background-color: #C8E6C9; color: #1B5E20; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
+.badge-warning { background-color: #FFF3E0; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
+.badge-danger { background-color: #FFCDD2; color: #C62828; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
+.badge-stock-bajo { background-color: #FFE0B2; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
+
+/* Badges de origen */
+.origin-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-right: 5px; }
+.origin-apri004 { background-color: #E1BEE7; color: #4A148C; }
+.origin-yessica { background-color: #BBDEFB; color: #0D47A1; }
+.origin-both { background-color: #C8E6C9; color: #1B5E20; }
+
+/* Métricas */
+.metric-card { background: white; border-radius: 20px; padding: 1.5rem; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: none; }
+.metric-value { font-size: 2.2rem; font-weight: bold; color: #4CAF50 !important; }
+
+/* Indicador de stock semáforo */
+.stock-verde { color: #2E7D32; font-weight: bold; background-color: #C8E6C9; padding: 2px 8px; border-radius: 20px; display: inline-block; }
+.stock-amarillo { color: #E65100; font-weight: bold; background-color: #FFE0B2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
+.stock-rojo { color: #C62828; font-weight: bold; background-color: #FFCDD2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
+
+/* Data editor */
+.stDataFrame { border-radius: 12px !important; overflow: hidden !important; }
+.stDataFrame thead th { background-color: #1B5E20 !important; color: white !important; font-weight: 600 !important; }
+
+/* Text area para SKUs */
+.stTextArea textarea {
+    color: #1A1A2E !important;
+    background-color: white !important;
+    border: 2px solid #4CAF50 !important;
+    border-radius: 12px !important;
+    font-family: monospace !important;
+    font-size: 14px !important;
+}
+
+/* Expander en sidebar */
+[data-testid="stSidebar"] .streamlit-expanderHeader {
+    color: #FFFFFF !important;
+}
+[data-testid="stSidebar"] .streamlit-expanderContent {
+    color: #FFFFFF !important;
+}
+
+/* Login animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.login-card { animation: fadeIn 0.5s ease-out; }
+</style>
+""", unsafe_allow_html=True)
+
+# ============================================
+# LOGIN PREMIUM
 # ============================================
 if not st.session_state.auth:
     st.markdown("""
     <style>
     .stApp {
-        background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 50%, #90CAF9 100%) !important;
+        background: linear-gradient(135deg, #E8F5E9 0%, #A5D6A7 100%) !important;
     }
     .main .block-container {
         background-color: transparent !important;
-    }
-    .stMarkdown {
-        background: transparent !important;
-    }
-    div[data-testid="stVerticalBlock"] > div {
-        background: transparent !important;
     }
     .login-card {
         background: white;
@@ -191,68 +198,19 @@ if not st.session_state.auth:
         padding: 2rem;
         box-shadow: 0 25px 50px rgba(0,0,0,0.15);
         text-align: center;
-        border: 1px solid #BBDEFB;
+        border: 1px solid #C8E6C9;
     }
     .login-card h1 {
-        color: #1A1A2E !important;
+        color: #1B5E20 !important;
         margin-bottom: 0.25rem;
         font-size: 1.8rem;
         font-weight: 700;
     }
     .login-card p {
-        color: #1A1A2E !important;
+        color: #2E7D32 !important;
         margin-bottom: 1.5rem;
         font-weight: 500;
         font-size: 0.9rem;
-    }
-    .stButton button {
-        background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%) !important;
-        color: white !important;
-        font-weight: 600 !important;
-        border: none !important;
-        border-radius: 12px !important;
-        padding: 0.6rem 1rem !important;
-        transition: all 0.3s ease !important;
-    }
-    .stButton button:hover {
-        background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%) !important;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(21,101,192,0.3) !important;
-    }
-    .stTextInput input {
-        border: 1px solid #BBDEFB !important;
-        border-radius: 12px !important;
-        transition: all 0.3s ease !important;
-        color: #1A1A2E !important;
-    }
-    .stTextInput input:focus {
-        border-color: #1E88E5 !important;
-        box-shadow: 0 0 0 2px rgba(30,136,229,0.2) !important;
-        transform: translateY(-2px);
-    }
-    .stTextInput label {
-        color: #1A1A2E !important;
-        font-weight: 500 !important;
-    }
-    .login-footer {
-        margin-top: 1.5rem;
-        padding-top: 1rem;
-        border-top: 1px solid #BBDEFB;
-        font-size: 0.7rem;
-        color: #1565C0 !important;
-    }
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(40px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    .login-card {
-        animation: fadeInUp 0.5s ease-out;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -282,7 +240,7 @@ if not st.session_state.auth:
                 st.info("💡 Usuario: admin | Contraseña: qtc2026")
         
         st.markdown("""
-        <div class="login-footer">
+        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #E8F5E9; font-size: 0.7rem; color: #2E7D32;">
             ⚡ QTC Smart Sales Pro
         </div>
         </div>
@@ -314,26 +272,24 @@ def corregir_numero(valor):
         return 0.0
 
 def limpiar_cabeceras(df):
-    # Recorrer las primeras 50 filas
+    """Busca la fila que contiene SKU y la usa como cabecera, saltando filas basura al inicio"""
     for i in range(min(50, len(df))):
-        # Obtener la fila como strings, manejando cualquier tipo de dato
-        fila = [str(x).upper() for x in df.iloc[i].values if x is not None]
-        
-        # Verificar si "SKU" está en alguna celda de esta fila
-        if any('SKU' in str(cell) for cell in fila):
-            # Usar toda la fila como cabecera
-            nuevas_columnas = []
-            for val in df.iloc[i].values:
-                if pd.isna(val) or str(val).strip() == '':
-                    nuevas_columnas.append(f"Col_{len(nuevas_columnas)}")
-                else:
-                    nuevas_columnas.append(str(val).strip())
-            df.columns = nuevas_columnas
-            # Eliminar filas vacías y resetear
-            df = df.iloc[i+1:].reset_index(drop=True)
-            # Eliminar columnas completamente vacías
-            df = df.dropna(axis=1, how='all')
-            return df
+        fila = df.iloc[i].astype(str).values
+        # Buscar "SKU" en cualquier celda de la fila
+        for celda in fila:
+            if 'SKU' in celda.upper():
+                nuevas_columnas = []
+                for val in df.iloc[i].values:
+                    if pd.notna(val) and str(val).strip() != '':
+                        nuevas_columnas.append(str(val).strip())
+                    else:
+                        nuevas_columnas.append(f"Col_{len(nuevas_columnas)}")
+                df.columns = nuevas_columnas
+                # Eliminar filas basura y resetear índice
+                df = df.iloc[i+1:].reset_index(drop=True)
+                # Eliminar columnas completamente vacías
+                df = df.dropna(axis=1, how='all')
+                return df
     return df
 
 def mapear_columna_precio(columnas, nombre_buscar):
@@ -351,14 +307,16 @@ def mapear_columna_precio(columnas, nombre_buscar):
 
 def cargar_catalogo(archivo):
     try:
+        # Detectar si es CSV por el nombre
         if archivo.name.lower().endswith('.csv'):
             contenido = archivo.getvalue()
             contenido_str = contenido.decode('utf-8', errors='ignore')
             lineas = contenido_str.split('\n')
             
+            # Buscar la línea que contiene "SKU" o "Columna1"
             header_row_index = None
-            for i, linea in enumerate(lineas):
-                if 'Columna1;PICK;BOX;NO.;MODEL MARK' in linea or 'SKU' in linea:
+            for i, linea in enumerate(lineas[:50]):
+                if 'SKU' in linea.upper() or 'Columna1' in linea:
                     header_row_index = i
                     break
             
@@ -366,14 +324,20 @@ def cargar_catalogo(archivo):
                 lineas_limpias = lineas[header_row_index:]
                 contenido_limpio = '\n'.join(lineas_limpias).encode('utf-8')
                 try:
-                    df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='utf-8', sep=';', on_bad_lines='skip')
+                    df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='utf-8-sig', sep=';', on_bad_lines='skip')
                 except:
-                    df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='latin-1', sep=';', on_bad_lines='skip')
+                    try:
+                        df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='latin-1', sep=';', on_bad_lines='skip')
+                    except:
+                        df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='utf-8', sep=';', on_bad_lines='skip')
             else:
                 try:
-                    df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8', sep=';', on_bad_lines='skip')
+                    df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8-sig', sep=';', on_bad_lines='skip')
                 except:
-                    df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', sep=';', on_bad_lines='skip')
+                    try:
+                        df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', sep=';', on_bad_lines='skip')
+                    except:
+                        df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8', sep=';', on_bad_lines='skip')
             
             df = limpiar_cabeceras(df)
             hoja_seleccionada = "CSV"
@@ -385,7 +349,7 @@ def cargar_catalogo(archivo):
             df = limpiar_cabeceras(df)
         
         posibles_skus = ['SKU', 'COD', 'CODIGO', 'SAP', 'NUMERO', 'ARTICULO', 'COD SAP']
-        posibles_desc = ['DESC', 'DESCRIPCION', 'NOMBRE', 'PRODUCTO', 'NOMBRE PRODUCTO']
+        posibles_desc = ['DESC', 'DESCRIPCION', 'NOMBRE', 'PRODUCTO', 'NOMBRE PRODUCTO', 'GOODS DESCRITPION']
         
         col_sku = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_skus)), df.columns[0])
         col_desc = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_desc)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
@@ -402,7 +366,7 @@ def cargar_catalogo(archivo):
             columnas_precio['P. VIP'] = col_vip
         if not columnas_precio:
             for c in df.columns:
-                if 'PRECIO' in str(c).upper():
+                if 'PRECIO' in str(c).upper() or 'MAYOR' in str(c).upper():
                     columnas_precio['PRECIO'] = c
                     break
         
@@ -431,8 +395,8 @@ def cargar_stock_completo(archivo):
             lineas = contenido_str.split('\n')
             
             header_row_index = None
-            for i, linea in enumerate(lineas):
-                if 'SKU' in linea or 'COD' in linea or 'ARTICULO' in linea:
+            for i, linea in enumerate(lineas[:50]):
+                if 'SKU' in linea.upper() or 'ARTICULO' in linea.upper():
                     header_row_index = i
                     break
             
@@ -440,81 +404,58 @@ def cargar_stock_completo(archivo):
                 lineas_limpias = lineas[header_row_index:]
                 contenido_limpio = '\n'.join(lineas_limpias).encode('utf-8')
                 try:
-                    df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='utf-8', sep=';', on_bad_lines='skip')
+                    df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='utf-8-sig', sep=';', on_bad_lines='skip')
                 except:
-                    df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='latin-1', sep=';', on_bad_lines='skip')
+                    try:
+                        df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='latin-1', sep=';', on_bad_lines='skip')
+                    except:
+                        df = pd.read_csv(io.BytesIO(contenido_limpio), encoding='utf-8', sep=';', on_bad_lines='skip')
             else:
                 try:
-                    df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8', sep=';', on_bad_lines='skip')
+                    df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8-sig', sep=';', on_bad_lines='skip')
                 except:
-                    df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', sep=';', on_bad_lines='skip')
+                    try:
+                        df = pd.read_csv(io.BytesIO(contenido), encoding='latin-1', sep=';', on_bad_lines='skip')
+                    except:
+                        df = pd.read_csv(io.BytesIO(contenido), encoding='utf-8', sep=';', on_bad_lines='skip')
             
             df = limpiar_cabeceras(df)
             
-            col_sku = None
-            col_stock = None
-            for col in df.columns:
-                col_upper = str(col).upper()
-                if any(p in col_upper for p in ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO']):
-                    if col_sku is None:
-                        col_sku = col
-                if any(p in col_upper for p in ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO']):
-                    if col_stock is None:
-                        col_stock = col
+            posibles_skus = ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO']
+            posibles_stock = ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO', 'EN STOCK']
             
-            if col_sku is None and len(df.columns) > 0:
-                col_sku = df.columns[0]
-            if col_stock is None and len(df.columns) > 1:
-                col_stock = df.columns[1]
+            col_sku = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_skus)), df.columns[0])
+            col_stock = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_stock)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
             
-            if df is not None and len(df) > 0:
-                todas_hojas.append({
-                    'nombre': f"{archivo.name} [CSV]",
-                    'df': df,
-                    'col_sku': col_sku,
-                    'col_stock': col_stock,
-                    'hoja': "CSV"
-                })
+            todas_hojas.append({
+                'nombre': f"{archivo.name} [CSV]",
+                'df': df,
+                'col_sku': col_sku,
+                'col_stock': col_stock,
+                'hoja': "CSV"
+            })
         else:
             xls = pd.ExcelFile(archivo)
             for hoja in xls.sheet_names:
-                try:
-                    df = pd.read_excel(archivo, sheet_name=hoja)
-                    df = limpiar_cabeceras(df)
-                    
-                    col_sku = None
-                    col_stock = None
-                    for col in df.columns:
-                        col_upper = str(col).upper()
-                        if any(p in col_upper for p in ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO']):
-                            if col_sku is None:
-                                col_sku = col
-                        if any(p in col_upper for p in ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO']):
-                            if col_stock is None:
-                                col_stock = col
-                    
-                    if col_sku is None and len(df.columns) > 0:
-                        col_sku = df.columns[0]
-                    if col_stock is None and len(df.columns) > 1:
-                        col_stock = df.columns[1]
-                    
-                    if df is not None and len(df) > 0:
-                        todas_hojas.append({
-                            'nombre': f"{archivo.name} [{hoja}]",
-                            'df': df,
-                            'col_sku': col_sku,
-                            'col_stock': col_stock,
-                            'hoja': hoja
-                        })
-                        st.success(f"✅ Hoja '{hoja}' cargada: {len(df)} filas")
-                except Exception as e:
-                    st.warning(f"⚠️ Error en hoja '{hoja}': {str(e)[:50]}")
+                df = pd.read_excel(archivo, sheet_name=hoja)
+                df = limpiar_cabeceras(df)
+                
+                posibles_skus = ['SKU', 'COD', 'CODIGO', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO']
+                posibles_stock = ['STOCK', 'DISPONIBLE', 'CANT', 'CANTIDAD', 'SALDO', 'EN STOCK']
+                
+                col_sku = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_skus)), df.columns[0])
+                col_stock = next((c for c in df.columns if any(p in str(c).upper() for p in posibles_stock)), df.columns[1] if len(df.columns) > 1 else df.columns[0])
+                
+                todas_hojas.append({
+                    'nombre': f"{archivo.name} [{hoja}]",
+                    'df': df,
+                    'col_sku': col_sku,
+                    'col_stock': col_stock,
+                    'hoja': hoja
+                })
+                st.success(f"✅ Hoja '{hoja}': {len(df)} filas")
         
-        if len(todas_hojas) == 0:
-            st.error(f"❌ No se pudo leer ninguna hoja del archivo {archivo.name}")
-        else:
-            st.success(f"✅ Total: {len(todas_hojas)} hojas cargadas")
-        
+        st.success(f"✅ Total: {len(todas_hojas)} hoja(s) cargada(s)")
         return todas_hojas
     except Exception as e:
         st.error(f"Error cargando {archivo.name}: {str(e)[:100]}")
@@ -524,6 +465,7 @@ def buscar_precio(catalogos, sku, col_precio_seleccionada):
     sku_limpio = sku.strip().upper()
     for cat in catalogos:
         df = cat['df']
+        # Búsqueda exacta
         mask = df[cat['col_sku']].astype(str).str.strip().str.upper() == sku_limpio
         if not df[mask].empty:
             row = df[mask].iloc[0]
@@ -538,6 +480,7 @@ def buscar_precio(catalogos, sku, col_precio_seleccionada):
                 'precio': precio,
                 'descripcion': str(row[cat['col_desc']])
             }
+        # Búsqueda parcial
         mask = df[cat['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
         if not df[mask].empty:
             row = df[mask].iloc[0]
@@ -563,7 +506,7 @@ def buscar_descripcion_en_stock(stocks, sku):
         if not df[mask].empty:
             row = df[mask].iloc[0]
             for col in df.columns:
-                if any(p in str(col).upper() for p in ['DESC', 'NOMBRE', 'PRODUCTO', 'DESCRIPCION']):
+                if any(p in str(col).upper() for p in ['DESC', 'NOMBRE', 'PRODUCTO', 'DESCRIPCION', 'GOODS DESCRITPION']):
                     desc = str(row[col])
                     if desc and desc != 'nan':
                         return desc[:100]
@@ -647,7 +590,7 @@ def buscar_en_catalogos(catalogos, termino, stocks, col_precio_consulta=None, ti
                         'Precio': precio,
                         'Stock_Total': stock_total,
                         'Stock_APRI004': stock_apri004,
-                        'Stock_YESSICA': stock_yessica
+                        'Stock_YESSICA': stock_yessica,
                     }
     
     return list(resultados_dict.values())
@@ -698,10 +641,6 @@ def generar_excel(items, cliente, ruc):
     writer.close()
     return output.getvalue()
 
-# ============================================
-# FUNCIONES PARA LOS INDICADORES DE STOCK
-# ============================================
-
 def obtener_clase_stock(stock):
     if stock == 0:
         return "stock-rojo"
@@ -739,7 +678,7 @@ try:
         st.markdown(f"""
         <div style="text-align: right; background: white; padding: 8px 15px; border-radius: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
             <span style="font-weight: 600;">👤 admin</span><br>
-            <span style="font-size: 0.7rem; color: #1565C0;">Administrador</span>
+            <span style="font-size: 0.7rem; color: #4CAF50;">Administrador</span>
         </div>
         """, unsafe_allow_html=True)
         if st.button("🚪 Cerrar Sesión", key="logout"):
@@ -753,7 +692,7 @@ except:
 st.markdown("---")
 
 # ============================================
-# SELECCIÓN DE MODO (solo si no hay modo seleccionado)
+# SELECCIÓN DE MODO DE COTIZACIÓN
 # ============================================
 if st.session_state.tipo_cotizacion is None:
     st.markdown("### 🎯 ¿Qué vas a cotizar hoy?")
@@ -790,7 +729,6 @@ with st.sidebar:
         st.session_state.resultados = None
         st.rerun()
     
-    # Mostrar modo actual
     if st.session_state.tipo_cotizacion == "XIAOMI":
         st.info("🔋 Modo XIAOMI activo")
     else:
@@ -802,7 +740,6 @@ with st.sidebar:
         st.session_state.debug_mode = False
     st.session_state.debug_mode = st.checkbox("🔧 Modo Depuración", value=st.session_state.debug_mode)
 
-# Mostrar modo actual en la página principal
 if st.session_state.tipo_cotizacion == "XIAOMI":
     st.success("🔋 **Modo XIAOMI** - Buscará stock en: **APRI.004** y **YESSICA SEPARADO** (suma ambas)")
 else:
@@ -989,9 +926,8 @@ with tab_cotizacion:
             st.markdown("---")
             st.markdown("### 📊 Resultados")
             
-            # Tabla de resultados HTML
             html = '<div style="overflow-x: auto;"><table style="width:100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; table-layout: fixed;">'
-            html += '<thead><tr style="background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%); color: white;">'
+            html += '<thead><tr style="background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%); color: white;">'
             html += '<th style="width: 12%; padding: 10px; text-align: left;">SKU</th>'
             html += '<th style="width: 28%; padding: 10px; text-align: left;">Descripción</th>'
             html += '<th style="width: 10%; padding: 10px; text-align: center;">Precio</th>'
@@ -1001,7 +937,7 @@ with tab_cotizacion:
             html += '<th style="width: 8%; padding: 10px; text-align: center;">A Cotizar</th>'
             html += '<th style="width: 8%; padding: 10px; text-align: center;">Total</th>'
             html += '<th style="width: 8%; padding: 10px; text-align: center;">Estado</th>'
-            html += '</tr></thead><tbody>'
+            html += '<tr></thead><tbody>'
             
             for item in st.session_state.resultados:
                 precio_str = f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio"
@@ -1018,7 +954,7 @@ with tab_cotizacion:
                 html += f'<td style="padding: 10px; text-align: center;">{stock_html}</td>'
                 html += f'<td style="padding: 10px;">{item["Origen"]}</td>'
                 html += f'<td style="padding: 10px; text-align: center;"><strong>{item["A Cotizar"]}</strong></td>'
-                html += f'<td style="padding: 10px; text-align: center;"><strong>{total_str}</strong></tr>'
+                html += f'<td style="padding: 10px; text-align: center;"><strong>{total_str}</strong></td>'
                 html += f'<td style="padding: 10px; text-align: center;"><span class="{item["Badge_Estado"]}" style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">{item["Estado"]}</span></td>'
                 html += '</tr>'
             
@@ -1171,8 +1107,8 @@ with tab_buscar:
                         pass
                     
                     st.markdown(f"""
-                    <div style="background: white; border-radius: 12px; padding: 1rem; margin: 0.5rem 0; border-left: 4px solid #1565C0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                        <div><span style="font-family: monospace; font-weight: bold; font-size: 1rem;">📦 {res['SKU']}</span><br><span style="font-size: 0.85rem; color: #555;">{res['Descripcion']}</span><br><span style="font-weight: bold; color: #1565C0;">{f'S/. {res["Precio"]:,.2f}' if res["Precio"] else "💰 Sin precio"}</span></div>
+                    <div style="background: white; border-radius: 12px; padding: 1rem; margin: 0.5rem 0; border-left: 4px solid #4CAF50; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div><span style="font-family: monospace; font-weight: bold; font-size: 1rem;">📦 {res['SKU']}</span><br><span style="font-size: 0.85rem; color: #555;">{res['Descripcion']}</span><br><span style="font-weight: bold; color: #4CAF50;">{f'S/. {res["Precio"]:,.2f}' if res["Precio"] else "💰 Sin precio"}</span></div>
                         <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee;">
                             <span class="{stock_clase}" title="{obtener_mensaje_stock(res['Stock_Total'])}">{stock_icono} Stock: {res['Stock_Total']}</span><br>
                             {stock_detalle}
