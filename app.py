@@ -980,54 +980,104 @@ with tab_cotizacion:
 # ---------- TAB BUSCAR ----------
 with tab_buscar:
     st.markdown("### 🔍 Buscar Productos")
-    
     if not st.session_state.catalogos:
         st.warning("🌿 Primero carga catálogos")
     else:
-        opciones_precio_buscar = set()
-        for cat in st.session_state.catalogos:
-            for col in cat['columnas_precio'].keys():
-                opciones_precio_buscar.add(col)
+        # Inicializar carrito si no existe
+        if 'carrito_seleccionados' not in st.session_state:
+            st.session_state.carrito_seleccionados = {}
+
+        opciones_precio_buscar = {col for cat in st.session_state.catalogos for col in cat['columnas_precio'].keys()}
+        col_precio_consulta = st.selectbox("💰 Precio: ", ["(No mostrar)"] + sorted(list(opciones_precio_buscar)), key="precio_busqueda")
         
-        col_precio_consulta = st.selectbox("💰 Precio:", ["(No mostrar)"] + sorted(list(opciones_precio_buscar)), key="precio_busqueda")
-        busqueda = st.text_input("🔎 Buscar:", placeholder="SKU o descripción")
-        
-        if busqueda and len(busqueda) >= 2:
+        # 🔹 OPTIMIZACIÓN: Usar botón para buscar y evitar reruns por cada tecla
+        col_busq1, col_busq2 = st.columns([3, 1])
+        with col_busq1:
+            busqueda = st.text_input("🔎 Buscar: ", placeholder="SKU o descripción", key="texto_busqueda")
+        with col_busq2:
+            btn_buscar = st.button("🔍 Buscar", use_container_width=True)
+
+        if btn_buscar and busqueda and len(busqueda) >= 2:
             with st.spinner("🔍 Buscando..."):
                 precio_seleccionado = None if col_precio_consulta == "(No mostrar)" else col_precio_consulta
                 resultados_busqueda = []
                 skus_vistos = set()
+                
                 for cat in st.session_state.catalogos:
                     df = cat['df']
                     mask = df[cat['col_sku']].astype(str).str.contains(busqueda, case=False, na=False)
                     mask |= df[cat['col_desc']].astype(str).str.contains(busqueda, case=False, na=False)
+                    
                     for _, row in df[mask].iterrows():
                         sku = str(row[cat['col_sku']])
-                        if sku in skus_vistos:
-                            continue
+                        if sku in skus_vistos: continue
                         skus_vistos.add(sku)
+                        
                         precio = None
                         if precio_seleccionado:
-                            col_precio_real = cat['columnas_precio'].get(precio_seleccionado)
-                            if col_precio_real:
-                                precio = corregir_numero(row[col_precio_real])
-                        stock_total, stock_detalle, stock_apri004, stock_yessica, stock_columnas = buscar_stock(st.session_state.stocks, sku, st.session_state.tipo_cotizacion)
+                            col_p = cat['columnas_precio'].get(precio_seleccionado)
+                            if col_p: precio = corregir_numero(row[col_p])
+                            
+                        stock_total, _, stock_apri, stock_yes, stock_col = buscar_stock(st.session_state.stocks, sku, st.session_state.tipo_cotizacion)
+                        
                         resultados_busqueda.append({
-                            'SKU': sku,
-                            'Descripcion': str(row[cat['col_desc']])[:100],
-                            'Precio': precio,
-                            'Stock_Total': stock_total,
-                            'Stock_APRI004': stock_apri004,
-                            'Stock_YESSICA': stock_yessica,
-                            'Stock_Detalle': stock_columnas
+                            'SKU': sku, 'Descripcion': str(row[cat['col_desc']])[:100],
+                            'Precio': precio, 'Stock_Total': stock_total,
+                            'Stock_APRI004': stock_apri, 'Stock_YESSICA': stock_yes, 'Stock_Detalle': stock_col
                         })
-            
+
             if resultados_busqueda:
                 st.success(f"✅ {len(resultados_busqueda)} resultados")
                 for res in resultados_busqueda:
                     stock_clase = obtener_clase_stock(res['Stock_Total'])
                     stock_icono = obtener_icono_stock(res['Stock_Total'])
                     
+                    stock_detalle_html = ''
+                    if st.session_state.tipo_cotizacion == ModoCotizacion.GENERAL and res.get('Stock_Detalle'):
+                        badge_detalle = '<br>'.join([
+                            f'📦 Total: {d["total"]} | 🔒 Comp: {d["comprometido"]} | 📋 Sol: {d["solicitado"]} | ✅ Disp: {d["disponible"]}'
+                            for d in res['Stock_Detalle'].values()
+                        ])
+                        stock_detalle_html = f'<div style="font-size:0.7rem; margin-top:4px;">{badge_detalle}</div>'
+                    
+                    st.markdown(f"""
+                     <div style="background: white; border-radius: 12px; padding: 1rem; margin: 0.5rem 0; border-left: 4px solid #4CAF50;">
+                         <div><strong>📦 {res['SKU']}</strong><br><span style="font-size:0.85rem;">{res['Descripcion']}</span><br>
+                         <span style="color:#4CAF50;">{f'S/. {res["Precio"]:,.2f}' if res["Precio"] else "💰 Sin precio"}</span></div>
+                         <div style="margin-top:8px;"><span class="{stock_clase}">{stock_icono} Stock: {res['Stock_Total']}</span>{stock_detalle_html}</div>
+                     </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # 🔹 FIX: Sincronización directa sin acumulación
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        st.markdown("**➕ Cantidad**")
+                    with col2:
+                        cant_inicial = st.session_state.carrito_seleccionados.get(res['SKU'], 0)
+                        nueva_cant = st.number_input(
+                            "Cant", min_value=0, max_value=999, value=cant_inicial, 
+                            key=f"qty_{res['SKU']}", label_visibility="collapsed"
+                        )
+                        # Solo actualiza si cambió para evitar reruns innecesarios
+                        if nueva_cant != cant_inicial:
+                            st.session_state.carrito_seleccionados[res['SKU']] = nueva_cant
+                            st.rerun()
+                    st.divider()
+
+        # 🔹 Botón de transferencia seguro
+        if st.session_state.carrito_seleccionados:
+            st.markdown("---")
+            st.markdown(f"### 🛒 Carrito ({len(st.session_state.carrito_seleccionados)} productos)")
+            st.dataframe(pd.DataFrame([{'SKU': k, 'Cantidad': v} for k, v in st.session_state.carrito_seleccionados.items()]), use_container_width=True)
+            
+            if st.button("📋 TRANSFERIR A COTIZACIÓN", use_container_width=True, type="primary"):
+                st.session_state.skus_transferidos = st.session_state.carrito_seleccionados.copy()
+                st.session_state.carrito_seleccionados = {}
+                st.success("✅ Transferido correctamente")
+                # Streamlit >= 1.36.0 soporta st.switch_tab
+                try: st.switch_tab("📦 Cotización")
+                except: st.warning("👉 Ve manualmente a la pestaña 📦 Cotización y presiona PROCESAR")
+                st.rerun()
                     # Badge detallado para modo GENERAL en búsqueda
                     if st.session_state.tipo_cotizacion == ModoCotizacion.GENERAL and res.get('Stock_Detalle'):
                         badge_detalle = '<br>'.join([
