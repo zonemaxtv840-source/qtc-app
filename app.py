@@ -307,38 +307,41 @@ def buscar_stock(stocks: List[Dict], sku: str, modo: str) -> Tuple[int, Dict, in
     stock_yessica = 0
     detalles = {}
     stock_detalle_columnas = {}
+
     for stock in stocks:
         hoja = stock['hoja'].upper()
         df_sku_limpio = stock['df'][stock['col_sku']].astype(str).str.strip().str.upper()
         mask = df_sku_limpio == sku_limpio
-        
+
         if mask.any():
             for _, row in stock['df'][mask].iterrows():
                 if modo == ModoCotizacion.XIAOMI:
                     cantidad = int(corregir_numero(row.get(stock.get('col_stock_disponible', ''), 0)))
                     if 'APRI.004' in hoja:
-                         stock_apri004 += cantidad
-                        detalles[f'APRI.004 ({stock["nombre "]})'] = detalles.get(f'APRI.004 ({stock["nombre "]})', 0) + cantidad
+                        stock_apri004 += cantidad
+                        detalles[f'APRI.004 ({stock["nombre"]})'] = detalles.get(f'APRI.004 ({stock["nombre"]})', 0) + cantidad
                     elif 'YESSICA' in hoja:
                         stock_yessica += cantidad
-                        detalles[f'YESSICA ({stock["nombre "]})'] = detalles.get(f'YESSICA ({stock["nombre "]})', 0) + cantidad
-                else:
+                        detalles[f'YESSICA ({stock["nombre"]})'] = detalles.get(f'YESSICA ({stock["nombre"]})', 0) + cantidad
+                else:  # MODO GENERAL
                     if 'APRI.001' in hoja:
                         disponible = int(corregir_numero(row.get(stock.get('col_stock_disponible', ''), 0)))
                         stock_total_disponible += disponible
-                        
+
                         total = int(corregir_numero(row.get(stock.get('col_stock_total', ''), 0)))
                         comprometido = int(corregir_numero(row.get(stock.get('col_stock_comprometido', ''), 0)))
                         solicitado = int(corregir_numero(row.get(stock.get('col_stock_solicitado', ''), 0)))
-                        
+
                         origen_key = stock['nombre']
                         if origen_key not in stock_detalle_columnas:
-                            stock_detalle_columnas[origen_key] = {'total': 0, 'comprometido': 0, 'solicitado': 0, 'disponible': 0}
+                            stock_detalle_columnas[origen_key] = {
+                                'total': 0, 'comprometido': 0, 'solicitado': 0, 'disponible': 0
+                            }
                         stock_detalle_columnas[origen_key]['total'] += total
                         stock_detalle_columnas[origen_key]['comprometido'] += comprometido
                         stock_detalle_columnas[origen_key]['solicitado'] += solicitado
                         stock_detalle_columnas[origen_key]['disponible'] += disponible
-                        
+
                         detalles[stock['nombre']] = detalles.get(stock['nombre'], 0) + disponible
 
     if modo == ModoCotizacion.XIAOMI:
