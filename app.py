@@ -39,130 +39,54 @@ STOCK_COLUMNS_GENERAL = {
 # ============================================
 # CONFIGURACIÓN DE PATRONES POR TIPO DE CATÁLOGO
 # ============================================
+# ============================================
+# CONFIGURACIÓN DE PATRONES POR TIPO DE CATÁLOGO (LIMPIO)
+# ============================================
 TIPOS_CATALOGO = {
-    "XIAOMI_DRIVE ": {
-        "patrones ": ["xiaomi ", "drive ", "mi ", "redmi "],
-        "columnas ": {
-            "sku ": ["SKU "],
-            "descripcion ": ["NOMBRE PRODUCTO ", "PRODUCTO "],
-            "precios ": {
-                "P. IR ": ["Mayorista ", "MAYORISTA "],
-                "P. BOX ": ["Caja ", "CAJA ", "BOX "],
-                "P. VIP ": ["Vip ", "VIP "]
+    "XIAOMI_DRIVE": {
+        "patrones": ["xiaomi", "drive", "mi", "redmi"],
+        "columnas": {
+            "sku": ["SKU"],
+            "descripcion": ["NOMBRE PRODUCTO", "PRODUCTO"],
+            "precios": {
+                "P. IR": ["Mayorista", "MAYORISTA"],
+                "P. BOX": ["Caja", "CAJA", "BOX"],
+                "P. VIP": ["Vip", "VIP"]
             }
         }
     },
-    "XIAOMI_POWERBE ": {
-        "patrones ": ["powerbe ", "powerbeats ", "beats "],
-        "columnas ": {
-            "sku ": ["COD SAP ", "SKU ", "CODIGO "],
-            "descripcion ": ["NOMBRE PRODUCTO ", "PRODUCTO ", "DESCRIPCION "],
-            "precios ": {
-                "P. IR ": ["P. IR ", "IR ", "MAYORISTA "],
-                "P. BOX ": ["P. BOX ", "BOX ", "CAJA "],
-                "P. VIP ": ["P. VIP ", "VIP "]
+    "XIAOMI_POWERBE": {
+        "patrones": ["powerbe", "powerbeats", "beats"],
+        "columnas": {
+            "sku": ["COD SAP", "SKU", "CODIGO"],
+            "descripcion": ["NOMBRE PRODUCTO", "PRODUCTO", "DESCRIPCION"],
+            "precios": {
+                "P. IR": ["P. IR", "IR", "MAYORISTA"],
+                "P. BOX": ["P. BOX", "BOX", "CAJA"],
+                "P. VIP": ["P. VIP", "VIP"]
             }
         }
     },
-    "GENERAL ": {
-        "patrones ": [],
-        "columnas ": {
-            "sku ": ["SKU ", "COD ", "SAP ", "NUMERO ", "ARTICULO ", "COD SAP ", "CODIGO ", "Número de artículo "],
-            "descripcion ": ["DESC ", "DESCRIPCION ", "NOMBRE ", "GOODS DESCRIPTION ", "NOMBRE PRODUCTO ", "PRODUCTO ", "Descripción del artículo "],
-            "precios ": {
-                "P. IR ": ["P. IR ", "IR ", "MAYORISTA ", "MAYOR "],
-                "P. BOX ": ["P. BOX ", "BOX ", "CAJA "],
-                "P. VIP ": ["P. VIP ", "VIP "]
+    "GENERAL": {
+        "patrones": [],
+        "columnas": {
+            "sku": ["SKU", "COD", "SAP", "NUMERO", "ARTICULO", "COD SAP", "CODIGO", "Número de artículo"],
+            "descripcion": ["DESC", "DESCRIPCION", "NOMBRE", "GOODS DESCRIPTION", "NOMBRE PRODUCTO", "PRODUCTO", "Descripción del artículo"],
+            "precios": {
+                "P. IR": ["P. IR", "IR", "MAYORISTA", "MAYOR"],
+                "P. BOX": ["P. BOX", "BOX", "CAJA"],
+                "P. VIP": ["P. VIP", "VIP"]
             }
         }
     }
 }
 
-# ============================================
-# FUNCIONES DE UTILIDAD
-# ============================================
-def corregir_numero(valor) -> float:
-    """Convierte cualquier formato de número a float."""
-    if pd.isna(valor) or str(valor).strip() in [" ", "0 ", "0.0 ", "-"]:
-        return 0.0
-    s = str(valor).upper().replace('S/', '').replace('$', '').replace(' ', '').strip()
-    if ',' in s and '.' in s:
-        s = s.replace(',', '')
-    elif ',' in s:
-        partes = s.split(',')
-        if len(partes[-1]) <= 2:
-            s = s.replace(',', '.')
-        else:
-            s = s.replace(',', '')
-    s = re.sub(r'[^\d.]', '', s)
-    try:
-        return float(s)
-    except:
-        return 0.0
-
-def limpiar_cabeceras(df: pd.DataFrame) -> pd.DataFrame:
-    """Detecta la fila de encabezados y la establece como columnas."""
-    for i in range(min(20, len(df))):
-        fila = [str(x).upper() for x in df.iloc[i].values]
-        if any(h in item for h in ['SKU', 'COD', 'SAP', 'NUMERO', 'ARTICULO', 'COD SAP', 'GOODS', 'DESC', 'NÚMERO DE ARTÍCULO'] for item in fila):
-            df.columns = [str(c).strip() for c in df.iloc[i]]
-            return df.iloc[i+1:].reset_index(drop=True)
-    return df
-
-def cargar_archivo_datos(uploaded_file) -> Optional[pd.DataFrame]:
-    """Carga XLSX, XLS o CSV y devuelve DataFrame."""
-    nombre = uploaded_file.name.lower()
-    try:
-        if nombre.endswith('.csv'):
-            try:
-                df = pd.read_csv(uploaded_file, encoding='utf-8')
-            except UnicodeDecodeError:
-                df = pd.read_csv(uploaded_file, encoding='latin-1')
-        else:
-            df = pd.read_excel(uploaded_file)
-        return limpiar_cabeceras(df)
-    except Exception as e:
-        st.error(f"Error cargando {uploaded_file.name}: {str(e)[:100]}")
-        return None
-
-def detectar_tipo_catalogo(nombre_archivo: str, df: pd.DataFrame) -> str:
-    """Detecta automáticamente el tipo de catálogo."""
-    nombre_lower = nombre_archivo.lower()
-    columnas_str = " ".join([str(c).upper() for c in df.columns])
-    for tipo, config in TIPOS_CATALOGO.items():
-        if tipo == "GENERAL ":
-            continue
-        for patron in config["patrones "]:
-            if patron in nombre_lower:
-                return tipo
-
-    if "COD SAP " in columnas_str or ("P. IR " in columnas_str and "P. BOX " in columnas_str):
-        return "XIAOMI_POWERBE "
-
-    if ("Family " in columnas_str or "SKU " in columnas_str) and \
-        "Mayorista " in columnas_str and "Caja " in columnas_str and "Vip " in columnas_str:
-        return "XIAOMI_DRIVE "
-
-    return "GENERAL "
-
-def detectar_columna_inteligente(df: pd.DataFrame, posibles: List[str], columna_fallback: str = None) -> str:
-    """Detecta la primera columna que coincida con los posibles nombres."""
-    df_cols = [str(c).strip() for c in df.columns]
-    df_cols_upper = [c.upper() for c in df_cols]
-    for posible in posibles:
-        posible_upper = posible.upper()
-        for idx, col_upper in enumerate(df_cols_upper):
-            if posible_upper == col_upper or posible_upper in col_upper:
-                return df_cols[idx]
-
-    if columna_fallback and columna_fallback in df.columns:
-        return columna_fallback
-    return df.columns[0]
-
 def detectar_precio_inteligente(df: pd.DataFrame, tipo_precio: str, tipo_catalogo: str) -> Optional[str]:
     """Detecta columna de precio según el tipo de catálogo."""
+    # Fallback seguro: si el tipo no existe, usa GENERAL
     config = TIPOS_CATALOGO.get(tipo_catalogo, TIPOS_CATALOGO["GENERAL"])
     patrones_precio = config["columnas"]["precios"].get(tipo_precio, [])
+    
     for col in df.columns:
         col_limpio = str(col).strip()
         col_upper = col_limpio.upper()
@@ -172,20 +96,45 @@ def detectar_precio_inteligente(df: pd.DataFrame, tipo_precio: str, tipo_catalog
                 return col_limpio
     return None
 
+def detectar_tipo_catalogo(nombre_archivo: str, df: pd.DataFrame) -> str:
+    """Detecta automáticamente el tipo de catálogo."""
+    nombre_lower = nombre_archivo.lower()
+    columnas_str = " ".join([str(c).upper() for c in df.columns])
+    
+    for tipo, config in TIPOS_CATALOGO.items():
+        if tipo == "GENERAL":
+            continue
+        for patron in config["patrones"]:
+            if patron in nombre_lower:
+                return tipo
+
+    if "COD SAP" in columnas_str or ("P. IR" in columnas_str and "P. BOX" in columnas_str):
+        return "XIAOMI_POWERBE"
+
+    if ("Family" in columnas_str or "SKU" in columnas_str) and \
+        "Mayorista" in columnas_str and "Caja" in columnas_str and "Vip" in columnas_str:
+        return "XIAOMI_DRIVE"
+
+    return "GENERAL"
+
 def cargar_catalogo(archivo) -> Optional[Dict]:
     """Carga un catálogo con detección inteligente."""
     df = cargar_archivo_datos(archivo)
     if df is None:
         return None
+    
     tipo_catalogo = detectar_tipo_catalogo(archivo.name, df)
-    config = TIPOS_CATALOGO.get(tipo_catalogo, TIPOS_CATALOGO["GENERAL "])
-    cols_config = config["columnas "]
+    
+    # Acceso seguro al config
+    config = TIPOS_CATALOGO.get(tipo_catalogo, TIPOS_CATALOGO["GENERAL"])
+    cols_config = config["columnas"]
 
-    col_sku = detectar_columna_inteligente(df, cols_config["sku "])
-    col_desc = detectar_columna_inteligente(df, cols_config["descripcion "])
+    col_sku = detectar_columna_inteligente(df, cols_config["sku"])
+    col_desc = detectar_columna_inteligente(df, cols_config["descripcion"])
 
     columnas_precio = {}
-    for tipo_precio in ["P. IR ", "P. BOX ", "P. VIP "]:
+    # Iteramos con las claves limpias
+    for tipo_precio in ["P. IR", "P. BOX", "P. VIP"]:
         col = detectar_precio_inteligente(df, tipo_precio, tipo_catalogo)
         if col:
             columnas_precio[tipo_precio] = col
@@ -196,7 +145,7 @@ def cargar_catalogo(archivo) -> Optional[Dict]:
                 columnas_precio['PRECIO'] = col
                 break
 
-    with st.sidebar.expander(f"📋 {archivo.name[:30]}... ", expanded=False):
+    with st.sidebar.expander(f"📋 {archivo.name[:30]}...", expanded=False):
         st.caption(f"🏷️ Tipo: **{tipo_catalogo.replace('_', ' ')}** ")
         st.caption(f"🔑 SKU: `{col_sku}` ")
         st.caption(f"📝 Desc: `{col_desc}` ")
