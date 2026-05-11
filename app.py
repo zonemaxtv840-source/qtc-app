@@ -841,10 +841,11 @@ with tab_cotizacion:
         st.caption("Formato: SKU:CANTIDAD (uno por línea)")
         
         if 'skus_transferidos' in st.session_state:
-            texto_defecto = "\n".join([f"{sku}:{cant}" for sku, cant in st.session_state.skus_transferidos.items()])
-            del st.session_state.skus_transferidos
-        else:
-            texto_defecto = ""
+        texto_defecto = "\n".join([f"{sku}:{cant}" for sku, cant in st.session_state.skus_transferidos.items()])
+        # Limpiar SOLO después de usarlo en este rerun
+        del st.session_state.skus_transferidos
+    else:
+        texto_defecto = ""
         
         texto_skus = st.text_area("", height=150, value=texto_defecto, placeholder="Ejemplo:\nRN0200046BK8:5\nCN0900009WH8:2")
         
