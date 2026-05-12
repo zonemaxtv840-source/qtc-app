@@ -177,17 +177,38 @@ def detectar_columna_inteligente(df: pd.DataFrame, posibles: List[str], columna_
     return df.columns[0]
 
 def detectar_precio_inteligente(df: pd.DataFrame, tipo_precio: str, tipo_catalogo: str) -> Optional[str]:
-    """Detecta columna de precio según el tipo de catálogo."""
+    """Detecta columna de precio con búsqueda más flexible."""
     config = TIPOS_CATALOGO.get(tipo_catalogo, TIPOS_CATALOGO["GENERAL"])
     patrones_precio = config["columnas"]["precios"].get(tipo_precio, [])
     
+    # Agregar patrones adicionales según el tipo de precio
+    patrones_extra = []
+    if tipo_precio == "P. BOX":
+        patrones_extra = ["P.BOX", "BOX", "CAJA", "P BOX", "PRECIO CAJA", "PRECIO BOX", "BOX PRICE"]
+    elif tipo_precio == "P. IR":
+        patrones_extra = ["P.IR", "IR", "MAYORISTA", "MAYOR", "P IR", "PRECIO MAYOR", "MAYOREO"]
+    elif tipo_precio == "P. VIP":
+        patrones_extra = ["P.VIP", "VIP", "P VIP", "PRECIO VIP", "CLIENTE VIP"]
+    
+    todos_patrones = patrones_precio + patrones_extra
+    
+    # Búsqueda más flexible
     for col in df.columns:
         col_limpio = str(col).strip()
-        col_upper = col_limpio.upper()
-        for patron in patrones_precio:
-            patron_upper = patron.upper()
-            if patron_upper == col_upper or patron_upper in col_upper:
+        col_normalizado = re.sub(r'[^a-zA-Z0-9]', '', col_limpio.upper())
+        
+        for patron in todos_patrones:
+            patron_limpio = re.sub(r'[^a-zA-Z0-9]', '', patron.upper())
+            
+            # Coincidencia exacta o parcial
+            if patron_limpio == col_normalizado or patron_limpio in col_normalizado or col_normalizado in patron_limpio:
                 return col_limpio
+            
+            # También buscar sin normalizar
+            if patron.upper() == col_limpio.upper() or patron.upper() in col_limpio.upper():
+                return col_limpio
+    
+    return None
     return None
 
 def cargar_catalogo(archivo) -> Optional[Dict]:
