@@ -1,1391 +1,2457 @@
-import streamlit as st
-import pandas as pd
-import re
-import io
-from datetime import datetime
-from PIL import Image
-import warnings
-from typing import List, Dict, Optional, Tuple
-
-warnings.filterwarnings('ignore')
-
-# ============================================
-# CONSTANTES Y CONFIGURACIÓN
-# ============================================
-
-class ModoCotizacion:
-    XIAOMI = "XIAOMI"
-    GENERAL = "GENERAL"
-
-# Mapeo de nombres de columnas de precios
-PRECIO_MAP = {
-    "P. BOX": ["P.BOX", "BOX", "CAJA"],
-    "P. IR": ["P.IR", "MAYORISTA", "MAYOR"],
-    "P. VIP": ["P.VIP", "VIP"]
-}
-
-# Hojas de stock por modo
-STOCK_HOJA_MAP = {
-    ModoCotizacion.XIAOMI: ["APRI.004", "YESSICA"],
-    ModoCotizacion.GENERAL: ["APRI.001"]
-}
-
-# Columnas de stock para modo GENERAL
-STOCK_COLUMNS_GENERAL = {
-    "total": ["En stock", "STOCK", "TOTAL", "INVENTARIO"],
-    "comprometido": ["Comprometido", "COMPROMETIDO", "RESERVADO", "APARTADO"],
-    "solicitado": ["Solicitado", "SOLICITADO", "PEDIDO"],
-    "disponible": ["Disponible", "DISPONIBLE", "STOCK REAL", "REAL"]
-}
-
-# ============================================
-# CONFIGURACIÓN DE PATRONES POR TIPO DE CATÁLOGO
-# ============================================
-
-TIPOS_CATALOGO = {
-    "XIAOMI_DRIVE": {
-        "patrones": ["xiaomi", "drive", "mi", "redmi"],
-        "columnas": {
-            "sku": ["SKU"],
-            "descripcion": ["NOMBRE PRODUCTO", "PRODUCTO"],
-            "precios": {
-                "P. IR": ["Mayorista", "MAYORISTA"],
-                "P. BOX": ["Caja", "CAJA", "BOX"],
-                "P. VIP": ["Vip", "VIP"]
-            }
-        }
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": []
     },
-    "XIAOMI_POWERBE": {
-        "patrones": ["powerbe", "powerbeats", "beats"],
-        "columnas": {
-            "sku": ["COD SAP", "SKU", "CODIGO"],
-            "descripcion": ["NOMBRE PRODUCTO", "PRODUCTO", "DESCRIPCION"],
-            "precios": {
-                "P. IR": ["P. IR", "IR", "MAYORISTA"],
-                "P. BOX": ["P. BOX", "BOX", "CAJA"],
-                "P. VIP": ["P. VIP", "VIP"]
-            }
-        }
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
     },
-    "GENERAL": {
-        "patrones": [],
-        "columnas": {
-            "sku": ["SKU", "COD", "SAP", "NUMERO", "ARTICULO", "COD SAP", "CODIGO", "Número de artículo"],
-            "descripcion": ["DESC", "DESCRIPCION", "NOMBRE", "GOODS DESCRIPTION", "NOMBRE PRODUCTO", "PRODUCTO", "Descripción del artículo"],
-            "precios": {
-                "P. IR": ["P. IR", "IR", "MAYORISTA", "MAYOR"],
-                "P. BOX": ["P. BOX", "BOX", "CAJA"],
-                "P. VIP": ["P. VIP", "VIP"]
-            }
+    "language_info": {
+      "name": "python"
+    },
+    "widgets": {
+      "application/vnd.jupyter.widget-state+json": {
+        "d0a238026b524ec48b6db07479c2290c": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "HBoxModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "HBoxModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "HBoxView",
+            "box_style": "",
+            "children": [
+              "IPY_MODEL_2c79cbfda1f44e7e90fb1efb98df7f7a",
+              "IPY_MODEL_1f82e74a348d49d7acacf366ec4d2671"
+            ],
+            "layout": "IPY_MODEL_0cf1be7f19be4bd79f6015cbf5ad3827"
+          }
+        },
+        "2c79cbfda1f44e7e90fb1efb98df7f7a": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DropdownModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DropdownModel",
+            "_options_labels": [
+              "Stock.xlsx",
+              "Catalogo ugreen.xlsx",
+              "catalogo xiaomi.xlsx"
+            ],
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "DropdownView",
+            "description": "🏷️ <b>Catálogo:</b>",
+            "description_tooltip": null,
+            "disabled": false,
+            "index": 2,
+            "layout": "IPY_MODEL_e054dfd15cf14da99c09e829da5cbe38",
+            "style": "IPY_MODEL_c372c4077fd04c1bad14669902c9e589"
+          }
+        },
+        "1f82e74a348d49d7acacf366ec4d2671": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DropdownModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DropdownModel",
+            "_options_labels": [
+              "Stock.xlsx",
+              "Catalogo ugreen.xlsx",
+              "catalogo xiaomi.xlsx"
+            ],
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "DropdownView",
+            "description": "📦 <b>Stock:</b>",
+            "description_tooltip": null,
+            "disabled": false,
+            "index": 0,
+            "layout": "IPY_MODEL_375f016fd5894d699ebf1adfbf46a57c",
+            "style": "IPY_MODEL_077872641482458d94dccc780030b9bc"
+          }
+        },
+        "0cf1be7f19be4bd79f6015cbf5ad3827": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "e054dfd15cf14da99c09e829da5cbe38": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "c372c4077fd04c1bad14669902c9e589": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DescriptionStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DescriptionStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "description_width": ""
+          }
+        },
+        "375f016fd5894d699ebf1adfbf46a57c": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "077872641482458d94dccc780030b9bc": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DescriptionStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DescriptionStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "description_width": ""
+          }
+        },
+        "639ff086145642b488958bd7d0a623e9": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "ButtonModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "ButtonModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "ButtonView",
+            "button_style": "info",
+            "description": "1. Cargar Archivos",
+            "disabled": false,
+            "icon": "",
+            "layout": "IPY_MODEL_d511ed2924d3499dbcecd3d060816803",
+            "style": "IPY_MODEL_8d7d287375ab4be5b40cc2fc44bfb6eb",
+            "tooltip": ""
+          }
+        },
+        "d511ed2924d3499dbcecd3d060816803": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "8d7d287375ab4be5b40cc2fc44bfb6eb": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "ButtonStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "ButtonStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "button_color": null,
+            "font_weight": ""
+          }
+        },
+        "e9a9437d9eda4e14814e8e376763cc00": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DropdownModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DropdownModel",
+            "_options_labels": [
+              "Export"
+            ],
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "DropdownView",
+            "description": "Hoja Catálogo:",
+            "description_tooltip": null,
+            "disabled": false,
+            "index": 0,
+            "layout": "IPY_MODEL_6e7324f093f24b5e90604dc94bd2397f",
+            "style": "IPY_MODEL_ceac721cbb01416fa84cded0ac18e931"
+          }
+        },
+        "6e7324f093f24b5e90604dc94bd2397f": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "ceac721cbb01416fa84cded0ac18e931": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DescriptionStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DescriptionStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "description_width": ""
+          }
+        },
+        "0fc11076c14c45738968f7936b856356": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DropdownModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DropdownModel",
+            "_options_labels": [
+              "APRI.001",
+              "APRI.004",
+              "SOFIA",
+              "YESSICA SEPARADO",
+              "DJI SEPARADO",
+              "Hoja1"
+            ],
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "DropdownView",
+            "description": "Hoja Stock:",
+            "description_tooltip": null,
+            "disabled": false,
+            "index": 1,
+            "layout": "IPY_MODEL_a39c2142e9b14193be41b35efa7a7a79",
+            "style": "IPY_MODEL_7ffa89fe564f4eb1811e6a1976fe1072"
+          }
+        },
+        "a39c2142e9b14193be41b35efa7a7a79": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "7ffa89fe564f4eb1811e6a1976fe1072": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DescriptionStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DescriptionStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "description_width": ""
+          }
+        },
+        "4fee131e6c9e4a71822436e3b40c528b": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "ButtonModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "ButtonModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "ButtonView",
+            "button_style": "primary",
+            "description": "2. Leer Precios ➡️",
+            "disabled": false,
+            "icon": "",
+            "layout": "IPY_MODEL_995279b9cd5a4d6d92a0a3bf3013311b",
+            "style": "IPY_MODEL_d3d91239803d4e9ebaf9f4216c58b4f3",
+            "tooltip": ""
+          }
+        },
+        "995279b9cd5a4d6d92a0a3bf3013311b": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "d3d91239803d4e9ebaf9f4216c58b4f3": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "ButtonStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "ButtonStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "button_color": null,
+            "font_weight": ""
+          }
+        },
+        "94eaf421dc144877a472a04b5e54b993": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DropdownModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DropdownModel",
+            "_options_labels": [
+              "P. IR",
+              "P. BOX",
+              "P. VIP",
+              "SUGERIDO"
+            ],
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "DropdownView",
+            "description": "Precio a Usar:",
+            "description_tooltip": null,
+            "disabled": false,
+            "index": 0,
+            "layout": "IPY_MODEL_a74a23262d23486d860d4190ab63cdf5",
+            "style": "IPY_MODEL_c7f4bdd0426e45b09da13ddb196c563b"
+          }
+        },
+        "a74a23262d23486d860d4190ab63cdf5": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "c7f4bdd0426e45b09da13ddb196c563b": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DescriptionStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DescriptionStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "description_width": ""
+          }
+        },
+        "387ac5f5f5164f289f523eac076260b2": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "TextareaModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "TextareaModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "TextareaView",
+            "continuous_update": true,
+            "description": "Pedido:",
+            "description_tooltip": null,
+            "disabled": false,
+            "layout": "IPY_MODEL_f53bf7e85ece441bb8b86e8a71fe9cb8",
+            "placeholder": "CN9404211NA8:5, ...",
+            "rows": null,
+            "style": "IPY_MODEL_1eccadde2caa41008ee54de7a1ebcc16",
+            "value": "RN0800070NA8:1, RN0400013GY5:1, CN9407604NA8:1, CN9407603NA8:1, CN9407602NA8:1, CN9407601NA8:1, CN9407600NA8:1, CN9407599NA8:1, CN9407598NA8:1, CN9407597NA8:1, CN9407596NA8:1, CN9407595NA8:1"
+          }
+        },
+        "f53bf7e85ece441bb8b86e8a71fe9cb8": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": "120px",
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": "450px"
+          }
+        },
+        "1eccadde2caa41008ee54de7a1ebcc16": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DescriptionStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DescriptionStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "description_width": ""
+          }
+        },
+        "838c3b8640e144f5a88e31d82ab7859a": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "ButtonModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "ButtonModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "ButtonView",
+            "button_style": "success",
+            "description": "3. Ejecutar Cruce 🚀",
+            "disabled": false,
+            "icon": "",
+            "layout": "IPY_MODEL_d13722e3fe434c26982057778baecccf",
+            "style": "IPY_MODEL_d1763a89ed8c44a2939bddf982968c5d",
+            "tooltip": ""
+          }
+        },
+        "d13722e3fe434c26982057778baecccf": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "d1763a89ed8c44a2939bddf982968c5d": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "ButtonStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "ButtonStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "button_color": null,
+            "font_weight": ""
+          }
+        },
+        "bb026ea992044777abc570d320b9a47e": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "HBoxModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "HBoxModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "HBoxView",
+            "box_style": "",
+            "children": [
+              "IPY_MODEL_21d7015dd1fd4bde97f482d53449d31a",
+              "IPY_MODEL_723e8b7be1ec436da8eb91ca6cc7cbf6"
+            ],
+            "layout": "IPY_MODEL_9f263a813b5846b99f0818ac5b420161"
+          }
+        },
+        "21d7015dd1fd4bde97f482d53449d31a": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "LabelModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "LabelModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "LabelView",
+            "description": "",
+            "description_tooltip": null,
+            "layout": "IPY_MODEL_851aacc2dffb40adaf813e422c45b19e",
+            "placeholder": "​",
+            "style": "IPY_MODEL_0bfd10eafe184b07873161bbd355ad16",
+            "value": "📦 RN0800070NA8 | Mijia hand-hung ironing machine 2 MJGTJO2LF -..."
+          }
+        },
+        "723e8b7be1ec436da8eb91ca6cc7cbf6": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "IntTextModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "IntTextModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "IntTextView",
+            "continuous_update": false,
+            "description": "",
+            "description_tooltip": null,
+            "disabled": false,
+            "layout": "IPY_MODEL_af1de6410f074394804073f926789138",
+            "step": 1,
+            "style": "IPY_MODEL_f3d645345418440085fe16356b0b209c",
+            "value": 1
+          }
+        },
+        "9f263a813b5846b99f0818ac5b420161": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "851aacc2dffb40adaf813e422c45b19e": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": "550px"
+          }
+        },
+        "0bfd10eafe184b07873161bbd355ad16": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DescriptionStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DescriptionStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "description_width": ""
+          }
+        },
+        "af1de6410f074394804073f926789138": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": "80px"
+          }
+        },
+        "f3d645345418440085fe16356b0b209c": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DescriptionStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DescriptionStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "description_width": ""
+          }
+        },
+        "a375ba04495f4d7fa60955eb969dd429": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "HBoxModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "HBoxModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "HBoxView",
+            "box_style": "",
+            "children": [
+              "IPY_MODEL_a331dbe83acd444d9a7fc598589074ac",
+              "IPY_MODEL_8fc553ed95924b359c07a5e7351081bc"
+            ],
+            "layout": "IPY_MODEL_2f133850d9c447c6a33075f6308469f4"
+          }
+        },
+        "a331dbe83acd444d9a7fc598589074ac": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "LabelModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "LabelModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "LabelView",
+            "description": "",
+            "description_tooltip": null,
+            "layout": "IPY_MODEL_0619b27410ff401f8c415ad18d68962a",
+            "placeholder": "​",
+            "style": "IPY_MODEL_37601a37b088403bbc06e86e46d29e87",
+            "value": "📦 RN0400013GY5 | Xiaomi Pad 7 Gray 8GB RAM 256GB ROM EU - RN..."
+          }
+        },
+        "8fc553ed95924b359c07a5e7351081bc": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "IntTextModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "IntTextModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "IntTextView",
+            "continuous_update": false,
+            "description": "",
+            "description_tooltip": null,
+            "disabled": false,
+            "layout": "IPY_MODEL_bd5195ab98b641de9d60dafda01fee90",
+            "step": 1,
+            "style": "IPY_MODEL_4419bbfa7c82449091f478d321f98eab",
+            "value": 1
+          }
+        },
+        "2f133850d9c447c6a33075f6308469f4": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "0619b27410ff401f8c415ad18d68962a": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": "550px"
+          }
+        },
+        "37601a37b088403bbc06e86e46d29e87": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DescriptionStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DescriptionStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "description_width": ""
+          }
+        },
+        "bd5195ab98b641de9d60dafda01fee90": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": "80px"
+          }
+        },
+        "4419bbfa7c82449091f478d321f98eab": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DescriptionStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DescriptionStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "description_width": ""
+          }
+        },
+        "ceee0846da3f4aa4ba341f9cdb8c5be7": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "VBoxModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "VBoxModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "VBoxView",
+            "box_style": "",
+            "children": [
+              "IPY_MODEL_86c914d807c44294b1741f00461fa9c9",
+              "IPY_MODEL_e4d872a09c1c4d66aa1c2332cae6c6ef"
+            ],
+            "layout": "IPY_MODEL_89f6501ef5d8452a9c71e23e95c135b9"
+          }
+        },
+        "86c914d807c44294b1741f00461fa9c9": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "HBoxModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "HBoxModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "HBoxView",
+            "box_style": "",
+            "children": [
+              "IPY_MODEL_55e1f562ee274a22a2cd9a26d3fdfebf",
+              "IPY_MODEL_bc8ec35f9f264360b9a3df920c95060c"
+            ],
+            "layout": "IPY_MODEL_711aab0d7e6f4a1482f74f0884fc1db7"
+          }
+        },
+        "e4d872a09c1c4d66aa1c2332cae6c6ef": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "HBoxModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "HBoxModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "HBoxView",
+            "box_style": "",
+            "children": [
+              "IPY_MODEL_570c25f183b3429287c4dc8f129c3ee8",
+              "IPY_MODEL_f0b29d666a4d4930943beeeec45e9d4b"
+            ],
+            "layout": "IPY_MODEL_12fa2213339740c1abd7bf6121385389"
+          }
+        },
+        "89f6501ef5d8452a9c71e23e95c135b9": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "55e1f562ee274a22a2cd9a26d3fdfebf": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "TextModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "TextModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "TextView",
+            "continuous_update": true,
+            "description": "Cliente:",
+            "description_tooltip": null,
+            "disabled": false,
+            "layout": "IPY_MODEL_b739b49209d1452f9080f538eab26001",
+            "placeholder": "​",
+            "style": "IPY_MODEL_b3b9b923451841939345930fd653c73b",
+            "value": "CLIENTE NUEVO"
+          }
+        },
+        "bc8ec35f9f264360b9a3df920c95060c": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "TextModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "TextModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "TextView",
+            "continuous_update": true,
+            "description": "RUC:",
+            "description_tooltip": null,
+            "disabled": false,
+            "layout": "IPY_MODEL_1eb0e83ea1284a8c9b4b1d4b3ff56b9e",
+            "placeholder": "​",
+            "style": "IPY_MODEL_c3f010942aa4490490e834f45033f0a3",
+            "value": "-"
+          }
+        },
+        "711aab0d7e6f4a1482f74f0884fc1db7": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "570c25f183b3429287c4dc8f129c3ee8": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "ButtonModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "ButtonModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "ButtonView",
+            "button_style": "success",
+            "description": "Generar Excel",
+            "disabled": false,
+            "icon": "",
+            "layout": "IPY_MODEL_16a27fb0243d4f8dbf820ec0b2e3d5b6",
+            "style": "IPY_MODEL_e2b60c7d6b8b4ca8bb59a8f83c885e0c",
+            "tooltip": ""
+          }
+        },
+        "f0b29d666a4d4930943beeeec45e9d4b": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "ButtonModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_dom_classes": [],
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "ButtonModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/controls",
+            "_view_module_version": "1.5.0",
+            "_view_name": "ButtonView",
+            "button_style": "warning",
+            "description": "Nueva Búsqueda",
+            "disabled": false,
+            "icon": "",
+            "layout": "IPY_MODEL_c757ef336e1c4ebf959bdc5a31e0a2d3",
+            "style": "IPY_MODEL_aeba55c85398498dbd3544605749790c",
+            "tooltip": ""
+          }
+        },
+        "12fa2213339740c1abd7bf6121385389": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "b739b49209d1452f9080f538eab26001": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "b3b9b923451841939345930fd653c73b": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DescriptionStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DescriptionStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "description_width": ""
+          }
+        },
+        "1eb0e83ea1284a8c9b4b1d4b3ff56b9e": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "c3f010942aa4490490e834f45033f0a3": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "DescriptionStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "DescriptionStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "description_width": ""
+          }
+        },
+        "16a27fb0243d4f8dbf820ec0b2e3d5b6": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "e2b60c7d6b8b4ca8bb59a8f83c885e0c": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "ButtonStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "ButtonStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "button_color": null,
+            "font_weight": ""
+          }
+        },
+        "c757ef336e1c4ebf959bdc5a31e0a2d3": {
+          "model_module": "@jupyter-widgets/base",
+          "model_name": "LayoutModel",
+          "model_module_version": "1.2.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/base",
+            "_model_module_version": "1.2.0",
+            "_model_name": "LayoutModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "LayoutView",
+            "align_content": null,
+            "align_items": null,
+            "align_self": null,
+            "border": null,
+            "bottom": null,
+            "display": null,
+            "flex": null,
+            "flex_flow": null,
+            "grid_area": null,
+            "grid_auto_columns": null,
+            "grid_auto_flow": null,
+            "grid_auto_rows": null,
+            "grid_column": null,
+            "grid_gap": null,
+            "grid_row": null,
+            "grid_template_areas": null,
+            "grid_template_columns": null,
+            "grid_template_rows": null,
+            "height": null,
+            "justify_content": null,
+            "justify_items": null,
+            "left": null,
+            "margin": null,
+            "max_height": null,
+            "max_width": null,
+            "min_height": null,
+            "min_width": null,
+            "object_fit": null,
+            "object_position": null,
+            "order": null,
+            "overflow": null,
+            "overflow_x": null,
+            "overflow_y": null,
+            "padding": null,
+            "right": null,
+            "top": null,
+            "visibility": null,
+            "width": null
+          }
+        },
+        "aeba55c85398498dbd3544605749790c": {
+          "model_module": "@jupyter-widgets/controls",
+          "model_name": "ButtonStyleModel",
+          "model_module_version": "1.5.0",
+          "state": {
+            "_model_module": "@jupyter-widgets/controls",
+            "_model_module_version": "1.5.0",
+            "_model_name": "ButtonStyleModel",
+            "_view_count": null,
+            "_view_module": "@jupyter-widgets/base",
+            "_view_module_version": "1.2.0",
+            "_view_name": "StyleView",
+            "button_color": null,
+            "font_weight": ""
+          }
         }
+      }
     }
-}
-
-# ============================================
-# FUNCIONES DE UTILIDAD
-# ============================================
-
-def limpiar_sku(valor) -> str:
-    """Limpia SKU eliminando espacios, caracteres especiales y normalizando."""
-    if pd.isna(valor):
-        return ""
-    sku = str(valor)
-    sku = sku.strip()
-    sku = re.sub(r'[\n\r\t]', '', sku)
-    sku = re.sub(r'[^\x20-\x7E]', '', sku)
-    sku = sku.upper()
-    return sku
-
-def corregir_numero(valor) -> float:
-    """Convierte cualquier formato de número a float."""
-    if pd.isna(valor) or str(valor).strip() in ["", "0", "0.0", "-"]:
-        return 0.0
-    s = str(valor).upper().replace('S/', '').replace('$', '').replace(' ', '').strip()
-    if ',' in s and '.' in s:
-        s = s.replace(',', '')
-    elif ',' in s:
-        partes = s.split(',')
-        if len(partes[-1]) <= 2:
-            s = s.replace(',', '.')
-        else:
-            s = s.replace(',', '')
-    s = re.sub(r'[^\d.]', '', s)
-    try:
-        return float(s)
-    except:
-        return 0.0
-
-def limpiar_cabeceras(df: pd.DataFrame) -> pd.DataFrame:
-    """Detecta la fila de encabezados y la establece como columnas."""
-    for i in range(min(20, len(df))):
-        fila = [str(x).upper() for x in df.iloc[i].values]
-        if any(h in item for h in ['SKU', 'COD', 'SAP', 'NUMERO', 'ARTICULO', 'COD SAP', 'GOODS', 'DESC', 'NÚMERO DE ARTÍCULO'] for item in fila):
-            df.columns = [str(c).strip() for c in df.iloc[i]]
-            return df.iloc[i+1:].reset_index(drop=True)
-    return df
-
-def cargar_archivo_datos(uploaded_file) -> Optional[pd.DataFrame]:
-    """Carga XLSX, XLS o CSV y devuelve DataFrame."""
-    nombre = uploaded_file.name.lower()
-    try:
-        if nombre.endswith('.csv'):
-            try:
-                df = pd.read_csv(uploaded_file, encoding='utf-8')
-            except UnicodeDecodeError:
-                df = pd.read_csv(uploaded_file, encoding='latin-1')
-        else:
-            df = pd.read_excel(uploaded_file)
-        return limpiar_cabeceras(df)
-    except Exception as e:
-        st.error(f"Error cargando {uploaded_file.name}: {str(e)[:100]}")
-        return None
-
-def detectar_tipo_catalogo(nombre_archivo: str, df: pd.DataFrame) -> str:
-    """Detecta automáticamente el tipo de catálogo."""
-    nombre_lower = nombre_archivo.lower()
-    columnas_str = " ".join([str(c).upper() for c in df.columns])
-    
-    for tipo, config in TIPOS_CATALOGO.items():
-        if tipo == "GENERAL":
-            continue
-        for patron in config["patrones"]:
-            if patron in nombre_lower:
-                return tipo
-    
-    if "COD SAP" in columnas_str or ("P. IR" in columnas_str and "P. BOX" in columnas_str):
-        return "XIAOMI_POWERBE"
-    
-    if ("Family" in columnas_str or "SKU" in columnas_str) and \
-       "Mayorista" in columnas_str and "Caja" in columnas_str and "Vip" in columnas_str:
-        return "XIAOMI_DRIVE"
-    
-    return "GENERAL"
-
-def detectar_columna_inteligente(df: pd.DataFrame, posibles: List[str], columna_fallback: str = None) -> str:
-    """Detecta la primera columna que coincida con los posibles nombres."""
-    df_cols = [str(c).strip() for c in df.columns]
-    df_cols_upper = [c.upper() for c in df_cols]
-    
-    for posible in posibles:
-        posible_upper = posible.upper()
-        for idx, col_upper in enumerate(df_cols_upper):
-            if posible_upper == col_upper or posible_upper in col_upper:
-                return df_cols[idx]
-    
-    if columna_fallback and columna_fallback in df.columns:
-        return columna_fallback
-    return df.columns[0]
-
-def detectar_precio_inteligente(df: pd.DataFrame, tipo_precio: str, tipo_catalogo: str) -> Optional[str]:
-    """Detecta columna de precio con búsqueda más flexible."""
-    config = TIPOS_CATALOGO.get(tipo_catalogo, TIPOS_CATALOGO["GENERAL"])
-    patrones_precio = config["columnas"]["precios"].get(tipo_precio, [])
-    
-    # Agregar patrones adicionales según el tipo de precio
-    patrones_extra = []
-    if tipo_precio == "P. BOX":
-        patrones_extra = ["P.BOX", "BOX", "CAJA", "P BOX", "PRECIO CAJA", "PRECIO BOX", "BOX PRICE"]
-    elif tipo_precio == "P. IR":
-        patrones_extra = ["P.IR", "IR", "MAYORISTA", "MAYOR", "P IR", "PRECIO MAYOR", "MAYOREO"]
-    elif tipo_precio == "P. VIP":
-        patrones_extra = ["P.VIP", "VIP", "P VIP", "PRECIO VIP", "CLIENTE VIP"]
-    
-    todos_patrones = patrones_precio + patrones_extra
-    
-    # Búsqueda más flexible
-    for col in df.columns:
-        col_limpio = str(col).strip()
-        col_normalizado = re.sub(r'[^a-zA-Z0-9]', '', col_limpio.upper())
-        
-        for patron in todos_patrones:
-            patron_limpio = re.sub(r'[^a-zA-Z0-9]', '', patron.upper())
-            
-            # Coincidencia exacta o parcial
-            if patron_limpio == col_normalizado or patron_limpio in col_normalizado or col_normalizado in patron_limpio:
-                return col_limpio
-            
-            # También buscar sin normalizar
-            if patron.upper() == col_limpio.upper() or patron.upper() in col_limpio.upper():
-                return col_limpio
-    
-    return None
-    return None
-
-def cargar_catalogo(archivo) -> Optional[Dict]:
-    """Carga un catálogo con detección inteligente."""
-    df = cargar_archivo_datos(archivo)
-    if df is None:
-        return None
-    
-    tipo_catalogo = detectar_tipo_catalogo(archivo.name, df)
-    config = TIPOS_CATALOGO.get(tipo_catalogo, TIPOS_CATALOGO["GENERAL"])
-    cols_config = config["columnas"]
-    
-    col_sku = detectar_columna_inteligente(df, cols_config["sku"])
-    col_desc = detectar_columna_inteligente(df, cols_config["descripcion"])
-    
-    columnas_precio = {}
-    for tipo_precio in ["P. IR", "P. BOX", "P. VIP"]:
-        col = detectar_precio_inteligente(df, tipo_precio, tipo_catalogo)
-        if col:
-            columnas_precio[tipo_precio] = col
-    
-    if not columnas_precio:
-        for col in df.columns:
-            if 'PRECIO' in str(col).upper():
-                columnas_precio['PRECIO'] = col
-                break
-    
-    with st.sidebar.expander(f"📋 {archivo.name[:30]}...", expanded=False):
-        st.caption(f"🏷️ Tipo: **{tipo_catalogo.replace('_', ' ')}**")
-        st.caption(f"🔑 SKU: `{col_sku}`")
-        st.caption(f"📝 Desc: `{col_desc}`")
-        if columnas_precio:
-            st.caption(f"💰 Precios: `{', '.join(columnas_precio.keys())}`")
-    
-    return {
-        'nombre': archivo.name,
-        'tipo': tipo_catalogo,
-        'df': df,
-        'col_sku': col_sku,
-        'col_desc': col_desc,
-        'columnas_precio': columnas_precio
-    }
-
-def cargar_stocks(archivos, modo: str) -> List[Dict]:
-    """Carga archivos de stock y filtra hojas según el modo."""
-    stocks_cargados = []
-    for archivo in archivos:
-        try:
-            xls = pd.ExcelFile(archivo)
-            hojas_a_cargar = []
-            
-            for hoja in xls.sheet_names:
-                hoja_upper = hoja.upper()
-                patrones_hoja = STOCK_HOJA_MAP.get(modo, [])
-                if any(patron in hoja_upper for patron in patrones_hoja):
-                    hojas_a_cargar.append(hoja)
-            
-            if not hojas_a_cargar and modo == ModoCotizacion.GENERAL:
-                st.warning(f"⚠️ No se encontró hoja 'APRI.001' en {archivo.name}. Cargando primera hoja.")
-                hojas_a_cargar = [xls.sheet_names[0]]
-            
-            for hoja in hojas_a_cargar:
-                df = pd.read_excel(archivo, sheet_name=hoja)
-                df = limpiar_cabeceras(df)
-                
-                col_sku = detectar_columna_inteligente(
-                    df, 
-                    ['SKU', 'COD', 'NUMERO', 'ARTICULO', 'NÚMERO DE ARTÍCULO', 'CODIGO', 'Número de artículo']
-                )
-                
-                col_stock_total = None
-                col_stock_comprometido = None
-                col_stock_solicitado = None
-                col_stock_disponible = None
-                
-                if modo == ModoCotizacion.GENERAL:
-                    col_stock_total = detectar_columna_inteligente(df, STOCK_COLUMNS_GENERAL["total"])
-                    col_stock_comprometido = detectar_columna_inteligente(df, STOCK_COLUMNS_GENERAL["comprometido"])
-                    col_stock_solicitado = detectar_columna_inteligente(df, STOCK_COLUMNS_GENERAL["solicitado"])
-                    col_stock_disponible = detectar_columna_inteligente(df, STOCK_COLUMNS_GENERAL["disponible"])
-                    
-                    if not col_stock_disponible:
-                        col_stock_disponible = detectar_columna_inteligente(df, ['STOCK', 'DISPONIBLE', 'CANTIDAD', 'CANT'])
-                        st.warning(f"⚠️ No se encontró columna 'Disponible' en {archivo.name} [{hoja}], usando stock general")
-                else:
-                    col_stock_disponible = detectar_columna_inteligente(
-                        df, 
-                        ['STOCK', 'DISPONIBLE', 'CANTIDAD', 'CANT', 'SALDO', 'UNIDADES']
-                    )
-                
-                stocks_cargados.append({
-                    'nombre': f"{archivo.name} [{hoja}]",
-                    'df': df,
-                    'col_sku': col_sku,
-                    'col_stock_total': col_stock_total,
-                    'col_stock_comprometido': col_stock_comprometido,
-                    'col_stock_solicitado': col_stock_solicitado,
-                    'col_stock_disponible': col_stock_disponible,
-                    'hoja': hoja,
-                    'modo': modo
-                })
-                st.success(f"✅ {archivo.name} → Hoja: {hoja}")
-                if modo == ModoCotizacion.GENERAL and col_stock_disponible:
-                    st.caption(f"   📊 Stock real desde columna: `{col_stock_disponible}`")
-        except Exception as e:
-            st.error(f"Error en {archivo.name}: {str(e)[:100]}")
-    
-    return stocks_cargados
-
-def buscar_precio(catalogos: List[Dict], sku: str, col_precio_seleccionada: str) -> Dict:
-    """Busca precio en catálogos con limpieza de SKU."""
-    sku_limpio = limpiar_sku(sku)
-    
-    for cat in catalogos:
-        df = cat['df']
-        df_sku_limpio = df[cat['col_sku']].apply(limpiar_sku)
-        mask = df_sku_limpio == sku_limpio
-        
-        if mask.any():
-            row = df[mask].iloc[0]
-            col_precio_real = cat['columnas_precio'].get(col_precio_seleccionada)
-            if col_precio_real and col_precio_real in df.columns:
-                precio = corregir_numero(row[col_precio_real])
-            else:
-                precio = 0.0
-            return {
-                'encontrado': True,
-                'catalogo': cat['nombre'],
-                'precio': precio,
-                'descripcion': str(row[cat['col_desc']]) if pd.notna(row[cat['col_desc']]) else ""
+  },
+  "cells": [
+    {
+      "cell_type": "code",
+      "source": [
+        "# @title 💎 SISTEMA QTC PRO: V39 (CONSOLA UNIVERSAL XIAOMI & UGREEN)\n",
+        "from google.colab import drive\n",
+        "import pandas as pd\n",
+        "import io, re, cv2, os, time\n",
+        "import numpy as np\n",
+        "from IPython.display import display, HTML, clear_output\n",
+        "import ipywidgets as widgets\n",
+        "from datetime import datetime\n",
+        "\n",
+        "import warnings\n",
+        "warnings.filterwarnings('ignore')\n",
+        "\n",
+        "# --- 1. CONEXIÓN A DRIVE ---\n",
+        "clear_output()\n",
+        "display(HTML(\"<h3 style='color:#F79646;'>🔗 Sincronizando con Drive Corporativo QTC...</h3>\"))\n",
+        "drive.mount('/content/drive', force_remount=True)\n",
+        "\n",
+        "posibles_rutas = ['/content/drive/MyDrive/QTC/', '/content/drive/My Drive/QTC/']\n",
+        "RUTA_QTC = next((r for r in posibles_rutas if os.path.exists(r)), None)\n",
+        "\n",
+        "# --- 2. MOTOR MATEMÁTICO ---\n",
+        "def corregir_numero(valor):\n",
+        "    if pd.isna(valor) or str(valor).strip() in [\"\", \"0\", \"0.0\"]: return 0.0\n",
+        "    s = str(valor).upper().replace('S/', '').replace('$', '').replace(' ', '').strip()\n",
+        "    if ',' in s and '.' in s: s = s.replace(',', '')\n",
+        "    elif ',' in s:\n",
+        "        partes = s.split(',')\n",
+        "        if len(partes[-1]) <= 2: s = s.replace(',', '.')\n",
+        "        else: s = s.replace(',', '')\n",
+        "    s = re.sub(r'[^\\d.]', '', s)\n",
+        "    try: return float(s)\n",
+        "    except: return 0.0\n",
+        "\n",
+        "def generar_excel_qtc_final(items, cliente, ruc):\n",
+        "    nombre_archivo = f'Cotizacion_{cliente.replace(\" \", \"_\")}.xlsx'\n",
+        "    writer = pd.ExcelWriter(nombre_archivo, engine='xlsxwriter')\n",
+        "    pd.DataFrame(items).to_excel(writer, sheet_name='Cotizacion', index=False, startrow=5)\n",
+        "    workbook, ws = writer.book, writer.sheets['Cotizacion']\n",
+        "    fmt_h = workbook.add_format({'bg_color': '#1C2833', 'bold': True, 'border': 1, 'align': 'center', 'font_color': 'white'})\n",
+        "    fmt_m = workbook.add_format({'num_format': '\"S/.\" #,##0.00', 'border': 1})\n",
+        "    fmt_b = workbook.add_format({'border': 1})\n",
+        "    ws.set_column('A:A', 20); ws.set_column('B:B', 75); ws.set_column('C:E', 15)\n",
+        "    try: ws.insert_image('D1', 'logo.png', {'x_scale': 1.5, 'y_scale': 1.5})\n",
+        "    except: pass\n",
+        "    ws.write('A1', 'FECHA:', workbook.add_format({'bold': True})); ws.write('B1', datetime.now().strftime(\"%d/%m/%Y\"))\n",
+        "    ws.write('A2', 'CLIENTE:', workbook.add_format({'bold': True})); ws.write('B2', cliente.upper()); ws.write('A3', 'RUC:', workbook.add_format({'bold': True})); ws.write('B3', ruc)\n",
+        "    for i, col in enumerate(['Código Sap', 'Descripción', 'Cantidad', 'Precio Unit.', 'Total']): ws.write(5, i, col, fmt_h)\n",
+        "    for r, item in enumerate(items):\n",
+        "        ws.write_row(r + 6, 0, [item['sku'], item['desc'], item['cant'], item['p_u'], item['total']], fmt_b)\n",
+        "        ws.write(r + 6, 3, item['p_u'], fmt_m); ws.write(r + 6, 4, item['total'], fmt_m)\n",
+        "    ws.write(len(items)+6, 3, 'TOTAL S/.', fmt_h); ws.write(len(items)+6, 4, sum(i['total'] for i in items), fmt_m)\n",
+        "    writer.close(); from google.colab import files; files.download(nombre_archivo)\n",
+        "\n",
+        "# --- 3. PROCESADOR DE CRUCE (ADAPTATIVO) ---\n",
+        "def procesar_cruce(df_p, df_s, col_p_p, pedido_raw):\n",
+        "    # Lógica de mapeo para Xiaomi o Ugreen\n",
+        "    c_sku_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['COD SAP', 'SKU', 'SAP'])), df_p.columns[0])\n",
+        "    c_desc_p = next((c for c in df_p.columns if any(x in str(c).upper() for x in ['NOMBRE PRODUCTO', 'DESCRIPCION', 'GOODS', 'ARTICULO'])), df_p.columns[1])\n",
+        "    c_sku_s = next((c for c in df_s.columns if any(x in str(c).upper() for x in ['NUMERO', 'SKU', 'ARTICULO', 'COD SAP'])), df_s.columns[0])\n",
+        "    c_dsp_s = next((c for c in df_s.columns if 'DISPONIBLE' in str(c).upper()), df_s.columns[-1])\n",
+        "\n",
+        "    pedido = {}\n",
+        "    for it in pedido_raw.split(','):\n",
+        "        if ':' in it:\n",
+        "            parts = it.split(':')\n",
+        "            pedido[parts[0].strip().upper()] = int(parts[1]) if parts[1].strip().isdigit() else 1\n",
+        "        else: pedido[it.strip().upper()] = 1\n",
+        "\n",
+        "    res, faltantes = [], []\n",
+        "    for cod_f, cant_f in pedido.items():\n",
+        "        mask = df_p[c_sku_p].astype(str).str.contains(re.escape(cod_f), case=False, na=False)\n",
+        "        variantes = df_p[mask]\n",
+        "        if variantes.empty:\n",
+        "            faltantes.append(f\"{cod_f} (No en catálogo)\")\n",
+        "            continue\n",
+        "        for _, fila in variantes.iterrows():\n",
+        "            info = fila.to_dict(); info['PEDIDO'] = cant_f\n",
+        "            sku_real = str(info[c_sku_p]).strip()\n",
+        "            m_stk = df_s[df_s[c_sku_s].astype(str).str.strip() == sku_real]\n",
+        "\n",
+        "            info['Disp'] = 0\n",
+        "            if not m_stk.empty:\n",
+        "                val = m_stk[c_dsp_s].iloc[0] if hasattr(m_stk[c_dsp_s], 'iloc') else m_stk[c_dsp_s]\n",
+        "                info['Disp'] = int(corregir_numero(val))\n",
+        "\n",
+        "            info['P_UNIT'] = corregir_numero(info[col_p_p])\n",
+        "            info['ALERTA'] = \"OK\" if info['Disp'] >= cant_f else \"SIN STOCK\"\n",
+        "            if info['ALERTA'] == \"SIN STOCK\": faltantes.append(f\"{sku_real} (Faltan {int(cant_f - info['Disp'])} un.)\")\n",
+        "            res.append(info)\n",
+        "    return pd.DataFrame(res), faltantes, c_sku_p, c_desc_p\n",
+        "\n",
+        "# --- 4. INTERFAZ DE CONSOLA ---\n",
+        "def consola_principal():\n",
+        "    clear_output()\n",
+        "    display(HTML(\"<h2 style='color:#1C2833; border-bottom: 3px solid #F79646; padding-bottom:5px;'>💎 CONSOLA MULTI-MARCA QTC</h2>\"))\n",
+        "\n",
+        "    if not RUTA_QTC: print(\"❌ Error: No se detectó la carpeta QTC.\"); return\n",
+        "    archivos = [f for f in os.listdir(RUTA_QTC) if f.endswith('.xlsx')]\n",
+        "\n",
+        "    sel_cat = widgets.Dropdown(options=archivos, description='🏷️ <b>Catálogo:</b>')\n",
+        "    sel_stk = widgets.Dropdown(options=archivos, description='📦 <b>Stock:</b>', value=next((f for f in archivos if 'stock' in f.lower()), archivos[0]))\n",
+        "    btn_cargar = widgets.Button(description=\"1. Cargar Archivos\", button_style='info')\n",
+        "    display(widgets.HBox([sel_cat, sel_stk]), btn_cargar)\n",
+        "\n",
+        "    def step_2(b):\n",
+        "        try:\n",
+        "            xls_p = pd.ExcelFile(RUTA_QTC + sel_cat.value); hojas_p = xls_p.sheet_names\n",
+        "            xls_s = pd.ExcelFile(RUTA_QTC + sel_stk.value); hojas_s = xls_s.sheet_names\n",
+        "            clear_output()\n",
+        "            display(HTML(f\"<h3>⚙️ Configurando: {sel_cat.value}</h3>\"))\n",
+        "            sel_h_p = widgets.Dropdown(options=hojas_p, description='Hoja Catálogo:')\n",
+        "            sel_h_s = widgets.Dropdown(options=hojas_s, description='Hoja Stock:')\n",
+        "            btn_next = widgets.Button(description=\"2. Leer Precios ➡️\", button_style='primary')\n",
+        "            display(sel_h_p, sel_h_s, btn_next)\n",
+        "\n",
+        "            def step_3(b):\n",
+        "                df_p = pd.read_excel(RUTA_QTC + sel_cat.value, sheet_name=sel_h_p.value)\n",
+        "                df_s = pd.read_excel(RUTA_QTC + sel_stk.value, sheet_name=sel_h_s.value)\n",
+        "                for df_obj in [df_p, df_s]:\n",
+        "                    for i in range(min(10, len(df_obj))):\n",
+        "                        if any(h in [str(x).upper() for x in df_obj.iloc[i].values] for h in ['SKU', 'SAP', 'ARTICULO', 'COD SAP']):\n",
+        "                            df_obj.columns = [str(c).strip() for c in df_obj.iloc[i]]\n",
+        "                            df_obj.drop(df_obj.index[:i+1], inplace=True); df_obj.reset_index(drop=True, inplace=True); break\n",
+        "\n",
+        "                cols_precios = [c for c in df_p.columns if any(p in str(c).upper() for p in ['VIP', 'P.', 'BOX', 'MAYOR', 'IR', 'SUGERIDO'])]\n",
+        "                clear_output()\n",
+        "                sel_monto = widgets.Dropdown(options=cols_precios, description='Precio a Usar:')\n",
+        "                area_ped = widgets.Textarea(placeholder='CN9404211NA8:5, ...', description='Pedido:', layout={'height': '120px', 'width': '450px'})\n",
+        "                btn_run = widgets.Button(description=\"3. Ejecutar Cruce 🚀\", button_style='success')\n",
+        "                display(sel_monto, area_ped, btn_run)\n",
+        "\n",
+        "                def run_final(b):\n",
+        "                    df_res, faltantes, c_sku, c_desc = procesar_cruce(df_p, df_s, sel_monto.value, area_ped.value)\n",
+        "                    clear_output()\n",
+        "                    if faltantes:\n",
+        "                        display(HTML(f\"<div style='background-color:#FF3333;color:black;padding:10px;border-radius:5px;border:2px solid black;'><b>⚠️ RESUMEN DE FALTANTES:</b><br>{', '.join(faltantes)}</div>\"))\n",
+        "                    if not df_res.empty:\n",
+        "                        def style_a(row): return ['background-color: #FF3333; color: #000000; font-weight: bold;' if row.ALERTA == \"SIN STOCK\" else '' for _ in row]\n",
+        "                        display(HTML(\"<h3>📊 BALANCE FINAL DE DISPONIBILIDAD</h3>\"))\n",
+        "                        display(df_res[[c_sku, c_desc, 'P_UNIT', 'PEDIDO', 'Disp', 'ALERTA']].style.set_table_styles([{'selector': 'th', 'props': [('background-color', '#1C2833'), ('color', 'white')]}])\n",
+        "                                .apply(style_a, axis=1).format({'P_UNIT': 'S/. {:.2f}'}))\n",
+        "\n",
+        "                        items_ok = df_res[df_res['ALERTA'] == \"OK\"]\n",
+        "                        cli_w = widgets.Text(description='Cliente:', value='CLIENTE NUEVO'); ruc_w = widgets.Text(description='RUC:', value='-')\n",
+        "                        inputs = {}\n",
+        "                        for _, row in items_ok.iterrows():\n",
+        "                            id_s = str(row[c_sku]); inputs[id_s] = widgets.IntText(value=row['PEDIDO'], min=0, layout={'width': '80px'})\n",
+        "                            display(widgets.HBox([widgets.Label(value=f\"📦 {id_s} | {str(row[c_desc])[:45]}...\", layout={'width': '550px'}), inputs[id_s]]))\n",
+        "\n",
+        "                        btn_xlsx = widgets.Button(description=\"Generar Excel\", button_style='success')\n",
+        "                        btn_reset = widgets.Button(description=\"Nueva Búsqueda\", button_style='warning')\n",
+        "                        display(widgets.VBox([widgets.HBox([cli_w, ruc_w]), widgets.HBox([btn_xlsx, btn_reset])]))\n",
+        "\n",
+        "                        btn_xlsx.on_click(lambda x: generar_excel_qtc_final([{'sku': s, 'desc': items_ok[items_ok[c_sku].astype(str)==s].iloc[0][c_desc], 'cant': w.value, 'p_u': items_ok[items_ok[c_sku].astype(str)==s].iloc[0]['P_UNIT'], 'total': round(w.value * items_ok[items_ok[c_sku].astype(str)==s].iloc[0]['P_UNIT'], 2)} for s, w in inputs.items() if w.value > 0], cli_w.value, ruc_w.value))\n",
+        "                        btn_reset.on_click(lambda x: consola_principal())\n",
+        "                btn_run.on_click(run_final)\n",
+        "            btn_next.on_click(step_3)\n",
+        "        except Exception as e: print(f\"❌ Error configurando hojas: {e}\")\n",
+        "    btn_cargar.on_click(step_2)\n",
+        "\n",
+        "consola_principal()\n"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 668,
+          "referenced_widgets": [
+            "d0a238026b524ec48b6db07479c2290c",
+            "2c79cbfda1f44e7e90fb1efb98df7f7a",
+            "1f82e74a348d49d7acacf366ec4d2671",
+            "0cf1be7f19be4bd79f6015cbf5ad3827",
+            "e054dfd15cf14da99c09e829da5cbe38",
+            "c372c4077fd04c1bad14669902c9e589",
+            "375f016fd5894d699ebf1adfbf46a57c",
+            "077872641482458d94dccc780030b9bc",
+            "639ff086145642b488958bd7d0a623e9",
+            "d511ed2924d3499dbcecd3d060816803",
+            "8d7d287375ab4be5b40cc2fc44bfb6eb",
+            "e9a9437d9eda4e14814e8e376763cc00",
+            "6e7324f093f24b5e90604dc94bd2397f",
+            "ceac721cbb01416fa84cded0ac18e931",
+            "0fc11076c14c45738968f7936b856356",
+            "a39c2142e9b14193be41b35efa7a7a79",
+            "7ffa89fe564f4eb1811e6a1976fe1072",
+            "4fee131e6c9e4a71822436e3b40c528b",
+            "995279b9cd5a4d6d92a0a3bf3013311b",
+            "d3d91239803d4e9ebaf9f4216c58b4f3",
+            "94eaf421dc144877a472a04b5e54b993",
+            "a74a23262d23486d860d4190ab63cdf5",
+            "c7f4bdd0426e45b09da13ddb196c563b",
+            "387ac5f5f5164f289f523eac076260b2",
+            "f53bf7e85ece441bb8b86e8a71fe9cb8",
+            "1eccadde2caa41008ee54de7a1ebcc16",
+            "838c3b8640e144f5a88e31d82ab7859a",
+            "d13722e3fe434c26982057778baecccf",
+            "d1763a89ed8c44a2939bddf982968c5d",
+            "bb026ea992044777abc570d320b9a47e",
+            "21d7015dd1fd4bde97f482d53449d31a",
+            "723e8b7be1ec436da8eb91ca6cc7cbf6",
+            "9f263a813b5846b99f0818ac5b420161",
+            "851aacc2dffb40adaf813e422c45b19e",
+            "0bfd10eafe184b07873161bbd355ad16",
+            "af1de6410f074394804073f926789138",
+            "f3d645345418440085fe16356b0b209c",
+            "a375ba04495f4d7fa60955eb969dd429",
+            "a331dbe83acd444d9a7fc598589074ac",
+            "8fc553ed95924b359c07a5e7351081bc",
+            "2f133850d9c447c6a33075f6308469f4",
+            "0619b27410ff401f8c415ad18d68962a",
+            "37601a37b088403bbc06e86e46d29e87",
+            "bd5195ab98b641de9d60dafda01fee90",
+            "4419bbfa7c82449091f478d321f98eab",
+            "ceee0846da3f4aa4ba341f9cdb8c5be7",
+            "86c914d807c44294b1741f00461fa9c9",
+            "e4d872a09c1c4d66aa1c2332cae6c6ef",
+            "89f6501ef5d8452a9c71e23e95c135b9",
+            "55e1f562ee274a22a2cd9a26d3fdfebf",
+            "bc8ec35f9f264360b9a3df920c95060c",
+            "711aab0d7e6f4a1482f74f0884fc1db7",
+            "570c25f183b3429287c4dc8f129c3ee8",
+            "f0b29d666a4d4930943beeeec45e9d4b",
+            "12fa2213339740c1abd7bf6121385389",
+            "b739b49209d1452f9080f538eab26001",
+            "b3b9b923451841939345930fd653c73b",
+            "1eb0e83ea1284a8c9b4b1d4b3ff56b9e",
+            "c3f010942aa4490490e834f45033f0a3",
+            "16a27fb0243d4f8dbf820ec0b2e3d5b6",
+            "e2b60c7d6b8b4ca8bb59a8f83c885e0c",
+            "c757ef336e1c4ebf959bdc5a31e0a2d3",
+            "aeba55c85398498dbd3544605749790c"
+          ]
+        },
+        "id": "hjz-2B3MBF9V",
+        "outputId": "ab95a5bd-910c-451f-a065-77f2dcf4620a"
+      },
+      "execution_count": 30,
+      "outputs": [
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "<IPython.core.display.HTML object>"
+            ],
+            "text/html": [
+              "<div style='background-color:#FF3333;color:black;padding:10px;border-radius:5px;border:2px solid black;'><b>⚠️ RESUMEN DE FALTANTES:</b><br>CN9407604NA8 (Faltan 1 un.), CN9407603NA8 (Faltan 1 un.), CN9407602NA8 (Faltan 1 un.), CN9407601NA8 (Faltan 1 un.), CN9407600NA8 (Faltan 1 un.), CN9407599NA8 (Faltan 1 un.), CN9407598NA8 (Faltan 1 un.), CN9407597NA8 (Faltan 1 un.), CN9407596NA8 (Faltan 1 un.), CN9407595NA8 (Faltan 1 un.)</div>"
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "<IPython.core.display.HTML object>"
+            ],
+            "text/html": [
+              "<h3>📊 BALANCE FINAL DE DISPONIBILIDAD</h3>"
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "<pandas.io.formats.style.Styler at 0x78a388a389b0>"
+            ],
+            "text/html": [
+              "<style type=\"text/css\">\n",
+              "#T_6ad97 th {\n",
+              "  background-color: #1C2833;\n",
+              "  color: white;\n",
+              "}\n",
+              "#T_6ad97_row2_col0, #T_6ad97_row2_col1, #T_6ad97_row2_col2, #T_6ad97_row2_col3, #T_6ad97_row2_col4, #T_6ad97_row2_col5, #T_6ad97_row3_col0, #T_6ad97_row3_col1, #T_6ad97_row3_col2, #T_6ad97_row3_col3, #T_6ad97_row3_col4, #T_6ad97_row3_col5, #T_6ad97_row4_col0, #T_6ad97_row4_col1, #T_6ad97_row4_col2, #T_6ad97_row4_col3, #T_6ad97_row4_col4, #T_6ad97_row4_col5, #T_6ad97_row5_col0, #T_6ad97_row5_col1, #T_6ad97_row5_col2, #T_6ad97_row5_col3, #T_6ad97_row5_col4, #T_6ad97_row5_col5, #T_6ad97_row6_col0, #T_6ad97_row6_col1, #T_6ad97_row6_col2, #T_6ad97_row6_col3, #T_6ad97_row6_col4, #T_6ad97_row6_col5, #T_6ad97_row7_col0, #T_6ad97_row7_col1, #T_6ad97_row7_col2, #T_6ad97_row7_col3, #T_6ad97_row7_col4, #T_6ad97_row7_col5, #T_6ad97_row8_col0, #T_6ad97_row8_col1, #T_6ad97_row8_col2, #T_6ad97_row8_col3, #T_6ad97_row8_col4, #T_6ad97_row8_col5, #T_6ad97_row9_col0, #T_6ad97_row9_col1, #T_6ad97_row9_col2, #T_6ad97_row9_col3, #T_6ad97_row9_col4, #T_6ad97_row9_col5, #T_6ad97_row10_col0, #T_6ad97_row10_col1, #T_6ad97_row10_col2, #T_6ad97_row10_col3, #T_6ad97_row10_col4, #T_6ad97_row10_col5, #T_6ad97_row11_col0, #T_6ad97_row11_col1, #T_6ad97_row11_col2, #T_6ad97_row11_col3, #T_6ad97_row11_col4, #T_6ad97_row11_col5 {\n",
+              "  background-color: #FF3333;\n",
+              "  color: #000000;\n",
+              "  font-weight: bold;\n",
+              "}\n",
+              "</style>\n",
+              "<table id=\"T_6ad97\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr>\n",
+              "      <th class=\"blank level0\" >&nbsp;</th>\n",
+              "      <th id=\"T_6ad97_level0_col0\" class=\"col_heading level0 col0\" >COD SAP</th>\n",
+              "      <th id=\"T_6ad97_level0_col1\" class=\"col_heading level0 col1\" >NOMBRE PRODUCTO</th>\n",
+              "      <th id=\"T_6ad97_level0_col2\" class=\"col_heading level0 col2\" >P_UNIT</th>\n",
+              "      <th id=\"T_6ad97_level0_col3\" class=\"col_heading level0 col3\" >PEDIDO</th>\n",
+              "      <th id=\"T_6ad97_level0_col4\" class=\"col_heading level0 col4\" >Disp</th>\n",
+              "      <th id=\"T_6ad97_level0_col5\" class=\"col_heading level0 col5\" >ALERTA</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th id=\"T_6ad97_level0_row0\" class=\"row_heading level0 row0\" >0</th>\n",
+              "      <td id=\"T_6ad97_row0_col0\" class=\"data row0 col0\" >RN0800070NA8</td>\n",
+              "      <td id=\"T_6ad97_row0_col1\" class=\"data row0 col1\" >Mijia hand-hung ironing machine 2 MJGTJO2LF - RN</td>\n",
+              "      <td id=\"T_6ad97_row0_col2\" class=\"data row0 col2\" >S/. 86.33</td>\n",
+              "      <td id=\"T_6ad97_row0_col3\" class=\"data row0 col3\" >1</td>\n",
+              "      <td id=\"T_6ad97_row0_col4\" class=\"data row0 col4\" >200</td>\n",
+              "      <td id=\"T_6ad97_row0_col5\" class=\"data row0 col5\" >OK</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th id=\"T_6ad97_level0_row1\" class=\"row_heading level0 row1\" >1</th>\n",
+              "      <td id=\"T_6ad97_row1_col0\" class=\"data row1 col0\" >RN0400013GY5</td>\n",
+              "      <td id=\"T_6ad97_row1_col1\" class=\"data row1 col1\" >Xiaomi Pad 7 Gray 8GB RAM 256GB ROM EU - RN</td>\n",
+              "      <td id=\"T_6ad97_row1_col2\" class=\"data row1 col2\" >S/. 1239.54</td>\n",
+              "      <td id=\"T_6ad97_row1_col3\" class=\"data row1 col3\" >1</td>\n",
+              "      <td id=\"T_6ad97_row1_col4\" class=\"data row1 col4\" >60</td>\n",
+              "      <td id=\"T_6ad97_row1_col5\" class=\"data row1 col5\" >OK</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th id=\"T_6ad97_level0_row2\" class=\"row_heading level0 row2\" >2</th>\n",
+              "      <td id=\"T_6ad97_row2_col0\" class=\"data row2 col0\" >CN9407604NA8</td>\n",
+              "      <td id=\"T_6ad97_row2_col1\" class=\"data row2 col1\" >Cudy 8-Port Gigabit Metal  Switch GS108</td>\n",
+              "      <td id=\"T_6ad97_row2_col2\" class=\"data row2 col2\" >S/. 62.57</td>\n",
+              "      <td id=\"T_6ad97_row2_col3\" class=\"data row2 col3\" >1</td>\n",
+              "      <td id=\"T_6ad97_row2_col4\" class=\"data row2 col4\" >0</td>\n",
+              "      <td id=\"T_6ad97_row2_col5\" class=\"data row2 col5\" >SIN STOCK</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th id=\"T_6ad97_level0_row3\" class=\"row_heading level0 row3\" >3</th>\n",
+              "      <td id=\"T_6ad97_row3_col0\" class=\"data row3 col0\" >CN9407603NA8</td>\n",
+              "      <td id=\"T_6ad97_row3_col1\" class=\"data row3 col1\" >Cudy 5-Port Gigabit Metal  Switch GS105</td>\n",
+              "      <td id=\"T_6ad97_row3_col2\" class=\"data row3 col2\" >S/. 38.81</td>\n",
+              "      <td id=\"T_6ad97_row3_col3\" class=\"data row3 col3\" >1</td>\n",
+              "      <td id=\"T_6ad97_row3_col4\" class=\"data row3 col4\" >0</td>\n",
+              "      <td id=\"T_6ad97_row3_col5\" class=\"data row3 col5\" >SIN STOCK</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th id=\"T_6ad97_level0_row4\" class=\"row_heading level0 row4\" >4</th>\n",
+              "      <td id=\"T_6ad97_row4_col0\" class=\"data row4 col0\" >CN9407602NA8</td>\n",
+              "      <td id=\"T_6ad97_row4_col1\" class=\"data row4 col1\" >Cudy Bluetooth 5.3 Nano USB Adapter BU530</td>\n",
+              "      <td id=\"T_6ad97_row4_col2\" class=\"data row4 col2\" >S/. 22.97</td>\n",
+              "      <td id=\"T_6ad97_row4_col3\" class=\"data row4 col3\" >1</td>\n",
+              "      <td id=\"T_6ad97_row4_col4\" class=\"data row4 col4\" >0</td>\n",
+              "      <td id=\"T_6ad97_row4_col5\" class=\"data row4 col5\" >SIN STOCK</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th id=\"T_6ad97_level0_row5\" class=\"row_heading level0 row5\" >5</th>\n",
+              "      <td id=\"T_6ad97_row5_col0\" class=\"data row5 col0\" >CN9407601NA8</td>\n",
+              "      <td id=\"T_6ad97_row5_col1\" class=\"data row5 col1\" >Cudy AX5400 Tir-Band Wi-Fi6/6E USB 3.0 Adapter WU5400</td>\n",
+              "      <td id=\"T_6ad97_row5_col2\" class=\"data row5 col2\" >S/. 102.17</td>\n",
+              "      <td id=\"T_6ad97_row5_col3\" class=\"data row5 col3\" >1</td>\n",
+              "      <td id=\"T_6ad97_row5_col4\" class=\"data row5 col4\" >0</td>\n",
+              "      <td id=\"T_6ad97_row5_col5\" class=\"data row5 col5\" >SIN STOCK</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th id=\"T_6ad97_level0_row6\" class=\"row_heading level0 row6\" >6</th>\n",
+              "      <td id=\"T_6ad97_row6_col0\" class=\"data row6 col0\" >CN9407600NA8</td>\n",
+              "      <td id=\"T_6ad97_row6_col1\" class=\"data row6 col1\" >Cudy AX3000 Wi-Fi 6 GPON Router GP3000</td>\n",
+              "      <td id=\"T_6ad97_row6_col2\" class=\"data row6 col2\" >S/. 189.29</td>\n",
+              "      <td id=\"T_6ad97_row6_col3\" class=\"data row6 col3\" >1</td>\n",
+              "      <td id=\"T_6ad97_row6_col4\" class=\"data row6 col4\" >0</td>\n",
+              "      <td id=\"T_6ad97_row6_col5\" class=\"data row6 col5\" >SIN STOCK</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th id=\"T_6ad97_level0_row7\" class=\"row_heading level0 row7\" >7</th>\n",
+              "      <td id=\"T_6ad97_row7_col0\" class=\"data row7 col0\" >CN9407599NA8</td>\n",
+              "      <td id=\"T_6ad97_row7_col1\" class=\"data row7 col1\" >Cudy AC1200 Wi-Fi GPON Router GP1200</td>\n",
+              "      <td id=\"T_6ad97_row7_col2\" class=\"data row7 col2\" >S/. 118.01</td>\n",
+              "      <td id=\"T_6ad97_row7_col3\" class=\"data row7 col3\" >1</td>\n",
+              "      <td id=\"T_6ad97_row7_col4\" class=\"data row7 col4\" >0</td>\n",
+              "      <td id=\"T_6ad97_row7_col5\" class=\"data row7 col5\" >SIN STOCK</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th id=\"T_6ad97_level0_row8\" class=\"row_heading level0 row8\" >8</th>\n",
+              "      <td id=\"T_6ad97_row8_col0\" class=\"data row8 col0\" >CN9407598NA8</td>\n",
+              "      <td id=\"T_6ad97_row8_col1\" class=\"data row8 col1\" >Cudy BE3600 WiFi 7 Mesh Repeater RE3600</td>\n",
+              "      <td id=\"T_6ad97_row8_col2\" class=\"data row8 col2\" >S/. 236.81</td>\n",
+              "      <td id=\"T_6ad97_row8_col3\" class=\"data row8 col3\" >1</td>\n",
+              "      <td id=\"T_6ad97_row8_col4\" class=\"data row8 col4\" >0</td>\n",
+              "      <td id=\"T_6ad97_row8_col5\" class=\"data row8 col5\" >SIN STOCK</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th id=\"T_6ad97_level0_row9\" class=\"row_heading level0 row9\" >9</th>\n",
+              "      <td id=\"T_6ad97_row9_col0\" class=\"data row9 col0\" >CN9407597NA8</td>\n",
+              "      <td id=\"T_6ad97_row9_col1\" class=\"data row9 col1\" >Cudy AX1500 Gigabit Wi-Fi 6 Mesh Solution M1500(2-Pack)</td>\n",
+              "      <td id=\"T_6ad97_row9_col2\" class=\"data row9 col2\" >S/. 260.57</td>\n",
+              "      <td id=\"T_6ad97_row9_col3\" class=\"data row9 col3\" >1</td>\n",
+              "      <td id=\"T_6ad97_row9_col4\" class=\"data row9 col4\" >0</td>\n",
+              "      <td id=\"T_6ad97_row9_col5\" class=\"data row9 col5\" >SIN STOCK</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th id=\"T_6ad97_level0_row10\" class=\"row_heading level0 row10\" >10</th>\n",
+              "      <td id=\"T_6ad97_row10_col0\" class=\"data row10 col0\" >CN9407596NA8</td>\n",
+              "      <td id=\"T_6ad97_row10_col1\" class=\"data row10 col1\" >Cudy AX1500 Gigabit Wi-Fi 6 Mesh Solution M1500(1-Pack)</td>\n",
+              "      <td id=\"T_6ad97_row10_col2\" class=\"data row10 col2\" >S/. 133.85</td>\n",
+              "      <td id=\"T_6ad97_row10_col3\" class=\"data row10 col3\" >1</td>\n",
+              "      <td id=\"T_6ad97_row10_col4\" class=\"data row10 col4\" >0</td>\n",
+              "      <td id=\"T_6ad97_row10_col5\" class=\"data row10 col5\" >SIN STOCK</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th id=\"T_6ad97_level0_row11\" class=\"row_heading level0 row11\" >11</th>\n",
+              "      <td id=\"T_6ad97_row11_col0\" class=\"data row11 col0\" >CN9407595NA8</td>\n",
+              "      <td id=\"T_6ad97_row11_col1\" class=\"data row11 col1\" >Cudy AC1200 Wi-Fi Mesh Solution M1200(1-Pack)</td>\n",
+              "      <td id=\"T_6ad97_row11_col2\" class=\"data row11 col2\" >S/. 78.41</td>\n",
+              "      <td id=\"T_6ad97_row11_col3\" class=\"data row11 col3\" >1</td>\n",
+              "      <td id=\"T_6ad97_row11_col4\" class=\"data row11 col4\" >0</td>\n",
+              "      <td id=\"T_6ad97_row11_col5\" class=\"data row11 col5\" >SIN STOCK</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n"
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "HBox(children=(Label(value='📦 RN0800070NA8 | Mijia hand-hung ironing machine 2 MJGTJO2LF -...', layout=Layout(…"
+            ],
+            "application/vnd.jupyter.widget-view+json": {
+              "version_major": 2,
+              "version_minor": 0,
+              "model_id": "bb026ea992044777abc570d320b9a47e"
             }
-    return {'encontrado': False, 'precio': 0.0, 'descripcion': ""}
-
-def buscar_stock(stocks: List[Dict], sku: str, modo: str) -> Tuple[int, Dict, int, int, Dict]:
-    """Busca stock con limpieza de SKU."""
-    sku_limpio = limpiar_sku(sku)
-    stock_total_disponible = 0
-    stock_apri004 = 0
-    stock_yessica = 0
-    detalles = {}
-    stock_detalle_columnas = {}
-    
-    for stock in stocks:
-        hoja = stock['hoja'].upper()
-        
-        df_sku_limpio = stock['df'][stock['col_sku']].apply(limpiar_sku)
-        mask = df_sku_limpio == sku_limpio
-        
-        if mask.any():
-            for _, row in stock['df'][mask].iterrows():
-                
-                if modo == ModoCotizacion.XIAOMI:
-                    cantidad = int(corregir_numero(row.get(stock.get('col_stock_disponible', ''), 0)))
-                    if 'APRI.004' in hoja:
-                        stock_apri004 += cantidad
-                        detalles[f'APRI.004 ({stock["nombre"]})'] = detalles.get(f'APRI.004 ({stock["nombre"]})', 0) + cantidad
-                    elif 'YESSICA' in hoja:
-                        stock_yessica += cantidad
-                        detalles[f'YESSICA ({stock["nombre"]})'] = detalles.get(f'YESSICA ({stock["nombre"]})', 0) + cantidad
-                
-                else:
-                    if 'APRI.001' in hoja:
-                        disponible = int(corregir_numero(row.get(stock.get('col_stock_disponible', ''), 0)))
-                        stock_total_disponible += disponible
-                        
-                        total = int(corregir_numero(row.get(stock.get('col_stock_total', ''), 0)))
-                        comprometido = int(corregir_numero(row.get(stock.get('col_stock_comprometido', ''), 0)))
-                        solicitado = int(corregir_numero(row.get(stock.get('col_stock_solicitado', ''), 0)))
-                        
-                        origen_key = stock['nombre']
-                        if origen_key not in stock_detalle_columnas:
-                            stock_detalle_columnas[origen_key] = {
-                                'total': 0,
-                                'comprometido': 0,
-                                'solicitado': 0,
-                                'disponible': 0
-                            }
-                        stock_detalle_columnas[origen_key]['total'] += total
-                        stock_detalle_columnas[origen_key]['comprometido'] += comprometido
-                        stock_detalle_columnas[origen_key]['solicitado'] += solicitado
-                        stock_detalle_columnas[origen_key]['disponible'] += disponible
-                        
-                        detalles[stock['nombre']] = detalles.get(stock['nombre'], 0) + disponible
-    
-    if modo == ModoCotizacion.XIAOMI:
-        stock_total_disponible = stock_apri004 + stock_yessica
-    
-    return stock_total_disponible, detalles, stock_apri004, stock_yessica, stock_detalle_columnas
-
-def obtener_descripcion_fallback(stocks: List[Dict], sku: str) -> str:
-    """Obtiene descripción de archivos de stock."""
-    sku_limpio = limpiar_sku(sku)
-    for stock in stocks:
-        df = stock['df']
-        df_sku_limpio = df[stock['col_sku']].apply(limpiar_sku)
-        mask = df_sku_limpio == sku_limpio
-        if not df[mask].empty:
-            row = df[mask].iloc[0]
-            for col in df.columns:
-                if any(p in str(col).upper() for p in ['DESC', 'NOMBRE', 'GOODS', 'PRODUCTO', 'DESCRIPCIÓN']):
-                    desc = str(row[col])
-                    if desc and desc != 'nan':
-                        return desc[:100]
-            return f"SKU: {sku}"
-    return f"SKU: {sku}"
-
-# ============================================
-# NUEVAS FUNCIONES PARA BÚSQUEDA INTELIGENTE
-# ============================================
-
-def buscar_stock_detallado(stocks: List[Dict], sku: str, modo: str) -> Dict:
-    """Busca stock detallado con limpieza de SKU."""
-    sku_limpio = limpiar_sku(sku)
-    resultado = {
-        'total': 0,
-        'apri004': 0,
-        'yessica': 0,
-        'apri001': 0,
-        'origenes': []
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "HBox(children=(Label(value='📦 RN0400013GY5 | Xiaomi Pad 7 Gray 8GB RAM 256GB ROM EU - RN...', layout=Layout(wi…"
+            ],
+            "application/vnd.jupyter.widget-view+json": {
+              "version_major": 2,
+              "version_minor": 0,
+              "model_id": "a375ba04495f4d7fa60955eb969dd429"
+            }
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "VBox(children=(HBox(children=(Text(value='CLIENTE NUEVO', description='Cliente:'), Text(value='-', description…"
+            ],
+            "application/vnd.jupyter.widget-view+json": {
+              "version_major": 2,
+              "version_minor": 0,
+              "model_id": "ceee0846da3f4aa4ba341f9cdb8c5be7"
+            }
+          },
+          "metadata": {}
+        }
+      ]
     }
-    
-    for stock in stocks:
-        df_sku_limpio = stock['df'][stock['col_sku']].apply(limpiar_sku)
-        mask = df_sku_limpio == sku_limpio
-        
-        if mask.any():
-            for _, row in stock['df'][mask].iterrows():
-                hoja = stock['hoja'].upper()
-                stock_cantidad = 0
-                detalle_columnas = {}
-                
-                if modo == ModoCotizacion.XIAOMI:
-                    stock_cantidad = int(corregir_numero(row.get(stock.get('col_stock_disponible', ''), 0)))
-                    if 'APRI.004' in hoja:
-                        resultado['apri004'] += stock_cantidad
-                    elif 'YESSICA' in hoja:
-                        resultado['yessica'] += stock_cantidad
-                    
-                    resultado['origenes'].append({
-                        'nombre': stock['nombre'],
-                        'stock': stock_cantidad,
-                        'detalle': {}
-                    })
-                
-                else:
-                    stock_cantidad = int(corregir_numero(row.get(stock.get('col_stock_disponible', ''), 0)))
-                    total = int(corregir_numero(row.get(stock.get('col_stock_total', ''), 0)))
-                    comprometido = int(corregir_numero(row.get(stock.get('col_stock_comprometido', ''), 0)))
-                    solicitado = int(corregir_numero(row.get(stock.get('col_stock_solicitado', ''), 0)))
-                    
-                    detalle_columnas = {
-                        'total': total,
-                        'comprometido': comprometido,
-                        'solicitado': solicitado,
-                        'disponible': stock_cantidad
-                    }
-                    
-                    if 'APRI.001' in hoja:
-                        resultado['apri001'] += stock_cantidad
-                    
-                    resultado['origenes'].append({
-                        'nombre': stock['nombre'],
-                        'stock': stock_cantidad,
-                        'detalle': detalle_columnas
-                    })
-                
-                resultado['total'] += stock_cantidad
-    
-    return resultado
-
-def buscar_precio_por_sku(catalogos: List[Dict], sku: str, col_precio: str) -> Tuple[float, str]:
-    """Busca precio de un SKU específico en los catálogos."""
-    sku_limpio = limpiar_sku(sku)
-    for cat in catalogos:
-        df = cat['df']
-        df_sku_limpio = df[cat['col_sku']].apply(limpiar_sku)
-        mask = df_sku_limpio == sku_limpio
-        
-        if not df[mask].empty:
-            row = df[mask].iloc[0]
-            col_precio_real = cat['columnas_precio'].get(col_precio)
-            if col_precio_real and col_precio_real in df.columns:
-                precio = corregir_numero(row[col_precio_real])
-                if precio > 0:
-                    return precio, cat['nombre']
-    return 0.0, ""
-
-def buscar_por_descripcion_completa(catalogos: List[Dict], termino: str, stocks: List[Dict], modo: str, col_precio: str = None) -> List[Dict]:
-    """Busca productos por descripción en TODOS los catálogos."""
-    termino_lower = termino.lower()
-    resultados = []
-    skus_vistos = set()
-    
-    for cat in catalogos:
-        df = cat['df']
-        col_desc = cat['col_desc']
-        col_sku = cat['col_sku']
-        
-        mask_desc = df[col_desc].astype(str).str.lower().str.contains(termino_lower, na=False)
-        
-        for _, row in df[mask_desc].iterrows():
-            sku = str(row[col_sku]).strip().upper()
-            if sku in skus_vistos:
-                continue
-            skus_vistos.add(sku)
-            
-            descripcion = str(row[col_desc])[:150]
-            
-            stock_info = buscar_stock_detallado(stocks, sku, modo)
-            
-            precio = 0.0
-            if col_precio:
-                precio, _ = buscar_precio_por_sku(catalogos, sku, col_precio)
-            
-            resultados.append({
-                'sku': sku,
-                'descripcion': descripcion,
-                'catalogo': cat['nombre'],
-                'tipo_catalogo': cat.get('tipo', 'GENERAL'),
-                'stock_total': stock_info['total'],
-                'stock_apri004': stock_info.get('apri004', 0),
-                'stock_yessica': stock_info.get('yessica', 0),
-                'stock_apri001': stock_info.get('apri001', 0),
-                'stock_detalle': stock_info.get('origenes', []),
-                'precio': precio,
-                'precio_disponible': precio > 0
-            })
-    
-    resultados.sort(key=lambda x: (x['stock_total'] > 0, x['stock_total']), reverse=True)
-    return resultados
-
-def obtener_badge_origen_detallado(stock_info: Dict, modo: str) -> str:
-    """Genera badge HTML que muestra stock por origen."""
-    if modo == ModoCotizacion.XIAOMI:
-        badges = []
-        if stock_info.get('stock_apri004', 0) > 0:
-            badges.append(f'<span class="origin-badge origin-apri004">🟣 APRI.004: {stock_info["stock_apri004"]}</span>')
-        if stock_info.get('stock_yessica', 0) > 0:
-            badges.append(f'<span class="origin-badge origin-yessica">🔵 YESSICA: {stock_info["stock_yessica"]}</span>')
-        
-        if stock_info.get('stock_apri001', 0) > 0:
-            badges.append(f'<span class="origin-badge origin-apri001">📦 APRI.001: {stock_info["stock_apri001"]} (stock general)</span>')
-        
-        if not badges:
-            return '<span class="badge-danger">❌ Sin stock</span>'
-        return ' '.join(badges)
-    
-    else:
-        badges = []
-        if stock_info.get('stock_apri001', 0) > 0:
-            badges.append(f'<span class="origin-badge origin-both">✅ Stock APRI.001: {stock_info["stock_apri001"]}</span>')
-        
-        for origen in stock_info.get('origenes', []):
-            if origen.get('detalle'):
-                d = origen['detalle']
-                badge_detalle = f'<div style="font-size:0.7rem; margin-top:4px;">📦 Total:{d["total"]} | 🔒 Comp:{d["comprometido"]} | 📋 Sol:{d["solicitado"]} | ✅ Disp:{d["disponible"]}</div>'
-                badges.append(badge_detalle)
-        
-        if not badges:
-            return '<span class="badge-danger">❌ Sin stock disponible</span>'
-        return ' '.join(badges)
-
-def procesar_pedidos(pedidos: List[Dict], catalogos: List[Dict], stocks: List[Dict], 
-                     col_precio: str, modo: str) -> Tuple[List[Dict], List[str]]:
-    """Procesa el listado de pedidos."""
-    resultados = []
-    advertencias = []
-    
-    for pedido in pedidos:
-        sku = pedido['sku']
-        cant_solicitada = pedido['cantidad']
-        
-        precio_info = buscar_precio(catalogos, sku, col_precio)
-        stock_total, stock_detalle, stock_apri004, stock_yessica, stock_columnas = buscar_stock(stocks, sku, modo)
-        
-        descripcion = precio_info['descripcion']
-        if not descripcion or descripcion == '':
-            descripcion = obtener_descripcion_fallback(stocks, sku)
-        
-        precio = precio_info['precio']
-        sin_precio = not precio_info['encontrado'] or precio == 0
-        sin_stock = stock_total == 0
-        
-        if sin_precio and sin_stock:
-            estado = "❌ Sin precio y sin stock"
-            badge_estado = "badge-danger"
-            a_cotizar = 0
-            total = 0
-            advertencias.append(f"❌ **{sku}**: Sin precio y sin stock")
-        elif sin_precio:
-            estado = "⚠️ Sin precio"
-            badge_estado = "badge-warning"
-            a_cotizar = 0
-            total = 0
-            advertencias.append(f"⚠️ **{sku}**: Sin precio en catálogo")
-        elif sin_stock:
-            estado = "❌ Sin stock disponible"
-            badge_estado = "badge-danger"
-            a_cotizar = 0
-            total = 0
-            advertencias.append(f"❌ **{sku}**: Sin stock disponible")
-        elif cant_solicitada > stock_total:
-            a_cotizar = stock_total
-            total = precio * a_cotizar
-            estado = f"⚠️ Stock insuficiente ({stock_total}/{cant_solicitada})"
-            badge_estado = "badge-warning"
-            advertencias.append(f"⚠️ **{sku}**: Stock insuficiente. Solicitado: {cant_solicitada} | Disponible: {stock_total}")
-        else:
-            a_cotizar = cant_solicitada
-            total = precio * a_cotizar
-            estado = "✅ OK"
-            badge_estado = "badge-ok"
-        
-        if modo == ModoCotizacion.XIAOMI:
-            if stock_apri004 > 0 and stock_yessica > 0:
-                badge_origen = f'<span class="origin-badge origin-both">🟣 APRI.004: {stock_apri004} | 🔵 YESSICA: {stock_yessica}</span>'
-            elif stock_apri004 > 0:
-                badge_origen = f'<span class="origin-badge origin-apri004">🟣 APRI.004: {stock_apri004}</span>'
-            elif stock_yessica > 0:
-                badge_origen = f'<span class="origin-badge origin-yessica">🔵 YESSICA: {stock_yessica}</span>'
-            else:
-                badge_origen = '<span class="badge-danger">❌ Sin stock</span>'
-        else:
-            if stock_total > 0 and stock_columnas:
-                badge_parts = []
-                for origen, datos in stock_columnas.items():
-                    badge_parts.append(
-                        f'<div style="font-size:0.7rem; line-height:1.4;">'
-                        f'📦 Total: {datos["total"]} | '
-                        f'🔒 Comp: {datos["comprometido"]} | '
-                        f'📋 Sol: {datos["solicitado"]} | '
-                        f'✅ Disp: <strong>{datos["disponible"]}</strong>'
-                        f'</div>'
-                    )
-                badge_origen = f'<div class="origin-badge origin-both" style="background:#E8F5E9; padding:6px 12px; border-radius:12px;">{"".join(badge_parts)}</div>'
-            elif stock_total > 0:
-                badge_origen = f'<span class="origin-badge origin-both">✅ Stock disponible: {stock_total}</span>'
-            else:
-                badge_origen = '<span class="badge-danger">❌ Sin stock disponible</span>'
-        
-        resultados.append({
-            'SKU': sku,
-            'Descripción': descripcion[:80],
-            'Precio': precio,
-            'Pedido': cant_solicitada,
-            'Stock': stock_total,
-            'Stock_APRI004': stock_apri004,
-            'Stock_YESSICA': stock_yessica,
-            'Stock_Detalle': stock_columnas,
-            'Origen': badge_origen,
-            'A Cotizar': a_cotizar,
-            'Total': total,
-            'Estado': estado,
-            'Badge_Estado': badge_estado
-        })
-    
-    return resultados, advertencias
-
-def generar_excel(items: List[Dict], cliente: str, ruc: str) -> bytes:
-    """Genera archivo Excel con formato profesional."""
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        pd.DataFrame(items).to_excel(writer, sheet_name='Cotizacion', index=False, startrow=5)
-        
-        workbook = writer.book
-        ws = writer.sheets['Cotizacion']
-        
-        fmt_header = workbook.add_format({'bg_color': '#F79646', 'bold': True, 'border': 1, 'align': 'center', 'font_color': 'white'})
-        fmt_money = workbook.add_format({'num_format': '"S/." #,##0.00', 'border': 1, 'align': 'right'})
-        fmt_border = workbook.add_format({'border': 1})
-        fmt_bold = workbook.add_format({'bold': True})
-        
-        ws.set_column('A:A', 20)
-        ws.set_column('B:B', 75)
-        ws.set_column('C:C', 12)
-        ws.set_column('D:D', 18)
-        ws.set_column('E:E', 18)
-        
-        ws.write('A1', 'FECHA:', fmt_bold)
-        ws.write('B1', datetime.now().strftime("%d/%m/%Y"))
-        ws.write('A2', 'CLIENTE:', fmt_bold)
-        ws.write('B2', cliente.upper())
-        ws.write('A3', 'RUC:', fmt_bold)
-        ws.write('B3', ruc)
-        
-        ws.merge_range('F1:H1', 'DATOS BANCARIOS', fmt_header)
-        ws.write('F2', 'BBVA SOLES:', workbook.add_format({'font_color': 'red', 'bold': True, 'border': 1}))
-        ws.write('G2', '0011-0616-0100012617', fmt_border)
-        
-        headers = ['Código SAP', 'Descripción', 'Cantidad', 'Precio Unit.', 'Total']
-        for i, header in enumerate(headers):
-            ws.write(5, i, header, fmt_header)
-        
-        for row_idx, item in enumerate(items):
-            ws.write_row(row_idx + 6, 0, [item['sku'], item['desc'], item['cant'], item['p_u'], item['total']], fmt_border)
-            ws.write(row_idx + 6, 3, item['p_u'], fmt_money)
-            ws.write(row_idx + 6, 4, item['total'], fmt_money)
-        
-        total_row = len(items) + 6
-        ws.write(total_row, 3, 'TOTAL S/.', fmt_header)
-        ws.write(total_row, 4, sum(item['total'] for item in items), fmt_money)
-    
-    return output.getvalue()
-
-def obtener_clase_stock(stock: int) -> str:
-    if stock == 0:
-        return "stock-rojo"
-    elif stock <= 5:
-        return "stock-amarillo"
-    return "stock-verde"
-
-def obtener_icono_stock(stock: int) -> str:
-    if stock == 0:
-        return "❌"
-    elif stock <= 5:
-        return "⚠️"
-    return "✅"
-
-def obtener_mensaje_stock(stock: int) -> str:
-    if stock == 0:
-        return "Sin stock disponible"
-    elif stock <= 5:
-        return f"¡Stock bajo! Solo quedan {stock} unidades disponibles"
-    return "Stock suficiente"
-
-# ============================================
-# CONFIGURACIÓN DE PÁGINA Y CSS COMPLETO
-# ============================================
-
-try:
-    img_logo = Image.open("logo.png")
-    st.set_page_config(page_title="QTC Smart Sales Pro", page_icon=img_logo, layout="wide")
-except:
-    st.set_page_config(page_title="QTC Smart Sales Pro", page_icon="💼", layout="wide")
-
-st.markdown("""
-<style>
-.stApp { background: linear-gradient(135deg, #E8F5E9 50%, #C8E6C9 100%) !important; }
-.main .block-container { background-color: transparent !important; }
-
-h1, h2, h3, h4, h5, h6 { color: #0A0A0A !important; font-family: 'Segoe UI', sans-serif; }
-p, div, span, label, .stMarkdown { color: #0A0A0A !important; }
-
-[data-testid="stSidebar"] { 
-    background: linear-gradient(180deg, #3E2723 0%, #4E342E 100%) !important;
+  ]
 }
-
-[data-testid="stSidebar"] * { 
-    color: #D7CCC8 !important;
-}
-
-[data-testid="stSidebar"] .stMarkdown, 
-[data-testid="stSidebar"] p, 
-[data-testid="stSidebar"] div,
-[data-testid="stSidebar"] label,
-[data-testid="stSidebar"] .stMarkdown p {
-    color: #D7CCC8 !important;
-}
-
-[data-testid="stSidebar"] h1, 
-[data-testid="stSidebar"] h2, 
-[data-testid="stSidebar"] h3,
-[data-testid="stSidebar"] .stMarkdown h3 {
-    color: #FFCC80 !important;
-    font-weight: 600 !important;
-}
-
-[data-testid="stSidebar"] .stTextInput input,
-[data-testid="stSidebar"] .stTextArea textarea,
-[data-testid="stSidebar"] .stNumberInput input {
-    color: #3E2723 !important;
-    background-color: #FFF8E1 !important;
-    border-radius: 10px !important;
-    border: 1px solid #FFB74D !important;
-}
-
-[data-testid="stSidebar"] .stSelectbox > div > div {
-    background-color: #FFF8E1 !important;
-    border: 1px solid #FFB74D !important;
-    border-radius: 10px !important;
-    color: #3E2723 !important;
-}
-
-[data-testid="stSidebar"] .stFileUploader > div > div {
-    background-color: #FFF8E1 !important;
-    border: 1px dashed #FFB74D !important;
-    border-radius: 12px !important;
-}
-
-[data-testid="stSidebar"] .stFileUploader button {
-    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%) !important;
-    color: #3E2723 !important;
-    font-weight: 600 !important;
-}
-
-[data-testid="stSidebar"] .stButton > button {
-    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%) !important;
-    color: #3E2723 !important;
-    font-weight: 600 !important;
-}
-
-[data-testid="stSidebar"] .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #FFB74D 0%, #FF9800 100%) !important;
-    color: #3E2723 !important;
-}
-
-.badge-ok { background-color: #C8E6C9; color: #1B5E20; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
-.badge-warning { background-color: #FFF3E0; color: #E65100; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
-.badge-danger { background-color: #FFCDD2; color: #C62828; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; display: inline-block; }
-.origin-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-right: 5px; }
-.origin-apri004 { background-color: #E1BEE7; color: #4A148C; }
-.origin-yessica { background-color: #BBDEFB; color: #0D47A1; }
-.origin-both { background-color: #C8E6C9; color: #1B5E20; }
-.origin-apri001 { background-color: #FFF3E0; color: #E65100; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 500; display: inline-block; margin: 2px; }
-.stock-verde { color: #2E7D32; font-weight: bold; background-color: #C8E6C9; padding: 2px 8px; border-radius: 20px; display: inline-block; }
-.stock-amarillo { color: #E65100; font-weight: bold; background-color: #FFE0B2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
-.stock-rojo { color: #C62828; font-weight: bold; background-color: #FFCDD2; padding: 2px 8px; border-radius: 20px; display: inline-block; }
-.product-card { background: white; border-radius: 12px; padding: 1rem; margin: 0.75rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-</style>
-""", unsafe_allow_html=True)
-
-# ============================================
-# INICIALIZACIÓN DE SESIÓN
-# ============================================
-
-if "auth" not in st.session_state:
-    st.session_state.auth = False
-if "tipo_cotizacion" not in st.session_state:
-    st.session_state.tipo_cotizacion = None
-if "catalogos" not in st.session_state:
-    st.session_state.catalogos = []
-if "stocks" not in st.session_state:
-    st.session_state.stocks = []
-if "resultados" not in st.session_state:
-    st.session_state.resultados = None
-if "cotizaciones" not in st.session_state:
-    st.session_state.cotizaciones = 0
-if "total_prods" not in st.session_state:
-    st.session_state.total_prods = 0
-if "productos_seleccionados" not in st.session_state:
-    st.session_state.productos_seleccionados = {}
-if "carrito_temporal" not in st.session_state:
-    st.session_state.carrito_temporal = {}
-
-# ============================================
-# LOGIN
-# ============================================
-
-if not st.session_state.auth:
-    st.markdown("""
-    <style>
-    .stApp { background: linear-gradient(135deg, #FFF8E1 0%, #FFE0B2 50%, #FFCC80 100%) !important; }
-    .login-card { background: #FFFDF5; border-radius: 28px; padding: 2.5rem; box-shadow: 0 25px 50px rgba(0,0,0,0.15); text-align: center; border: 1px solid #FFE0B2; animation: fadeInUp 0.5s ease-out; }
-    .stButton button { background: linear-gradient(135deg, #E65100 0%, #FF9800 100%) !important; color: white !important; }
-    @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-    """, unsafe_allow_html=True)
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 2.5, 1])
-    with col2:
-        st.markdown('<div class="login-card"><h1 style="color:#E65100;">QTC Smart Sales</h1><p style="color:#F57C00;">Sistema Profesional de Cotización</p>', unsafe_allow_html=True)
-        user = st.text_input("👤 USUARIO", placeholder="Ingresa tu usuario", key="login_user")
-        pw = st.text_input("🔒 CONTRASEÑA", type="password", placeholder="Ingresa tu contraseña", key="login_pass")
-        if st.button("🚀 INGRESAR", use_container_width=True):
-            if user == "admin" and pw == "qtc2026":
-                st.session_state.auth = True
-                st.rerun()
-            else:
-                st.error("❌ Credenciales incorrectas")
-                st.info("💡 Usuario: admin | Contraseña: qtc2026")
-        st.markdown('<div style="margin-top:2rem; font-size:0.7rem; color:#FF9800;">⚡ QTC Smart Sales Pro</div></div>', unsafe_allow_html=True)
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    st.stop()
-
-# ============================================
-# HEADER
-# ============================================
-
-try:
-    col_logo, col_title, col_user = st.columns([1, 4, 2])
-    with col_logo:
-        st.image("logo.png", width="60px")
-    with col_title:
-        st.title("QTC Smart Sales Pro")
-    with col_user:
-        st.markdown(f"""
-        <div style="text-align: right; background: white; padding: 8px 15px; border-radius: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-            <span style="font-weight: 600;">👤 admin</span><br>
-            <span style="font-size: 0.7rem; color: #4CAF50;">Administrador</span>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("🚪 Cerrar Sesión", key="logout"):
-            st.session_state.auth = False
-            st.rerun()
-except:
-    st.title("QTC Smart Sales Pro")
-
-st.markdown("---")
-
-if st.session_state.tipo_cotizacion is None:
-    st.markdown("### 🎯 ¿Qué vas a cotizar hoy?")
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🔋 XIAOMI", use_container_width=True):
-            st.session_state.tipo_cotizacion = ModoCotizacion.XIAOMI
-            st.rerun()
-    with col2:
-        if st.button("💼 GENERAL", use_container_width=True):
-            st.session_state.tipo_cotizacion = ModoCotizacion.GENERAL
-            st.rerun()
-    st.stop()
-
-if st.session_state.tipo_cotizacion == ModoCotizacion.XIAOMI:
-    st.success("🔋 **Modo XIAOMI** - Stock en APRI.004 + YESSICA")
-else:
-    st.info("💼 **Modo GENERAL** - Stock desde columna DISPONIBLE")
-
-st.markdown("---")
-
-# ============================================
-# SIDEBAR
-# ============================================
-
-with st.sidebar:
-    st.markdown("### 🎯 Modo de Cotización")
-    modo_actual = st.session_state.tipo_cotizacion
-    
-    col_m1, col_m2 = st.columns(2)
-    with col_m1:
-        if st.button("🔋 XIAOMI", use_container_width=True, 
-                    type="primary" if modo_actual == ModoCotizacion.XIAOMI else "secondary"):
-            if modo_actual != ModoCotizacion.XIAOMI:
-                st.session_state.tipo_cotizacion = ModoCotizacion.XIAOMI
-                st.session_state.stocks = []
-                st.session_state.resultados = None
-                st.rerun()
-    with col_m2:
-        if st.button("💼 GENERAL", use_container_width=True,
-                    type="primary" if modo_actual == ModoCotizacion.GENERAL else "secondary"):
-            if modo_actual != ModoCotizacion.GENERAL:
-                st.session_state.tipo_cotizacion = ModoCotizacion.GENERAL
-                st.session_state.stocks = []
-                st.session_state.resultados = None
-                st.rerun()
-    
-    st.markdown("---")
-    
-    st.markdown("### 📂 Archivos")
-    
-    st.markdown("**📚 Catálogos de Precios**")
-    archivos_catalogos = st.file_uploader("Excel o CSV", type=['xlsx', 'xls', 'csv'], accept_multiple_files=True, key="cat_upload")
-    if archivos_catalogos:
-        st.session_state.catalogos = []
-        for archivo in archivos_catalogos:
-            resultado = cargar_catalogo(archivo)
-            if resultado:
-                st.session_state.catalogos.append(resultado)
-                st.success(f"✅ {resultado['nombre'][:50]}")
-    
-    st.markdown("**📦 Reportes de Stock**")
-    if st.session_state.tipo_cotizacion == ModoCotizacion.GENERAL:
-        st.caption("Modo GENERAL: Busca columna **DISPONIBLE** para stock real")
-    else:
-        st.caption(f"Modo {st.session_state.tipo_cotizacion}: {', '.join(STOCK_HOJA_MAP[st.session_state.tipo_cotizacion])}")
-    
-    archivos_stock = st.file_uploader("Excel", type=['xlsx', 'xls'], accept_multiple_files=True, key="stock_upload")
-    if archivos_stock:
-        st.session_state.stocks = cargar_stocks(archivos_stock, st.session_state.tipo_cotizacion)
-    
-    # ============================================
-    # PANEL DE DEBUG (para verificar SKUs)
-    # ============================================
-    with st.sidebar.expander("🔧 DEBUG - Verificar SKUs", expanded=False):
-        if st.session_state.catalogos and st.session_state.stocks:
-            st.markdown("### Verificar SKU específico")
-            sku_test = st.text_input("Ingresa SKU a verificar:", "RN0200046BK8")
-            
-            if sku_test:
-                st.markdown("---")
-                st.markdown("#### 📦 En CATÁLOGOS:")
-                sku_limpio_test = limpiar_sku(sku_test)
-                
-                for cat in st.session_state.catalogos:
-                    df = cat['df']
-                    col_sku = cat['col_sku']
-                    
-                    st.markdown(f"**{cat['nombre']}** (columna: `{col_sku}`)")
-                    
-                    df_sku_limpio = df[col_sku].apply(limpiar_sku)
-                    mask_exacta = df_sku_limpio == sku_limpio_test
-                    
-                    if mask_exacta.any():
-                        row = df[mask_exacta].iloc[0]
-                        st.success(f"✅ ENCONTRADO EXACTAMENTE")
-                        st.code(f"SKU original: '{row[col_sku]}'")
-                        st.write(f"Precios: { {k: row.get(v, 'N/A') for k, v in cat['columnas_precio'].items()} }")
-                    else:
-                        mask_parcial = df[col_sku].astype(str).str.contains(sku_limpio_test, case=False, na=False)
-                        if mask_parcial.any():
-                            st.warning(f"⚠️ No exacto, pero hay coincidencias parciales:")
-                            for _, row in df[mask_parcial].head(3).iterrows():
-                                st.code(f"  • '{row[col_sku]}'")
-                        else:
-                            st.error(f"❌ NO ENCONTRADO")
-                            st.caption("Primeros 5 SKUs del catálogo:")
-                            for sku_ejemplo in df[col_sku].astype(str).head(5).tolist():
-                                st.caption(f"  - '{sku_ejemplo}'")
-                
-                st.markdown("---")
-                st.markdown("#### 📊 En STOCK:")
-                for stock in st.session_state.stocks:
-                    st.markdown(f"**{stock['nombre']}** (columna: `{stock['col_sku']}`)")
-                    
-                    df_stock = stock['df']
-                    col_sku_stock = stock['col_sku']
-                    
-                    df_stock_sku_limpio = df_stock[col_sku_stock].apply(limpiar_sku)
-                    mask_exacta = df_stock_sku_limpio == sku_limpio_test
-                    
-                    if mask_exacta.any():
-                        row = df_stock[mask_exacta].iloc[0]
-                        st.success(f"✅ ENCONTRADO EXACTAMENTE")
-                        st.code(f"SKU original: '{row[col_sku_stock]}'")
-                        
-                        if stock.get('col_stock_disponible'):
-                            valor_stock = row.get(stock['col_stock_disponible'], 0)
-                            st.write(f"📊 Stock disponible: `{valor_stock}` → {corregir_numero(valor_stock)} unidades")
-                        else:
-                            st.warning("⚠️ No se detectó columna de stock disponible")
-                    else:
-                        st.error(f"❌ NO ENCONTRADO")
-        else:
-            st.info("Carga catálogos y stocks para usar el debug")
-
-# ============================================
-# TABS PRINCIPALES
-# ============================================
-
-tab_cotizacion, tab_buscar, tab_dashboard = st.tabs(["📦 Cotización", "🔍 Buscar Productos", "📊 Dashboard"])
-
-# ---------- TAB COTIZACIÓN ----------
-with tab_cotizacion:
-    if not st.session_state.catalogos:
-        st.warning("🌿 Carga catálogos en el panel izquierdo")
-    else:
-        opciones_precio = set()
-        for cat in st.session_state.catalogos:
-            for col in cat['columnas_precio'].keys():
-                opciones_precio.add(col)
-        
-        if not opciones_precio:
-            st.error("⚠️ No se detectaron columnas de precio")
-            col_precio = None
-        else:
-            col_precio = st.selectbox("💰 Columna de precio:", sorted(list(opciones_precio)))
-        
-        st.markdown("---")
-        st.markdown("### 📝 Ingresa los productos")
-        st.caption("Formato: SKU:CANTIDAD (uno por línea)")
-        
-        if 'skus_transferidos' in st.session_state:
-            texto_defecto = "\n".join([f"{sku}:{cant}" for sku, cant in st.session_state.skus_transferidos.items()])
-            del st.session_state.skus_transferidos
-        else:
-            texto_defecto = ""
-        
-        texto_skus = st.text_area("", height=150, value=texto_defecto, placeholder="Ejemplo:\nRN0200046BK8:5\nCN0900009WH8:2")
-        
-        pedidos_dict = {}
-        if texto_skus:
-            for line in texto_skus.split('\n'):
-                line = line.strip()
-                if ':' in line:
-                    parts = line.split(':')
-                    if len(parts) == 2:
-                        try:
-                            sku = parts[0].strip().upper()
-                            cantidad = int(parts[1].strip())
-                            if cantidad > 0:
-                                pedidos_dict[sku] = pedidos_dict.get(sku, 0) + cantidad
-                        except:
-                            pass
-                elif line:
-                    sku = line.strip().upper()
-                    pedidos_dict[sku] = pedidos_dict.get(sku, 0) + 1
-        
-        pedidos = [{'sku': sku, 'cantidad': cant} for sku, cant in pedidos_dict.items()]
-        
-        if st.button("🚀 PROCESAR", use_container_width=True, type="primary") and pedidos:
-            if not col_precio:
-                st.error("❌ Selecciona una columna de precio")
-            else:
-                with st.spinner("🔍 Procesando..."):
-                    resultados, advertencias = procesar_pedidos(
-                        pedidos, st.session_state.catalogos, st.session_state.stocks, 
-                        col_precio, st.session_state.tipo_cotizacion
-                    )
-                    for adv in advertencias:
-                        if "⚠️" in adv:
-                            st.warning(adv)
-                        else:
-                            st.error(adv)
-                    st.session_state.resultados = resultados
-        
-        if st.session_state.resultados:
-            st.markdown("---")
-            st.markdown("### 📊 Resultados")
-            
-            html = '<div style="overflow-x: auto;"><table style="width:100%; border-collapse: collapse; background: white; border-radius: 12px;">'
-            html += '<thead><tr style="background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%); color: white;">'
-            html += '<th style="padding: 10px;">SKU</th><th style="padding: 10px;">Descripción</th><th style="padding: 10px;">Precio</th>'
-            html += '<th style="padding: 10px;">Pedido</th><th style="padding: 10px;">Stock</th><th style="padding: 10px;">Origen</th>'
-            html += '<th style="padding: 10px;">A Cotizar</th><th style="padding: 10px;">Total</th><th style="padding: 10px;">Estado</th></tr></thead><tbody>'
-            
-            for item in st.session_state.resultados:
-                precio_str = f"S/. {item['Precio']:,.2f}" if item['Precio'] > 0 else "Sin precio"
-                total_str = f"S/. {item['Total']:,.2f}"
-                stock_clase = obtener_clase_stock(item['Stock'])
-                stock_icono = obtener_icono_stock(item['Stock'])
-                stock_html = f'<span class="{stock_clase}" title="{obtener_mensaje_stock(item["Stock"])}">{stock_icono} {item["Stock"]}</span>'
-                
-                html += f'<tr style="border-bottom: 1px solid #E8F5E9;">'
-                html += f'<td style="padding: 10px; font-family: monospace;">{item["SKU"]}</td>'
-                html += f'<td style="padding: 10px;">{item["Descripción"][:60]}{"..." if len(item["Descripción"]) > 60 else ""}</td>'
-                html += f'<td style="padding: 10px; text-align: center;">{precio_str}</td>'
-                html += f'<td style="padding: 10px; text-align: center;">{item["Pedido"]}</td>'
-                html += f'<td style="padding: 10px; text-align: center;">{stock_html}</td>'
-                html += f'<td style="padding: 10px;">{item["Origen"]}</td>'
-                html += f'<td style="padding: 10px; text-align: center;"><strong>{item["A Cotizar"]}</strong></td>'
-                html += f'<td style="padding: 10px; text-align: center;"><strong>{total_str}</strong></td>'
-                html += f'<td style="padding: 10px; text-align: center;"><span class="{item["Badge_Estado"]}">{item["Estado"]}</span></td>'
-                html += '</tr>'
-            
-            html += '</tbody></table></div>'
-            st.markdown(html, unsafe_allow_html=True)
-            
-            st.markdown("---")
-            st.markdown("### ✏️ Ajustar cantidades")
-            
-            df_ajuste = pd.DataFrame(st.session_state.resultados)[['SKU', 'Descripción', 'Precio', 'Stock', 'A Cotizar']].copy()
-            df_ajuste['Precio'] = df_ajuste['Precio'].apply(lambda x: f"S/. {x:,.2f}" if x > 0 else "Sin precio")
-            
-            edited_df = st.data_editor(
-                df_ajuste,
-                column_config={
-                    "SKU": st.column_config.TextColumn("SKU", disabled=True, width="small"),
-                    "Descripción": st.column_config.TextColumn("Descripción", disabled=True, width="large"),
-                    "Precio": st.column_config.TextColumn("Precio", disabled=True, width="small"),
-                    "Stock": st.column_config.NumberColumn("Stock", disabled=True, width="small"),
-                    "A Cotizar": st.column_config.NumberColumn("A Cotizar", min_value=0, step=1, required=True, width="small"),
-                },
-                use_container_width=True,
-                hide_index=True,
-                key="ajuste_editor"
-            )
-            
-            for idx, row in edited_df.iterrows():
-                if idx < len(st.session_state.resultados):
-                    nueva_cant = row['A Cotizar']
-                    stock_disponible = st.session_state.resultados[idx]['Stock']
-                    if nueva_cant > stock_disponible and stock_disponible > 0:
-                        nueva_cant = stock_disponible
-                        st.warning(f"⚠️ **{st.session_state.resultados[idx]['SKU']}**: Máximo {stock_disponible} unidades")
-                    
-                    st.session_state.resultados[idx]['A Cotizar'] = nueva_cant
-                    if st.session_state.resultados[idx]['Precio'] > 0:
-                        st.session_state.resultados[idx]['Total'] = st.session_state.resultados[idx]['Precio'] * nueva_cant
-                        st.session_state.resultados[idx]['Estado'] = "✅ OK" if nueva_cant > 0 else "⚠️ Sin stock"
-                        st.session_state.resultados[idx]['Badge_Estado'] = "badge-ok" if nueva_cant > 0 else "badge-warning"
-            
-            items_validos = [r for r in st.session_state.resultados if r['A Cotizar'] > 0 and r['Precio'] > 0]
-            items_con_issues = [r for r in st.session_state.resultados if r['A Cotizar'] == 0 or r['Precio'] == 0]
-            total_general = sum(r['Total'] for r in items_validos)
-            
-            col_m1, col_m2, col_m3 = st.columns(3)
-            col_m1.metric("✅ A cotizar", len(items_validos))
-            col_m2.metric("💰 Total", f"S/. {total_general:,.2f}")
-            col_m3.metric("⚠️ Excluidos", len(items_con_issues))
-            
-            if items_validos:
-                st.markdown("---")
-                st.markdown("### 📥 Generar Cotización")
-                col_cli1, col_cli2 = st.columns(2)
-                with col_cli1:
-                    cliente = st.text_input("🏢 Cliente", "CLIENTE NUEVO", key="cliente_nombre")
-                with col_cli2:
-                    ruc_cliente = st.text_input("📋 RUC/DNI", "-", key="cliente_ruc")
-                
-                if st.button("📥 GENERAR EXCEL", use_container_width=True, type="primary"):
-                    items_excel = [{'sku': r['SKU'], 'desc': r['Descripción'], 'cant': r['A Cotizar'], 'p_u': r['Precio'], 'total': r['Total']} for r in items_validos]
-                    excel = generar_excel(items_excel, cliente, ruc_cliente)
-                    st.download_button("💾 DESCARGAR", data=excel, file_name=f"Cotizacion_{cliente}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx", use_container_width=True)
-                    st.session_state.cotizaciones += 1
-                    st.session_state.total_prods = len(items_validos)
-                    st.balloons()
-                    st.success("✅ Cotización generada")
-
-# ---------- TAB BUSCAR ----------
-with tab_buscar:
-    st.markdown("### 🔍 Buscar Productos por Descripción")
-    st.caption("📝 Busca por nombre, marca o descripción - Te mostraremos TODOS los SKU, su stock y precio")
-    
-    if not st.session_state.catalogos:
-        st.warning("🌿 Primero carga catálogos en el panel izquierdo")
-    else:
-        opciones_precio_buscar = set()
-        for cat in st.session_state.catalogos:
-            for col in cat['columnas_precio'].keys():
-                opciones_precio_buscar.add(col)
-        
-        col_precio_buscar = st.selectbox(
-            "💰 Selecciona la columna de precio para mostrar:", 
-            sorted(list(opciones_precio_buscar)), 
-            key="precio_busqueda_tab",
-            help="Selecciona qué precio mostrar (P. IR, P. BOX, P. VIP)"
-        )
-        
-        termino_busqueda = st.text_input(
-            "🔎 Buscar producto:", 
-            placeholder="Ej: audífonos bluetooth, cargador usb-c, Xiaomi pad, laptop",
-            help="Busca por cualquier palabra en la descripción del producto"
-        )
-        
-        if termino_busqueda and len(termino_busqueda) >= 3:
-            with st.spinner(f"🔍 Buscando '{termino_busqueda}' en todos los catálogos..."):
-                resultados = buscar_por_descripcion_completa(
-                    st.session_state.catalogos, 
-                    termino_busqueda, 
-                    st.session_state.stocks,
-                    st.session_state.tipo_cotizacion,
-                    col_precio_buscar
-                )
-            
-            if not resultados:
-                st.warning(f"❌ No se encontraron productos con '{termino_busqueda}'")
-            else:
-                st.success(f"✅ Encontrados {len(resultados)} productos")
-                
-                for idx, prod in enumerate(resultados):
-                    if prod['stock_total'] > 0:
-                        card_border = "4px solid #4CAF50"
-                        stock_texto = f"✅ Stock disponible: {prod['stock_total']}"
-                    else:
-                        card_border = "4px solid #F44336"
-                        stock_texto = "❌ Sin stock"
-                    
-                    precio_texto = "💰 Sin precio disponible"
-                    if prod['precio'] > 0:
-                        precio_texto = f"💰 {col_precio_buscar}: S/. {prod['precio']:,.2f}"
-                    
-                    stock_badge = obtener_badge_origen_detallado(prod, st.session_state.tipo_cotizacion)
-                    
-                    with st.container():
-                        st.markdown(f"""
-                        <div class="product-card" style="border-left: {card_border};">
-                            <div>
-                                <strong style="font-size: 1rem;">📦 {prod['sku']}</strong><br>
-                                <span style="font-size: 0.85rem; color: #666;">{prod['descripcion']}</span><br>
-                                <span style="font-size: 0.75rem; color: #999;">📁 Catálogo: {prod['catalogo']}</span><br>
-                                <span style="font-size: 0.85rem; font-weight: 500;">{stock_texto}</span><br>
-                                <div style="margin-top: 6px;">{stock_badge}</div>
-                                <div style="margin-top: 8px;"><span style="font-size: 0.9rem; font-weight: 700; color: #2E7D32;">{precio_texto}</span></div>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        col1, col2, col3 = st.columns([2, 1, 1])
-                        with col1:
-                            cantidad_seleccionada = st.number_input(
-                                "Cantidad", 
-                                min_value=0, 
-                                max_value=prod['stock_total'] if prod['stock_total'] > 0 else 999,
-                                value=st.session_state.carrito_temporal.get(prod['sku'], 0),
-                                step=1,
-                                key=f"cant_{prod['sku']}_{idx}",
-                                label_visibility="collapsed"
-                            )
-                        with col2:
-                            if st.button("➕ Agregar", key=f"add_{prod['sku']}_{idx}", use_container_width=True):
-                                if cantidad_seleccionada > 0:
-                                    if prod['stock_total'] > 0 or cantidad_seleccionada <= prod['stock_total']:
-                                        st.session_state.carrito_temporal[prod['sku']] = cantidad_seleccionada
-                                        st.toast(f"✅ Agregado: {cantidad_seleccionada}x {prod['sku']}", icon="✅")
-                                    else:
-                                        st.warning(f"⚠️ Stock insuficiente para {prod['sku']}")
-                                    st.rerun()
-                        with col3:
-                            if prod['sku'] in st.session_state.carrito_temporal:
-                                if st.button("🗑️", key=f"remove_{prod['sku']}_{idx}", help="Eliminar"):
-                                    del st.session_state.carrito_temporal[prod['sku']]
-                                    st.toast(f"❌ Eliminado: {prod['sku']}", icon="❌")
-                                    st.rerun()
-                        
-                        st.divider()
-        
-        if st.session_state.carrito_temporal:
-            st.markdown("---")
-            st.markdown("### 🛒 Productos seleccionados para cotizar")
-            st.caption("Estos productos serán transferidos a la pestaña de Cotización")
-            
-            items_carrito = []
-            total_carrito = 0
-            
-            for sku, cantidad in st.session_state.carrito_temporal.items():
-                descripcion = sku
-                precio_unitario = 0
-                
-                for cat in st.session_state.catalogos:
-                    df = cat['df']
-                    sku_limpio = limpiar_sku(sku)
-                    df_sku_limpio = df[cat['col_sku']].apply(limpiar_sku)
-                    mask = df_sku_limpio == sku_limpio
-                    if mask.any():
-                        descripcion = str(df[mask].iloc[0][cat['col_desc']])[:80]
-                        col_precio_real = cat['columnas_precio'].get(col_precio_buscar)
-                        if col_precio_real and col_precio_real in df.columns:
-                            precio_unitario = corregir_numero(df[mask].iloc[0][col_precio_real])
-                        break
-                
-                subtotal = precio_unitario * cantidad
-                total_carrito += subtotal
-                
-                items_carrito.append({
-                    'SKU': sku,
-                    'Descripción': descripcion,
-                    'Cantidad': cantidad,
-                    'Precio Unit.': f"S/. {precio_unitario:,.2f}" if precio_unitario > 0 else "Sin precio",
-                    'Subtotal': f"S/. {subtotal:,.2f}" if precio_unitario > 0 else "S/. 0.00"
-                })
-            
-            df_carrito = pd.DataFrame(items_carrito)
-            st.dataframe(df_carrito, use_container_width=True, hide_index=True)
-            
-            col_b1, col_b2, col_b3 = st.columns([1, 1, 2])
-            with col_b1:
-                if st.button("🗑️ Limpiar carrito", use_container_width=True):
-                    st.session_state.carrito_temporal = {}
-                    st.rerun()
-            
-            with col_b2:
-                if st.button("📋 Transferir a Cotización", use_container_width=True, type="primary"):
-                    st.session_state.skus_transferidos = st.session_state.carrito_temporal.copy()
-                    st.session_state.carrito_temporal = {}
-                    st.success("✅ Productos transferidos a la pestaña COTIZACIÓN")
-                    st.info("👉 Ve a la pestaña '📦 Cotización' y presiona PROCESAR")
-                    st.balloons()
-            
-            with col_b3:
-                st.markdown(f"<div style='text-align: right; padding: 8px; background: #E8F5E9; border-radius: 10px;'><strong>Total productos: {len(st.session_state.carrito_temporal)}</strong><br>Unidades: {sum(st.session_state.carrito_temporal.values())}<br><strong style='color: #2E7D32;'>Total: S/. {total_carrito:,.2f}</strong></div>", unsafe_allow_html=True)
-
-# ---------- TAB DASHBOARD ----------
-with tab_dashboard:
-    st.markdown("### 📊 Dashboard")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("📄 Cotizaciones", st.session_state.get('cotizaciones', 0))
-    col2.metric("🌿 Productos", st.session_state.get('total_prods', 0))
-    col3.metric("📚 Catálogos", len(st.session_state.get('catalogos', [])))
-    
-    st.markdown("---")
-    st.markdown("### 📋 Catálogos Cargados")
-    for cat in st.session_state.get('catalogos', []):
-        st.markdown(f"- {cat['nombre']} *({cat.get('tipo', 'general').replace('_', ' ')})*")
-    
-    if st.session_state.get('carrito_temporal'):
-        st.markdown("---")
-        st.markdown("### 🛒 Carrito actual")
-        st.markdown(f"- {len(st.session_state.carrito_temporal)} productos seleccionados")
-        st.markdown(f"- {sum(st.session_state.carrito_temporal.values())} unidades totales")
-    
-    st.markdown("---")
-    st.markdown("### 🎯 Reglas actuales")
-    if st.session_state.tipo_cotizacion == ModoCotizacion.XIAOMI:
-        st.markdown("🔋 **XIAOMI** → APRI.004 + YESSICA")
-        st.markdown("📌 **Nota:** Si un producto tiene stock en APRI.001 (stock general), se mostrará como nota informativa")
-    else:
-        st.markdown("💼 **GENERAL** → Columna **DISPONIBLE** = Stock real")
-        st.markdown("   - En stock (Total) - Comprometido - Solicitado = Disponible")
-
-st.markdown("---")
-st.markdown("*💚 QTC Smart Sales Pro - Sistema Profesional de Cotización*")
