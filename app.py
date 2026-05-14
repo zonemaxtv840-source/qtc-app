@@ -8,7 +8,7 @@ from PIL import Image
 import warnings
 from typing import List, Dict, Optional, Tuple
 from difflib import SequenceMatcher
- ============================================
+#============================================
 # CONFIGURACIÓN DE SUPABASE
 # ============================================
 
