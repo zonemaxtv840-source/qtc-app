@@ -1,4 +1,4 @@
-# app.py - QTC Smart Sales Pro v4.1
+# app.py - QTC Smart Sales Pro v4.2 (Con diagnóstico en Modo Masivo)
 import streamlit as st
 import pandas as pd
 import re
@@ -171,6 +171,29 @@ st.markdown("""
         margin: 0.5rem 0;
         border: 1px solid #FFE0B2;
     }
+    
+    .error-sku-card {
+        background: #FFEBEE;
+        border-radius: 16px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-left: 5px solid #f44336;
+    }
+    
+    .diagnostico-box {
+        background: #FFF3E0;
+        padding: 8px;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+    
+    .match-found {
+        background: #E8F5E9;
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 0.5rem 0;
+        border-left: 4px solid #4CAF50;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -253,8 +276,12 @@ def detectar_columnas_precio(df: pd.DataFrame) -> Dict:
             if key in precios:
                 break
     
-    if not precios and 'PRECIO' in [str(c).upper() for c in df.columns]:
-        precios['P. VIP'] = 'PRECIO'
+    # CORRECCIÓN: Si no encontró columnas específicas pero hay 'PRECIO'
+    if not precios and any('PRECIO' in str(c).upper() for c in df.columns):
+        for col in df.columns:
+            if 'PRECIO' in str(col).upper():
+                precios['P. VIP'] = col
+                break
     
     return precios
 
@@ -594,6 +621,8 @@ if 'stocks' not in st.session_state:
     st.session_state.stocks = []
 if 'carrito' not in st.session_state:
     st.session_state.carrito = []
+if 'resultados_bulk' not in st.session_state:
+    st.session_state.resultados_bulk = []
 
 # ============================================
 # LOGIN
@@ -736,11 +765,10 @@ with st.sidebar:
 
 tab1, tab2, tab3 = st.tabs(["📦 MODO MASIVO (Bulk)", "🔍 BÚSQUEDA INTELIGENTE", "🛒 CARRITO DE COTIZACIÓN"])
 
-# ========== TAB 1: MODO MASIVO (Bulk) - CORREGIDO ==========
+# ========== TAB 1: MODO MASIVO CON DIAGNÓSTICO ==========
 with tab1:
     st.markdown("### 📦 Ingresa productos en formato masivo")
     st.caption("Formato: `SKU:CANTIDAD` (uno por línea)")
-    st.info("💡 **Ejemplo:** RN0200065BK8:10 (buscará SKU equivalente si no tiene precio propio)")
     
     texto_bulk = st.text_area(
         "",
@@ -749,18 +777,9 @@ with tab1:
     )
     
     col_b1, col_b2 = st.columns([1, 1])
-    
-    # Botón PROCESAR
     with col_b1:
         if st.button("🚀 Procesar lista", type="primary", use_container_width=True):
-            if not texto_bulk:
-                st.warning("⚠️ Ingresa productos en el área de texto")
-            elif not st.session_state.catalogos:
-                st.warning("⚠️ Carga catálogos de precios en el sidebar")
-            elif not st.session_state.stocks:
-                st.warning("⚠️ Carga reportes de stock en el sidebar")
-            else:
-                # Parsear pedidos
+            if texto_bulk and st.session_state.catalogos and st.session_state.stocks:
                 pedidos = []
                 for line in texto_bulk.strip().split('\n'):
                     line = line.strip()
@@ -773,24 +792,18 @@ with tab1:
                                 if cant > 0:
                                     pedidos.append({'sku': sku, 'cantidad': cant})
                             except:
-                                st.warning(f"⚠️ Formato incorrecto: {line}")
+                                pass
                 
-                if not pedidos:
-                    st.warning("⚠️ No se encontraron productos válidos")
-                else:
-                    with st.spinner("🔍 Procesando lista..."):
+                if pedidos:
+                    with st.spinner("Procesando y diagnosticando..."):
                         resultados_procesados = []
                         encontrados = 0
                         con_precio = 0
                         con_stock = 0
+                        errores_sku = []
                         
                         for pedido in pedidos:
-                            prod = buscar_producto(
-                                pedido['sku'], 
-                                st.session_state.catalogos, 
-                                st.session_state.stocks, 
-                                st.session_state.precio_key
-                            )
+                            prod = buscar_producto(pedido['sku'], st.session_state.catalogos, st.session_state.stocks, st.session_state.precio_key)
                             
                             if prod['tiene_precio']:
                                 encontrados += 1
@@ -799,25 +812,24 @@ with tab1:
                             if prod['tiene_stock']:
                                 con_stock += 1
                             
-                            # Determinar cantidad a cotizar y estado
+                            # Detectar error de SKU (tiene stock pero no precio)
+                            if prod['tiene_stock'] and not prod['tiene_precio']:
+                                errores_sku.append(prod)
+                            
                             if prod['tiene_precio'] and prod['tiene_stock']:
                                 cantidad_cotizar = min(pedido['cantidad'], prod['stock_total'])
+                                estado = "✅ OK"
                                 if cantidad_cotizar < pedido['cantidad']:
-                                    estado = f"⚠️ Stock insuficiente (solo {cantidad_cotizar}/{pedido['cantidad']})"
-                                else:
-                                    estado = "✅ OK - Disponible"
-                            elif prod['tiene_stock'] and not prod['tiene_precio']:
+                                    estado = f"⚠️ Stock insuficiente ({cantidad_cotizar}/{pedido['cantidad']})"
+                            elif not prod['tiene_precio'] and prod['tiene_stock']:
                                 cantidad_cotizar = 0
-                                if prod.get('sku_equivalente'):
-                                    estado = f"⚠️ ERROR DE SKU - Usar {prod['sku_equivalente']} en su lugar"
-                                else:
-                                    estado = "⚠️ ERROR DE SKU - Stock sin precio"
-                            elif prod['tiene_precio'] and not prod['tiene_stock']:
+                                estado = "⚠️ Stock disponible - SIN PRECIO (Error de SKU)"
+                            elif not prod['tiene_precio']:
                                 cantidad_cotizar = 0
-                                estado = "❌ Sin stock disponible"
+                                estado = "❌ Sin precio"
                             else:
                                 cantidad_cotizar = 0
-                                estado = "❌ No encontrado"
+                                estado = "❌ Sin stock"
                             
                             resultados_procesados.append({
                                 **prod,
@@ -826,10 +838,9 @@ with tab1:
                                 'estado': estado
                             })
                         
-                        # Guardar en session_state
                         st.session_state.resultados_bulk = resultados_procesados
+                        st.session_state.errores_sku_bulk = errores_sku
                         
-                        # Mostrar contadores
                         total_ingresados = len(pedidos)
                         total_encontrados = encontrados
                         total_con_stock = con_stock
@@ -846,40 +857,17 @@ with tab1:
                         </div>
                         """, unsafe_allow_html=True)
                         
-                        # Mostrar errores de SKU destacados
-                        errores_sku = [p for p in resultados_procesados if p['tiene_stock'] and not p['tiene_precio']]
-                        if errores_sku:
-                            st.markdown("""
-                            <div style="background:#FFEBEE;border-radius:12px;padding:1rem;margin:1rem 0;border-left:4px solid #f44336;">
-                                <strong style="color:#c62828;">⚠️ ERRORES DE SKU DETECTADOS</strong>
-                                <span style="font-size:0.8rem;margin-left:8px;">Productos con stock pero sin precio en catálogos</span>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            for err in errores_sku:
-                                if err.get('sku_equivalente'):
-                                    st.markdown(f"""
-                                    <div style="background:white;border-radius:8px;padding:0.5rem;margin:0.25rem 0;border:1px solid #ffcdd2;">
-                                        <strong>📦 {err['sku']}</strong> → Stock: {err['stock_total']} unidades<br>
-                                        💡 Sugerencia: Usar <code>{err['sku_equivalente']}</code> (coincidencia {err['similitud_equivalente']:.0f}%)
-                                    </div>
-                                    """, unsafe_allow_html=True)
-                                else:
-                                    st.markdown(f"""
-                                    <div style="background:white;border-radius:8px;padding:0.5rem;margin:0.25rem 0;border:1px solid #ffcdd2;">
-                                        <strong>📦 {err['sku']}</strong> → Stock: {err['stock_total']} unidades<br>
-                                        ⚠️ No se encontró SKU equivalente
-                                    </div>
-                                    """, unsafe_allow_html=True)
-                        
                         st.success(f"✅ Procesados {len(pedidos)} productos")
                         st.rerun()
+                else:
+                    st.warning("No se encontraron productos válidos")
+            else:
+                st.warning("Carga catálogos y stock primero")
     
-    # Botón AGREGAR AL CARRITO
     with col_b2:
         if st.button("📋 Agregar válidos al carrito", use_container_width=True):
-            if hasattr(st.session_state, 'resultados_bulk') and st.session_state.resultados_bulk:
+            if hasattr(st.session_state, 'resultados_bulk'):
                 agregados = 0
-                no_agregados = 0
                 for prod in st.session_state.resultados_bulk:
                     if prod['cantidad_cotizar'] > 0 and prod['tiene_precio']:
                         item_carrito = {
@@ -894,64 +882,40 @@ with tab1:
                         }
                         st.session_state.carrito.append(item_carrito)
                         agregados += 1
-                    else:
-                        no_agregados += 1
-                
-                if agregados > 0:
-                    st.success(f"✅ Agregados {agregados} productos al carrito")
-                if no_agregados > 0:
-                    st.info(f"ℹ️ {no_agregados} productos no se agregaron (sin stock o sin precio)")
+                st.success(f"✅ Agregados {agregados} productos al carrito")
                 st.rerun()
-            else:
-                st.warning("⚠️ Primero procesa una lista de productos")
     
-    # Mostrar resultados del procesamiento
-    if hasattr(st.session_state, 'resultados_bulk') and st.session_state.resultados_bulk:
+    # MOSTRAR DIAGNÓSTICO DE ERRORES DE SKU (igual que en Tab 2)
+    if hasattr(st.session_state, 'errores_sku_bulk') and st.session_state.errores_sku_bulk:
         st.markdown("---")
-        st.markdown("### 📊 Resultados del procesamiento")
+        st.markdown("## 🔍 DIAGNÓSTICO DE PRODUCTOS CON STOCK SIN PRECIO")
+        st.info("💡 Estos productos tienen stock pero no se encontraron en los catálogos de precios. Se han detectado SKU equivalentes o alternativas similares:")
         
-        for idx, prod in enumerate(st.session_state.resultados_bulk):
+        for prod in st.session_state.errores_sku_bulk:
             badge_stock = construir_badge_stock(prod['stock_yessica'], prod['stock_apri004'], prod['stock_apri001'])
             
-            # Determinar color de fondo según estado
-            if "✅" in prod['estado']:
-                bg_color = "#E8F5E9"
-                border_color = "#4CAF50"
-            elif "⚠️" in prod['estado']:
-                bg_color = "#FFF3E0"
-                border_color = "#FF9800"
-            else:
-                bg_color = "#FFEBEE"
-                border_color = "#f44336"
-            
             st.markdown(f"""
-            <div style="background:{bg_color}; border-radius:12px; padding:0.75rem; margin-bottom:0.75rem; border-left:4px solid {border_color};">
-                <div style="display:flex; justify-content:space-between; align-items:start;">
-                    <div>
-                        <strong>📦 {prod['sku']}</strong>
-                        <span style="font-size:0.7rem; color:#666; margin-left:8px;">{prod['estado']}</span>
-                        <br>
-                        <span style="font-size:0.8rem;">{prod['descripcion'][:80]}</span>
-                    </div>
-                    <div style="text-align:right;">
-                        <div>💰 <strong>S/ {prod['precio']:,.2f}</strong></div>
-                        <div>📦 Stock: <strong>{prod['stock_total']}</strong></div>
-                    </div>
+            <div class="error-sku-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div><span style="background:#f44336;color:white;padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:bold;">⚠️ PROBLEMA DETECTADO - ERROR DE SKU</span></div>
                 </div>
-                <div style="margin-top:8px;">
-                    {badge_stock}
+                <div style="margin-top:12px;">
+                    <strong>📦 SKU BUSCADO:</strong> {prod['sku']}<br>
+                    <strong>📝 Descripción:</strong> {prod['descripcion']}<br>
+                    <strong>📦 Stock disponible:</strong> {prod['stock_total']} unidades<br>
+                    <div style="margin-top:8px;">{badge_stock}</div>
                 </div>
-                <div style="margin-top:8px; font-size:0.8rem;">
-                    📋 Solicitado: {prod['cantidad_solicitada']} | 
-                    ✅ A cotizar: <strong>{prod['cantidad_cotizar']}</strong>
+                <div class="diagnostico-box">
+                    <strong>🔍 Análisis:</strong> Este SKU tiene stock pero no existe en los catálogos de precios.
                 </div>
             </div>
             """, unsafe_allow_html=True)
             
-            # Mostrar SKU equivalente si existe y es un error
-            if prod.get('sku_equivalente') and prod['tiene_stock'] and not prod['tiene_precio']:
-                # Buscar precio del equivalente
+            # Mostrar SKU equivalente encontrado
+            if prod.get('sku_equivalente'):
+                # Buscar precio y descripción del equivalente
                 precio_eq = 0
+                desc_eq = ""
                 for cat in st.session_state.catalogos:
                     df = cat['df']
                     df_sku = df[cat['col_sku']].astype(str).str.strip().str.upper()
@@ -961,17 +925,84 @@ with tab1:
                         if st.session_state.precio_key in cat['precios']:
                             col_precio = cat['precios'][st.session_state.precio_key]
                             precio_eq = corregir_numero(row[col_precio])
+                        if cat['col_desc']:
+                            desc_eq = str(row[cat['col_desc']])[:100]
                         break
                 
                 st.markdown(f"""
-                <div style="background:#E8F5E9; border-radius:8px; padding:0.5rem; margin-top:0.5rem; font-size:0.8rem;">
-                    💡 <strong>SKU equivalente sugerido:</strong> <code>{prod['sku_equivalente']}</code> 
-                    (coincidencia {prod['similitud_equivalente']:.0f}%) - Precio: S/ {precio_eq:,.2f}
+                <div class="match-found">
+                    <strong style="color:#2E7D32;">💡 SE ENCONTRÓ EL ARTÍCULO CON MISMA DESCRIPCIÓN PERO OTRO SKU</strong>
+                    <div style="margin-top:10px;">
+                        <strong>SKU equivalente:</strong> <code>{prod['sku_equivalente']}</code><br>
+                        <strong>Descripción:</strong> {desc_eq}<br>
+                        <strong>Precio {st.session_state.precio_key}:</strong> S/ {precio_eq:,.2f}<br>
+                        <strong>Coincidencia:</strong> {prod['similitud_equivalente']:.0f}%
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
+                
+                col_eq1, col_eq2 = st.columns(2)
+                with col_eq1:
+                    if st.button(f"➕ Usar SKU equivalente ({prod['sku_equivalente']})", key=f"bulk_use_eq_{prod['sku']}"):
+                        # Buscar el producto equivalente completo
+                        prod_eq = buscar_producto(prod['sku_equivalente'], st.session_state.catalogos, st.session_state.stocks, st.session_state.precio_key)
+                        if prod_eq['tiene_precio'] and prod_eq['tiene_stock']:
+                            item_carrito = {
+                                'sku': prod['sku_equivalente'],
+                                'descripcion': desc_eq,
+                                'cantidad': 1,
+                                'precio': precio_eq,
+                                'total': precio_eq,
+                                'stock_yessica': prod_eq['stock_yessica'],
+                                'stock_apri004': prod_eq['stock_apri004'],
+                                'stock_apri001': prod_eq['stock_apri001']
+                            }
+                            st.session_state.carrito.append(item_carrito)
+                            st.success(f"✅ Agregado {prod['sku_equivalente']} al carrito")
+                            st.rerun()
+                        else:
+                            st.warning(f"⚠️ El SKU {prod['sku_equivalente']} no tiene stock disponible.")
+                
+                with col_eq2:
+                    if st.button(f"📝 Seguir con SKU original ({prod['sku']}) sin precio", key=f"bulk_use_orig_{prod['sku']}"):
+                        st.warning(f"⚠️ El SKU {prod['sku']} no tiene precio. No se puede agregar al carrito.")
+            
+            # Mostrar alternativas si no hay equivalente exacto
+            elif prod.get('alternativas') and len(prod['alternativas']) > 0:
+                st.markdown('<div style="background:#FFF8E1;border-radius:12px;padding:0.75rem;margin:0.5rem 0;"><strong>💡 PRODUCTOS SIMILARES ENCONTRADOS:</strong></div>', unsafe_allow_html=True)
+                for alt in prod['alternativas'][:3]:
+                    badge_alt = construir_badge_stock(alt['stock_yessica'], alt['stock_apri004'], alt['stock_apri001'])
+                    st.markdown(f"""
+                    <div class="alternativa-item">
+                        <strong>📦 {alt['sku']}</strong>
+                        <span style="background:#FF9800;color:white;padding:2px 6px;border-radius:10px;font-size:0.6rem;">{alt['similitud']:.0f}% coincidencia</span><br>
+                        <span style="font-size:0.75rem;">{alt['descripcion'][:80]}</span>
+                        <div>💰 Precio: S/ {alt['precio']:,.2f} | 📦 Stock: {alt['stock_total']}</div>
+                        <div>{badge_alt}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    if alt['tiene_precio'] and alt['tiene_stock']:
+                        if st.button(f"➕ Agregar {alt['sku']} al carrito", key=f"bulk_alt_{prod['sku']}_{alt['sku']}"):
+                            item_carrito = {
+                                'sku': alt['sku'],
+                                'descripcion': alt['descripcion'],
+                                'cantidad': 1,
+                                'precio': alt['precio'],
+                                'total': alt['precio'],
+                                'stock_yessica': alt['stock_yessica'],
+                                'stock_apri004': alt['stock_apri004'],
+                                'stock_apri001': alt['stock_apri001']
+                            }
+                            st.session_state.carrito.append(item_carrito)
+                            st.success(f"✅ Agregado {alt['sku']} al carrito")
+                            st.rerun()
+            else:
+                st.info("No se encontraron SKU alternativos con la misma descripción.")
+            
+            st.divider()
 
-
-# ========== TAB 2: BÚSQUEDA INTELIGENTE CON DIAGNÓSTICO ==========
+# ========== TAB 2: BÚSQUEDA INTELIGENTE ==========
 with tab2:
     st.markdown("### 🔍 Buscar productos por SKU o descripción")
     st.caption("Escribe parte del nombre, modelo o SKU del producto")
@@ -1083,19 +1114,23 @@ with tab2:
                             col_eq1, col_eq2 = st.columns(2)
                             with col_eq1:
                                 if st.button(f"➕ Usar SKU equivalente ({prod['sku_equivalente']})", key=f"use_eq_{prod['sku']}"):
-                                    item_carrito = {
-                                        'sku': prod['sku_equivalente'],
-                                        'descripcion': desc_eq,
-                                        'cantidad': 1,
-                                        'precio': precio_eq,
-                                        'total': precio_eq,
-                                        'stock_yessica': 0,
-                                        'stock_apri004': prod['stock_apri004'],
-                                        'stock_apri001': prod['stock_apri001']
-                                    }
-                                    st.session_state.carrito.append(item_carrito)
-                                    st.success(f"✅ Agregado {prod['sku_equivalente']} al carrito")
-                                    st.rerun()
+                                    prod_eq = buscar_producto(prod['sku_equivalente'], st.session_state.catalogos, st.session_state.stocks, st.session_state.precio_key)
+                                    if prod_eq['tiene_precio'] and prod_eq['tiene_stock']:
+                                        item_carrito = {
+                                            'sku': prod['sku_equivalente'],
+                                            'descripcion': desc_eq,
+                                            'cantidad': 1,
+                                            'precio': precio_eq,
+                                            'total': precio_eq,
+                                            'stock_yessica': prod_eq['stock_yessica'],
+                                            'stock_apri004': prod_eq['stock_apri004'],
+                                            'stock_apri001': prod_eq['stock_apri001']
+                                        }
+                                        st.session_state.carrito.append(item_carrito)
+                                        st.success(f"✅ Agregado {prod['sku_equivalente']} al carrito")
+                                        st.rerun()
+                                    else:
+                                        st.warning(f"⚠️ El SKU {prod['sku_equivalente']} no tiene stock disponible.")
                             with col_eq2:
                                 if st.button(f"📝 Seguir con SKU original ({prod['sku']}) sin precio", key=f"use_orig_{prod['sku']}"):
                                     st.warning(f"⚠️ El SKU {prod['sku']} no tiene precio. No se puede agregar al carrito.")
@@ -1114,6 +1149,22 @@ with tab2:
                                     <div>{badge_alt}</div>
                                 </div>
                                 """, unsafe_allow_html=True)
+                                
+                                if alt['tiene_precio'] and alt['tiene_stock']:
+                                    if st.button(f"➕ Agregar {alt['sku']} al carrito", key=f"alt_{prod['sku']}_{alt['sku']}"):
+                                        item_carrito = {
+                                            'sku': alt['sku'],
+                                            'descripcion': alt['descripcion'],
+                                            'cantidad': 1,
+                                            'precio': alt['precio'],
+                                            'total': alt['precio'],
+                                            'stock_yessica': alt['stock_yessica'],
+                                            'stock_apri004': alt['stock_apri004'],
+                                            'stock_apri001': alt['stock_apri001']
+                                        }
+                                        st.session_state.carrito.append(item_carrito)
+                                        st.success(f"✅ Agregado {alt['sku']} al carrito")
+                                        st.rerun()
                         else:
                             st.info("No se encontraron SKU alternativos con la misma descripción.")
                     
@@ -1256,4 +1307,4 @@ with tab3:
 # ============================================
 
 st.markdown("---")
-st.markdown('<div class="footer">⚡ QTC Smart Sales Pro v4.1 | Con detección de SKU equivalentes</div>', unsafe_allow_html=True)
+st.markdown('<div class="footer">⚡ QTC Smart Sales Pro v4.2 | Con diagnóstico en Modo Masivo</div>', unsafe_allow_html=True)
