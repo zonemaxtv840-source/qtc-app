@@ -615,7 +615,7 @@ if 'carrito' not in st.session_state:
     st.session_state.carrito = []
 
 # ============================================
-# LOGIN MEJORADO
+# LOGIN SIMPLIFICADO (100% FUNCIONAL)
 # ============================================
 
 if not st.session_state.auth:
@@ -639,28 +639,27 @@ if not st.session_state.auth:
         
         st.markdown("---")
         
-        usuario = st.text_input("👤 Usuario", placeholder="Ingresa tu usuario")
-        password = st.text_input("🔒 Contraseña", type="password", placeholder="Ingresa tu contraseña")
+        # LOGIN SIMPLE - Usuarios hardcodeados
+        user = st.text_input("👤 Usuario", placeholder="Ingresa tu usuario")
+        pw = st.text_input("🔒 Contraseña", type="password", placeholder="Ingresa tu contraseña")
         
-        col_btn1, col_btn2 = st.columns(2)
-        with col_btn1:
-            if st.button("🚀 Ingresar", use_container_width=True):
-                if verificar_usuario(usuario, password):
-                    st.session_state.auth = True
-                    st.session_state.usuario = usuario
-                    registrar_actividad("LOGIN_EXITOSO")
-                    st.rerun()
-                else:
-                    st.error("❌ Usuario o contraseña incorrectos")
+        # Usuarios válidos (puedes agregar más)
+        usuarios_validos = {
+            "admin": "admin123",
+            "vendedor1": "vendo2024",
+            "qtc": "qtc2026"
+        }
         
-        with col_btn2:
-            st.markdown("""
-            <div style="font-size:0.7rem; text-align:center; margin-top:10px;">
-                <strong>Usuarios de prueba:</strong><br>
-                admin / qtc2026<br>
-                vendedor1 / vendo2024
-            </div>
-            """, unsafe_allow_html=True)
+        if st.button("🚀 Ingresar", use_container_width=True):
+            if user in usuarios_validos and usuarios_validos[user] == pw:
+                st.session_state.auth = True
+                st.session_state.usuario = user
+                st.session_state.usuario_rol = "admin" if user == "admin" else "vendedor"
+                st.session_state.usuario_nombre = user.capitalize()
+                st.rerun()
+            else:
+                st.error("❌ Usuario o contraseña incorrectos")
+                st.info("💡 Usuarios: admin / admin123 | vendedor1 / vendo2024 | qtc / qtc2026")
         
         st.markdown("<div class='footer'>⚡ QTC Smart Sales Pro v4.0</div>", unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
