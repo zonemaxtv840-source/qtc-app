@@ -1149,7 +1149,6 @@ with tab3:
                 st.rerun()
 
 # ========== TAB 4: EXPLORADOR DE DATOS ==========
-tab4 = st.tabs(["📦 MODO MASIVO (Bulk)", "🔍 BÚSQUEDA INTELIGENTE", "🛒 CARRITO DE COTIZACIÓN", "📊 EXPLORADOR DE DATOS"])[3]
 
 with tab4:
     st.markdown("### 📊 Explorador de Datos")
