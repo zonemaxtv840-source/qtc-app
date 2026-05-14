@@ -765,96 +765,130 @@ with st.sidebar:
             st.session_state.carrito = []
             st.rerun()
 
-    # ============================================
-    # PANEL DE ADMINISTRACIÓN (solo para admins)
+        # ============================================
+    # PANEL DE ADMINISTRACIÓN COMPLETO
     # ============================================
     
     st.markdown("---")
     
     # Verificar si el usuario es administrador
     usuario_rol = st.session_state.get('usuario_rol', 'vendedor')
+    usuario_actual = st.session_state.get('usuario', '')
     
     if usuario_rol == 'admin':
-        st.markdown("### 👥 Administración")
+        st.markdown("### 👥 Administración de Usuarios")
         
-        # Expander para crear nuevo usuario
-        with st.expander("➕ Crear nuevo usuario"):
-            nuevo_user = st.text_input("Usuario", placeholder="ej: juan_perez", key="new_user")
-            nuevo_pass = st.text_input("Contraseña", type="password", placeholder="******", key="new_pass")
-            nuevo_nombre = st.text_input("Nombre completo", placeholder="Juan Pérez", key="new_nombre")
-            nuevo_rol = st.selectbox("Rol", ["vendedor", "admin"], key="new_rol")
-            
-            col_admin1, col_admin2 = st.columns(2)
-            with col_admin1:
-                if st.button("✅ Crear Usuario", use_container_width=True, key="btn_crear_user"):
-                    if nuevo_user and nuevo_pass:
+        # Pestañas para administración
+        tab_admin1, tab_admin2, tab_admin3 = st.tabs(["➕ Crear", "📋 Listar", "📊 Estadísticas"])
+        
+        # ========== TAB 1: CREAR USUARIO ==========
+        with tab_admin1:
+            with st.form("form_crear_usuario"):
+                st.markdown("#### Nuevo Usuario")
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    nuevo_username = st.text_input("Usuario *", placeholder="ej: juan_perez")
+                    nuevo_password = st.text_input("Contraseña *", type="password", placeholder="******")
+                with col2:
+                    nuevo_nombre = st.text_input("Nombre completo", placeholder="Juan Pérez")
+                    nuevo_rol = st.selectbox("Rol", ["vendedor", "admin"])
+                
+                submitted = st.form_submit_button("✅ Crear Usuario", use_container_width=True)
+                
+                if submitted:
+                    if nuevo_username and nuevo_password:
                         try:
                             # Verificar si ya existe
-                            existe = supabase.table('usuarios').select("*").eq('username', nuevo_user).execute()
+                            existe = supabase.table('usuarios').select("*").eq('username', nuevo_username).execute()
                             
                             if existe.data:
-                                st.error(f"❌ El usuario '{nuevo_user}' ya existe")
+                                st.error(f"❌ El usuario '{nuevo_username}' ya existe")
                             else:
-                                # Crear nuevo usuario
+                                # Crear usuario
                                 supabase.table('usuarios').insert({
-                                    "username": nuevo_user,
-                                    "password": nuevo_pass,
-                                    "nombre": nuevo_nombre or nuevo_user,
+                                    "username": nuevo_username,
+                                    "password": nuevo_password,
+                                    "nombre": nuevo_nombre or nuevo_username,
                                     "rol": nuevo_rol,
                                     "activo": True
                                 }).execute()
-                                st.success(f"✅ Usuario '{nuevo_user}' creado exitosamente")
+                                st.success(f"✅ Usuario '{nuevo_username}' creado exitosamente")
                                 st.rerun()
                         except Exception as e:
                             st.error(f"Error: {e}")
                     else:
-                        st.warning("⚠️ Completa usuario y contraseña")
-            
-            with col_admin2:
-                if st.button("🔄 Actualizar lista", use_container_width=True, key="btn_refresh"):
-                    st.rerun()
+                        st.warning("⚠️ Usuario y contraseña son obligatorios")
         
-        # Expander para listar y gestionar usuarios
-        with st.expander("📋 Gestionar usuarios"):
+        # ========== TAB 2: LISTAR USUARIOS ==========
+        with tab_admin2:
+            st.markdown("#### Usuarios Registrados")
+            
             try:
-                usuarios_db = supabase.table('usuarios').select("id,username,nombre,rol,activo").execute()
+                usuarios_db = supabase.table('usuarios').select("*").order('id').execute()
                 
-                for u in usuarios_db.data:
-                    with st.container():
-                        col_u1, col_u2, col_u3 = st.columns([3, 2, 1])
-                        
-                        with col_u1:
-                            st.markdown(f"**@{u['username']}**")
-                            st.caption(f"{u['nombre'] or 'Sin nombre'}")
-                        
-                        with col_u2:
-                            rol_badge = "🔴 Admin" if u['rol'] == 'admin' else "🟢 Vendedor"
-                            st.markdown(f"{rol_badge}")
-                        
-                        with col_u3:
-                            # No permitir eliminar al propio admin
-                            if u['username'] != st.session_state.get('usuario'):
-                                if st.button("🗑️", key=f"del_user_{u['id']}"):
-                                    supabase.table('usuarios').delete().eq('id', u['id']).execute()
-                                    st.success(f"✅ Usuario {u['username']} eliminado")
-                                    st.rerun()
-                        
-                        st.divider()
+                if usuarios_db.data:
+                    for u in usuarios_db.data:
+                        with st.container():
+                            col1, col2, col3, col4 = st.columns([2, 2, 1.5, 1])
+                            
+                            with col1:
+                                st.markdown(f"**@{u['username']}**")
+                                st.caption(f"{u.get('nombre', 'Sin nombre')}")
+                            
+                            with col2:
+                                rol_text = "🔴 Administrador" if u['rol'] == 'admin' else "🟢 Vendedor"
+                                st.markdown(rol_text)
+                            
+                            with col3:
+                                st.caption(f"ID: {u['id']}")
+                            
+                            with col4:
+                                # No permitir eliminar al propio usuario
+                                if u['username'] != usuario_actual:
+                                    if st.button("🗑️ Eliminar", key=f"del_{u['id']}"):
+                                        supabase.table('usuarios').delete().eq('id', u['id']).execute()
+                                        st.success(f"✅ Usuario {u['username']} eliminado")
+                                        st.rerun()
+                                else:
+                                    st.markdown("_Actual_")
+                            
+                            st.divider()
+                else:
+                    st.info("No hay usuarios registrados")
+                    
             except Exception as e:
                 st.error(f"Error al cargar usuarios: {e}")
         
-        # Expander para estadísticas rápidas
-        with st.expander("📊 Estadísticas"):
+        # ========== TAB 3: ESTADÍSTICAS ==========
+        with tab_admin3:
+            st.markdown("#### Estadísticas del Sistema")
+            
             try:
                 total_usuarios = supabase.table('usuarios').select("*", count="exact").execute()
                 total_productos = supabase.table('productos').select("*", count="exact").execute()
                 total_cotizaciones = supabase.table('cotizaciones').select("*", count="exact").execute()
                 
-                st.metric("👥 Usuarios", total_usuarios.count)
-                st.metric("📦 Productos", total_productos.count)
-                st.metric("📄 Cotizaciones", total_cotizaciones.count)
-            except:
-                st.info("Carga datos para ver estadísticas")
+                col_e1, col_e2, col_e3 = st.columns(3)
+                with col_e1:
+                    st.metric("👥 Usuarios", total_usuarios.count)
+                with col_e2:
+                    st.metric("📦 Productos", total_productos.count)
+                with col_e3:
+                    st.metric("📄 Cotizaciones", total_cotizaciones.count)
+                
+                # Usuarios por rol
+                admins = sum(1 for u in usuarios_db.data if u['rol'] == 'admin')
+                vendedores = sum(1 for u in usuarios_db.data if u['rol'] == 'vendedor')
+                
+                st.markdown("---")
+                st.markdown("**Por rol:**")
+                st.write(f"👑 Administradores: {admins}")
+                st.write(f"💼 Vendedores: {vendedores}")
+                
+            except Exception as e:
+                st.info("Carga productos y cotizaciones para ver estadísticas")
+   
 # ============================================
 # TABS PRINCIPALES
 # ============================================
