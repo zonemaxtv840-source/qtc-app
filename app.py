@@ -766,7 +766,7 @@ with st.sidebar:
             st.session_state.carrito = []
             st.rerun()
 
-# ============================================
+    # ============================================
     # PANEL DE ADMINISTRACIÓN (solo para admins)
     # ============================================
     
