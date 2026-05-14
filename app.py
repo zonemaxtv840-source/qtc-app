@@ -736,10 +736,11 @@ with st.sidebar:
 
 tab1, tab2, tab3 = st.tabs(["📦 MODO MASIVO (Bulk)", "🔍 BÚSQUEDA INTELIGENTE", "🛒 CARRITO DE COTIZACIÓN"])
 
-# ========== TAB 1: MODO MASIVO ==========
+# ========== TAB 1: MODO MASIVO (Bulk) - CORREGIDO ==========
 with tab1:
     st.markdown("### 📦 Ingresa productos en formato masivo")
     st.caption("Formato: `SKU:CANTIDAD` (uno por línea)")
+    st.info("💡 **Ejemplo:** RN0200065BK8:10 (buscará SKU equivalente si no tiene precio propio)")
     
     texto_bulk = st.text_area(
         "",
@@ -748,9 +749,18 @@ with tab1:
     )
     
     col_b1, col_b2 = st.columns([1, 1])
+    
+    # Botón PROCESAR
     with col_b1:
         if st.button("🚀 Procesar lista", type="primary", use_container_width=True):
-            if texto_bulk and st.session_state.catalogos and st.session_state.stocks:
+            if not texto_bulk:
+                st.warning("⚠️ Ingresa productos en el área de texto")
+            elif not st.session_state.catalogos:
+                st.warning("⚠️ Carga catálogos de precios en el sidebar")
+            elif not st.session_state.stocks:
+                st.warning("⚠️ Carga reportes de stock en el sidebar")
+            else:
+                # Parsear pedidos
                 pedidos = []
                 for line in texto_bulk.strip().split('\n'):
                     line = line.strip()
@@ -763,17 +773,24 @@ with tab1:
                                 if cant > 0:
                                     pedidos.append({'sku': sku, 'cantidad': cant})
                             except:
-                                pass
+                                st.warning(f"⚠️ Formato incorrecto: {line}")
                 
-                if pedidos:
-                    with st.spinner("Procesando..."):
+                if not pedidos:
+                    st.warning("⚠️ No se encontraron productos válidos")
+                else:
+                    with st.spinner("🔍 Procesando lista..."):
                         resultados_procesados = []
                         encontrados = 0
                         con_precio = 0
                         con_stock = 0
                         
                         for pedido in pedidos:
-                            prod = buscar_producto(pedido['sku'], st.session_state.catalogos, st.session_state.stocks, st.session_state.precio_key)
+                            prod = buscar_producto(
+                                pedido['sku'], 
+                                st.session_state.catalogos, 
+                                st.session_state.stocks, 
+                                st.session_state.precio_key
+                            )
                             
                             if prod['tiene_precio']:
                                 encontrados += 1
@@ -782,20 +799,25 @@ with tab1:
                             if prod['tiene_stock']:
                                 con_stock += 1
                             
+                            # Determinar cantidad a cotizar y estado
                             if prod['tiene_precio'] and prod['tiene_stock']:
                                 cantidad_cotizar = min(pedido['cantidad'], prod['stock_total'])
-                                estado = "✅ OK"
                                 if cantidad_cotizar < pedido['cantidad']:
-                                    estado = f"⚠️ Stock insuficiente ({cantidad_cotizar}/{pedido['cantidad']})"
-                            elif not prod['tiene_precio'] and prod['tiene_stock']:
+                                    estado = f"⚠️ Stock insuficiente (solo {cantidad_cotizar}/{pedido['cantidad']})"
+                                else:
+                                    estado = "✅ OK - Disponible"
+                            elif prod['tiene_stock'] and not prod['tiene_precio']:
                                 cantidad_cotizar = 0
-                                estado = "⚠️ Stock disponible - SIN PRECIO (Error de SKU)"
-                            elif not prod['tiene_precio']:
+                                if prod.get('sku_equivalente'):
+                                    estado = f"⚠️ ERROR DE SKU - Usar {prod['sku_equivalente']} en su lugar"
+                                else:
+                                    estado = "⚠️ ERROR DE SKU - Stock sin precio"
+                            elif prod['tiene_precio'] and not prod['tiene_stock']:
                                 cantidad_cotizar = 0
-                                estado = "❌ Sin precio"
+                                estado = "❌ Sin stock disponible"
                             else:
                                 cantidad_cotizar = 0
-                                estado = "❌ Sin stock"
+                                estado = "❌ No encontrado"
                             
                             resultados_procesados.append({
                                 **prod,
@@ -804,8 +826,10 @@ with tab1:
                                 'estado': estado
                             })
                         
+                        # Guardar en session_state
                         st.session_state.resultados_bulk = resultados_procesados
                         
+                        # Mostrar contadores
                         total_ingresados = len(pedidos)
                         total_encontrados = encontrados
                         total_con_stock = con_stock
@@ -822,28 +846,40 @@ with tab1:
                         </div>
                         """, unsafe_allow_html=True)
                         
-                        error_sku = [p for p in resultados_procesados if p['tiene_stock'] and not p['tiene_precio']]
-                        if error_sku:
+                        # Mostrar errores de SKU destacados
+                        errores_sku = [p for p in resultados_procesados if p['tiene_stock'] and not p['tiene_precio']]
+                        if errores_sku:
                             st.markdown("""
                             <div style="background:#FFEBEE;border-radius:12px;padding:1rem;margin:1rem 0;border-left:4px solid #f44336;">
                                 <strong style="color:#c62828;">⚠️ ERRORES DE SKU DETECTADOS</strong>
-                                <span style="font-size:0.8rem;margin-left:8px;">Productos con stock pero sin precio</span>
+                                <span style="font-size:0.8rem;margin-left:8px;">Productos con stock pero sin precio en catálogos</span>
                             </div>
                             """, unsafe_allow_html=True)
-                            df_error = pd.DataFrame([{'SKU': p['sku'], 'Descripción': p['descripcion'][:50], 'Stock': p['stock_total']} for p in error_sku])
-                            st.dataframe(df_error, use_container_width=True, hide_index=True)
+                            for err in errores_sku:
+                                if err.get('sku_equivalente'):
+                                    st.markdown(f"""
+                                    <div style="background:white;border-radius:8px;padding:0.5rem;margin:0.25rem 0;border:1px solid #ffcdd2;">
+                                        <strong>📦 {err['sku']}</strong> → Stock: {err['stock_total']} unidades<br>
+                                        💡 Sugerencia: Usar <code>{err['sku_equivalente']}</code> (coincidencia {err['similitud_equivalente']:.0f}%)
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                else:
+                                    st.markdown(f"""
+                                    <div style="background:white;border-radius:8px;padding:0.5rem;margin:0.25rem 0;border:1px solid #ffcdd2;">
+                                        <strong>📦 {err['sku']}</strong> → Stock: {err['stock_total']} unidades<br>
+                                        ⚠️ No se encontró SKU equivalente
+                                    </div>
+                                    """, unsafe_allow_html=True)
                         
                         st.success(f"✅ Procesados {len(pedidos)} productos")
                         st.rerun()
-                else:
-                    st.warning("No se encontraron productos válidos")
-            else:
-                st.warning("Carga catálogos y stock primero")
     
+    # Botón AGREGAR AL CARRITO
     with col_b2:
         if st.button("📋 Agregar válidos al carrito", use_container_width=True):
-            if hasattr(st.session_state, 'resultados_bulk'):
+            if hasattr(st.session_state, 'resultados_bulk') and st.session_state.resultados_bulk:
                 agregados = 0
+                no_agregados = 0
                 for prod in st.session_state.resultados_bulk:
                     if prod['cantidad_cotizar'] > 0 and prod['tiene_precio']:
                         item_carrito = {
@@ -858,8 +894,82 @@ with tab1:
                         }
                         st.session_state.carrito.append(item_carrito)
                         agregados += 1
-                st.success(f"✅ Agregados {agregados} productos al carrito")
+                    else:
+                        no_agregados += 1
+                
+                if agregados > 0:
+                    st.success(f"✅ Agregados {agregados} productos al carrito")
+                if no_agregados > 0:
+                    st.info(f"ℹ️ {no_agregados} productos no se agregaron (sin stock o sin precio)")
                 st.rerun()
+            else:
+                st.warning("⚠️ Primero procesa una lista de productos")
+    
+    # Mostrar resultados del procesamiento
+    if hasattr(st.session_state, 'resultados_bulk') and st.session_state.resultados_bulk:
+        st.markdown("---")
+        st.markdown("### 📊 Resultados del procesamiento")
+        
+        for idx, prod in enumerate(st.session_state.resultados_bulk):
+            badge_stock = construir_badge_stock(prod['stock_yessica'], prod['stock_apri004'], prod['stock_apri001'])
+            
+            # Determinar color de fondo según estado
+            if "✅" in prod['estado']:
+                bg_color = "#E8F5E9"
+                border_color = "#4CAF50"
+            elif "⚠️" in prod['estado']:
+                bg_color = "#FFF3E0"
+                border_color = "#FF9800"
+            else:
+                bg_color = "#FFEBEE"
+                border_color = "#f44336"
+            
+            st.markdown(f"""
+            <div style="background:{bg_color}; border-radius:12px; padding:0.75rem; margin-bottom:0.75rem; border-left:4px solid {border_color};">
+                <div style="display:flex; justify-content:space-between; align-items:start;">
+                    <div>
+                        <strong>📦 {prod['sku']}</strong>
+                        <span style="font-size:0.7rem; color:#666; margin-left:8px;">{prod['estado']}</span>
+                        <br>
+                        <span style="font-size:0.8rem;">{prod['descripcion'][:80]}</span>
+                    </div>
+                    <div style="text-align:right;">
+                        <div>💰 <strong>S/ {prod['precio']:,.2f}</strong></div>
+                        <div>📦 Stock: <strong>{prod['stock_total']}</strong></div>
+                    </div>
+                </div>
+                <div style="margin-top:8px;">
+                    {badge_stock}
+                </div>
+                <div style="margin-top:8px; font-size:0.8rem;">
+                    📋 Solicitado: {prod['cantidad_solicitada']} | 
+                    ✅ A cotizar: <strong>{prod['cantidad_cotizar']}</strong>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Mostrar SKU equivalente si existe y es un error
+            if prod.get('sku_equivalente') and prod['tiene_stock'] and not prod['tiene_precio']:
+                # Buscar precio del equivalente
+                precio_eq = 0
+                for cat in st.session_state.catalogos:
+                    df = cat['df']
+                    df_sku = df[cat['col_sku']].astype(str).str.strip().str.upper()
+                    mask = df_sku == prod['sku_equivalente']
+                    if mask.any():
+                        row = df[mask].iloc[0]
+                        if st.session_state.precio_key in cat['precios']:
+                            col_precio = cat['precios'][st.session_state.precio_key]
+                            precio_eq = corregir_numero(row[col_precio])
+                        break
+                
+                st.markdown(f"""
+                <div style="background:#E8F5E9; border-radius:8px; padding:0.5rem; margin-top:0.5rem; font-size:0.8rem;">
+                    💡 <strong>SKU equivalente sugerido:</strong> <code>{prod['sku_equivalente']}</code> 
+                    (coincidencia {prod['similitud_equivalente']:.0f}%) - Precio: S/ {precio_eq:,.2f}
+                </div>
+                """, unsafe_allow_html=True)
+
 
 # ========== TAB 2: BÚSQUEDA INTELIGENTE CON DIAGNÓSTICO ==========
 with tab2:
