@@ -765,7 +765,7 @@ with st.sidebar:
             st.session_state.carrito = []
             st.rerun()
 
-        # ============================================
+     # ============================================
     # PANEL DE ADMINISTRACIÓN COMPLETO
     # ============================================
     
@@ -820,6 +820,25 @@ with st.sidebar:
                     else:
                         st.warning("⚠️ Usuario y contraseña son obligatorios")
         
+        # En el panel de administración, agrega:
+with st.expander("📦 Subir catálogo a Supabase"):
+    archivo_excel = st.file_uploader("Selecciona tu catálogo Excel", type=['xlsx', 'xls'])
+    
+    if archivo_excel:
+        df = pd.read_excel(archivo_excel)
+        st.write(f"📄 {len(df)} productos encontrados")
+        
+        if st.button("🚀 Subir a Supabase"):
+            with st.spinner("Subiendo productos..."):
+                for _, row in df.iterrows():
+                    supabase.table('productos').upsert({
+                        "sku": str(row['SKU']),
+                        "descripcion": str(row.get('DESCRIPCION', ''))[:500],
+                        "precio_ir": float(row.get('P. IR', 0)),
+                        "precio_box": float(row.get('P. BOX', 0)),
+                        "precio_vip": float(row.get('P. VIP', 0))
+                    }).execute()
+                st.success(f"✅ {len(df)} productos subidos")
         # ========== TAB 2: LISTAR USUARIOS ==========
         with tab_admin2:
             st.markdown("#### Usuarios Registrados")
