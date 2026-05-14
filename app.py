@@ -1,4 +1,4 @@
-# app.py - QTC Smart Sales Pro v3.0
+# app.py - QTC Smart Sales Pro v3.1 (VERSIÓN FIABLE)
 import streamlit as st
 import pandas as pd
 import re
@@ -325,8 +325,18 @@ def cargar_stock(archivos, modo: str) -> List[Dict]:
     return stocks
 
 # ============================================
-# FUNCIONES DE SIMILITUD Y BÚSQUEDA
+# FUNCIONES DE SIMILITUD Y BÚSQUEDA CON LIMPIEZA EXTREMA
 # ============================================
+
+def limpiar_sku_extremo(texto) -> str:
+    """Limpieza extrema de SKU para evitar caracteres invisibles (espacios, saltos de línea, etc.)"""
+    if pd.isna(texto):
+        return ""
+    # Convertir a string y eliminar espacios y saltos de línea
+    limpio = str(texto).strip().replace('\n', '').replace('\r', '').replace('\t', '')
+    # Mantener solo letras mayúsculas, números y guiones
+    limpio = re.sub(r'[^A-Za-z0-9\-]', '', limpio)
+    return limpio.upper()
 
 def calcular_similitud(texto1: str, texto2: str) -> float:
     """Calcula el porcentaje de similitud entre dos textos."""
@@ -358,7 +368,7 @@ def buscar_alternativas_por_descripcion(sku_buscado: str, descripcion: str, cata
                                          stocks: List[Dict], precio_key: str, umbral_minimo: float = 65.0) -> List[Dict]:
     """Busca productos alternativos con descripción similar."""
     alternativas = []
-    sku_buscado_limpio = sku_buscado.strip().upper()
+    sku_buscado_limpio = limpiar_sku_extremo(sku_buscado)
     
     if not descripcion or descripcion == f"SKU: {sku_buscado}":
         return alternativas
@@ -367,7 +377,7 @@ def buscar_alternativas_por_descripcion(sku_buscado: str, descripcion: str, cata
         df = cat['df']
         
         for _, row in df.iterrows():
-            sku_alternativo = str(row[cat['col_sku']]).strip().upper()
+            sku_alternativo = limpiar_sku_extremo(row[cat['col_sku']])
             
             if sku_alternativo == sku_buscado_limpio:
                 continue
@@ -399,15 +409,28 @@ def buscar_alternativas_por_descripcion(sku_buscado: str, descripcion: str, cata
     return alternativas_unicas[:8]
 
 def buscar_producto(sku: str, catalogos: List[Dict], stocks: List[Dict], precio_key: str, buscar_alternativas: bool = True) -> Dict:
-    """Busca producto por SKU. Si no tiene stock, busca alternativas por descripción."""
-    sku_limpio = sku.strip().upper()
+    """
+    Busca producto por SKU con LIMPIEZA EXTREMA para garantizar que NINGÚN SKU falle.
+    Si la búsqueda exacta falla, intenta búsqueda flexible (contiene).
+    """
+    sku_original = sku
+    sku_limpio = limpiar_sku_extremo(sku)
     
     precio = 0.0
     descripcion = ""
+    
+    # Buscar precio en catálogos
     for cat in catalogos:
         df = cat['df']
-        df_sku = df[cat['col_sku']].astype(str).str.strip().str.upper()
-        mask = df_sku == sku_limpio
+        df_sku_limpio = df[cat['col_sku']].astype(str).apply(limpiar_sku_extremo)
+        
+        # Búsqueda exacta
+        mask = df_sku_limpio == sku_limpio
+        
+        # Fallback: búsqueda flexible (contiene)
+        if not mask.any():
+            mask = df[cat['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
+        
         if mask.any():
             row = df[mask].iloc[0]
             if precio_key in cat['precios']:
@@ -418,18 +441,27 @@ def buscar_producto(sku: str, catalogos: List[Dict], stocks: List[Dict], precio_
             break
     
     if not descripcion:
-        descripcion = f"SKU: {sku}"
+        descripcion = f"SKU: {sku_original}"
     
+    # Buscar stock en todas las hojas
     stock_yessica = 0
     stock_apri004 = 0
     stock_apri001 = 0
     
     for stock in stocks:
         df = stock['df']
-        df_sku = df[stock['col_sku']].astype(str).str.strip().str.upper()
-        mask = df_sku == sku_limpio
+        df_sku_limpio = df[stock['col_sku']].astype(str).apply(limpiar_sku_extremo)
+        
+        # Búsqueda exacta
+        mask = df_sku_limpio == sku_limpio
+        
+        # Fallback: búsqueda flexible (contiene)
+        if not mask.any():
+            mask = df[stock['col_sku']].astype(str).str.contains(sku_limpio, case=False, na=False)
+        
         if mask.any():
             for _, row in df[mask].iterrows():
+                # Buscar columna de cantidad
                 col_cant = None
                 for col in df.columns:
                     col_upper = str(col).upper()
@@ -450,7 +482,7 @@ def buscar_producto(sku: str, catalogos: List[Dict], stocks: List[Dict], precio_
     stock_total = stock_yessica + stock_apri004 + stock_apri001
     
     resultado = {
-        'sku': sku,
+        'sku': sku_original,
         'descripcion': descripcion,
         'precio': precio,
         'stock_yessica': stock_yessica,
@@ -463,9 +495,9 @@ def buscar_producto(sku: str, catalogos: List[Dict], stocks: List[Dict], precio_
         'alternativas': []
     }
     
-    if not resultado['tiene_stock'] and buscar_alternativas and descripcion and descripcion != f"SKU: {sku}":
+    if not resultado['tiene_stock'] and buscar_alternativas and descripcion and descripcion != f"SKU: {sku_original}":
         resultado['alternativas'] = buscar_alternativas_por_descripcion(
-            sku, descripcion, catalogos, stocks, precio_key, umbral_minimo=65.0
+            sku_original, descripcion, catalogos, stocks, precio_key, umbral_minimo=65.0
         )
     
     return resultado
@@ -688,7 +720,7 @@ with tab1:
     texto_bulk = st.text_area(
         "",
         height=200,
-        placeholder="Ejemplo:\nRN9401276NA8:100\nCN0200047BK8:100\nCN0200053NA8:10"
+        placeholder="Ejemplo:\nRN9401276NA8:100\nCN0200047BK8:100\nCN0200053NA8:10\nRN0200065BK8:50"
     )
     
     col_b1, col_b2 = st.columns([1, 1])
@@ -873,7 +905,7 @@ with tab1:
             </div>
             """, unsafe_allow_html=True)
 
-# ========== TAB 2: BÚSQUEDA INTELIGENTE MEJORADA ==========
+# ========== TAB 2: BÚSQUEDA INTELIGENTE ==========
 with tab2:
     st.markdown("### 🔍 Buscar productos por SKU o descripción")
     st.caption("Escribe parte del nombre, modelo o SKU del producto")
@@ -913,7 +945,6 @@ with tab2:
                 for prod in resultados_busqueda:
                     badge_stock = construir_badge_stock(prod['stock_yessica'], prod['stock_apri004'], prod['stock_apri001'])
                     
-                    # Determinar estado
                     if prod['tiene_stock'] and prod['tiene_precio']:
                         estado_principal = "✅ CON STOCK"
                         color_estado = "#4CAF50"
@@ -953,7 +984,6 @@ with tab2:
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # ===== SI TIENE STOCK Y PRECIO: Mostrar botón para agregar =====
                     if prod['tiene_stock'] and prod['tiene_precio']:
                         col_cant, col_btn = st.columns([1, 2])
                         with col_cant:
@@ -981,7 +1011,6 @@ with tab2:
                                 st.success(f"✅ Agregado {cantidad}x {prod['sku']}")
                                 st.rerun()
                     
-                    # ===== SI NO TIENE STOCK: Mostrar ALTERNATIVAS =====
                     elif not prod['tiene_stock'] and prod.get('alternativas') and len(prod['alternativas']) > 0:
                         st.markdown("""
                         <div style="background: #FFF8E1; border-radius: 12px; padding: 0.75rem; margin: 0.5rem 0; border-left: 4px solid #FF9800;">
