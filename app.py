@@ -1,4 +1,4 @@
-# app.py - QTC Smart Sales Pro v3.0
+# app.py - QTC Smart Sales Pro v4.0 con Supabase
 import streamlit as st
 import pandas as pd
 import re
@@ -8,95 +8,10 @@ from PIL import Image
 import warnings
 from typing import List, Dict, Optional, Tuple
 from difflib import SequenceMatcher
-#============================================
-# CONFIGURACIÓN DE SUPABASE
-# ============================================
-
 from supabase import create_client
-import os
-
-# Inicializar Supabase (usando secrets de Streamlit Cloud)
-try:
-    SUPABASE_URL = st.secrets["SUPABASE_URL"]
-    SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    st.sidebar.success("☁️ Conectado a Supabase")
-except Exception as e:
-    st.sidebar.warning(f"⚠️ Supabase no disponible: {str(e)[:50]}")
-    supabase = None
-
-@st.cache_data(ttl=300)  # Cache por 5 minutos
-def buscar_en_supabase(sku: str):
-    """Buscar producto por SKU en la nube"""
-    if not supabase:
-        return None
-    
-    try:
-        # Buscar producto
-        producto = supabase.table('productos').select("*").eq('sku', sku).execute()
-        
-        if producto.data:
-            prod = producto.data[0]
-            
-            # Buscar stock
-            stock = supabase.table('stock').select("*").eq('sku', sku).execute()
-            
-            stock_dict = {'YESSICA': 0, 'APRI.004': 0, 'APRI.001': 0}
-            for s in stock.data:
-                stock_dict[s['fuente']] = s['cantidad']
-            
-            return {
-                'sku': prod['sku'],
-                'descripcion': prod['descripcion'],
-                'precio': prod.get('precio_vip', 0),
-                'stock_yessica': stock_dict['YESSICA'],
-                'stock_apri004': stock_dict['APRI.004'],
-                'stock_apri001': stock_dict['APRI.001'],
-                'stock_total': sum(stock_dict.values()),
-                'tiene_stock': sum(stock_dict.values()) > 0,
-                'tiene_precio': prod.get('precio_vip', 0) > 0,
-            }
-        return None
-    except Exception as e:
-        st.error(f"Error en búsqueda: {e}")
-        return None
-
-def buscar_varios_supabase(query: str):
-    """Búsqueda por texto en Supabase"""
-    if not supabase:
-        return []
-    
-    try:
-        resultados = supabase.table('productos').select("*")\
-            .or_(f"sku.ilike.%{query}%,descripcion.ilike.%{query}%")\
-            .limit(20).execute()
-        
-        productos = []
-        for prod in resultados.data:
-            stock = supabase.table('stock').select("*").eq('sku', prod['sku']).execute()
-            
-            stock_dict = {'YESSICA': 0, 'APRI.004': 0, 'APRI.001': 0}
-            for s in stock.data:
-                stock_dict[s['fuente']] = s['cantidad']
-            
-            productos.append({
-                'sku': prod['sku'],
-                'descripcion': prod['descripcion'],
-                'precio': prod.get('precio_vip', 0),
-                'stock_yessica': stock_dict['YESSICA'],
-                'stock_apri004': stock_dict['APRI.004'],
-                'stock_apri001': stock_dict['APRI.001'],
-                'stock_total': sum(stock_dict.values()),
-            })
-        return productos
-    except Exception as e:
-        st.error(f"Error: {e}")
-        return []
-
 
 warnings.filterwarnings('ignore')
 
-#
 # ============================================
 # CONFIGURACIÓN DE PÁGINA
 # ============================================
@@ -107,6 +22,32 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# ============================================
+# CONFIGURACIÓN DE SUPABASE
+# ============================================
+
+# Inicializar Supabase (usando secrets de Streamlit Cloud)
+supabase = None
+try:
+    SUPABASE_URL = st.secrets["SUPABASE_URL"]
+    SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    st.sidebar.success("☁️ Supabase conectado")
+except Exception as e:
+    st.sidebar.warning("⚠️ Supabase no disponible (configura secrets)")
+
+# ============================================
+# CSS COMPLETO (tu código existente)
+# ============================================
+
+st.markdown("""
+<style>
+    /* ... todo tu CSS existente ... */
+</style>
+""", unsafe_allow_html=True)
+
+# ... el resto de tu código sigue igual ...
 
 # ============================================
 # CSS COMPLETO
