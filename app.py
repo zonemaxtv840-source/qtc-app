@@ -8,10 +8,7 @@ from PIL import Image
 import warnings
 from typing import List, Dict, Optional, Tuple
 from difflib import SequenceMatcher
-
-warnings.filterwarnings('ignore')
-
-# ============================================
+ ============================================
 # CONFIGURACIÓN DE SUPABASE
 # ============================================
 
@@ -96,6 +93,10 @@ def buscar_varios_supabase(query: str):
         st.error(f"Error: {e}")
         return []
 
+
+warnings.filterwarnings('ignore')
+
+#
 # ============================================
 # CONFIGURACIÓN DE PÁGINA
 # ============================================
