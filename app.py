@@ -24,6 +24,56 @@ st.set_page_config(
 )
 
 # ============================================
+# SISTEMA DE USUARIOS CON SUPABASE
+# ============================================
+
+def verificar_usuario(username: str, password: str):
+    """Verifica credenciales en Supabase"""
+    if not supabase:
+        # Si no hay Supabase, usar usuarios hardcodeados (respaldo)
+        usuarios_validos = {
+            "admin": "qtc2026",
+            "vendedor1": "vendo2024",
+            "demo": "demo123"
+        }
+        return username in usuarios_validos and usuarios_validos[username] == password
+    
+    try:
+        respuesta = supabase.table('usuarios')\
+            .select("*")\
+            .eq('username', username)\
+            .eq('password', password)\
+            .eq('activo', True)\
+            .execute()
+        
+        if respuesta.data:
+            usuario = respuesta.data[0]
+            # Guardar información del usuario en sesión
+            st.session_state.usuario_id = usuario['id']
+            st.session_state.usuario_nombre = usuario['nombre']
+            st.session_state.usuario_rol = usuario['rol']
+            return True
+        return False
+    except Exception as e:
+        st.error(f"Error de verificación: {e}")
+        return False
+
+def registrar_actividad(accion: str, sku: str = None):
+    """Registra actividad del usuario para auditoría"""
+    if not supabase:
+        return
+    
+    try:
+        supabase.table('logs_actividad').insert({
+            'usuario_id': st.session_state.get('usuario_id'),
+            'usuario_nombre': st.session_state.get('usuario_nombre'),
+            'accion': accion,
+            'sku': sku,
+            'ip': st.request.client_ip if hasattr(st, 'request') else 'local'
+        }).execute()
+    except:
+        pass  # No crítico si falla
+# ============================================
 # CONFIGURACIÓN DE SUPABASE
 # ============================================
 
