@@ -615,7 +615,7 @@ if 'carrito' not in st.session_state:
     st.session_state.carrito = []
 
 # ============================================
-# LOGIN
+# LOGIN MEJORADO
 # ============================================
 
 if not st.session_state.auth:
@@ -629,28 +629,40 @@ if not st.session_state.auth:
     with col2:
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
         
-        col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
-        with col_logo2:
-            try:
-                st.image("logo.png", width=100)
-            except:
-                st.markdown("<h1 style='color:#e94560;'>QTC</h1>", unsafe_allow_html=True)
+        try:
+            st.image("logo.png", width=100)
+        except:
+            st.markdown("<h1 style='color:#e94560; text-align:center;'>QTC</h1>", unsafe_allow_html=True)
         
-        st.markdown("<h2 style='color:#1a1a2e;'>QTC Smart Sales Pro</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='color:#666;'>Sistema Profesional de Cotización</p>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color:#1a1a2e; text-align:center;'>QTC Smart Sales Pro</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#666; text-align:center;'>Sistema Profesional de Cotización</p>", unsafe_allow_html=True)
         
-        user = st.text_input("👤 Usuario", placeholder="Ingresa tu usuario")
-        pw = st.text_input("🔒 Contraseña", type="password", placeholder="Ingresa tu contraseña")
+        st.markdown("---")
         
-        if st.button("🚀 Ingresar", use_container_width=True):
-            if user == "admin" and pw == "qtc2026":
-                st.session_state.auth = True
-                st.rerun()
-            else:
-                st.error("❌ Credenciales incorrectas")
-                st.info("💡 Usuario: admin | Contraseña: qtc2026")
+        usuario = st.text_input("👤 Usuario", placeholder="Ingresa tu usuario")
+        password = st.text_input("🔒 Contraseña", type="password", placeholder="Ingresa tu contraseña")
         
-        st.markdown("<div class='footer'>⚡ QTC Smart Sales Pro</div>", unsafe_allow_html=True)
+        col_btn1, col_btn2 = st.columns(2)
+        with col_btn1:
+            if st.button("🚀 Ingresar", use_container_width=True):
+                if verificar_usuario(usuario, password):
+                    st.session_state.auth = True
+                    st.session_state.usuario = usuario
+                    registrar_actividad("LOGIN_EXITOSO")
+                    st.rerun()
+                else:
+                    st.error("❌ Usuario o contraseña incorrectos")
+        
+        with col_btn2:
+            st.markdown("""
+            <div style="font-size:0.7rem; text-align:center; margin-top:10px;">
+                <strong>Usuarios de prueba:</strong><br>
+                admin / qtc2026<br>
+                vendedor1 / vendo2024
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown("<div class='footer'>⚡ QTC Smart Sales Pro v4.0</div>", unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
     
     st.stop()
