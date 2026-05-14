@@ -668,28 +668,31 @@ if not st.session_state.auth:
     st.stop()
 
 # ============================================
-# HEADER
+# HEADER CON INFORMACIÓN DE USUARIO
 # ============================================
 
-col1, col2, col3 = st.columns([1, 5, 2])
+col1, col2, col3 = st.columns([1, 4, 2])
 with col1:
     try:
-        st.image("logo.png", width="60px")
+        st.image("logo.png", width=60)
     except:
         st.markdown("**QTC**", unsafe_allow_html=True)
 with col2:
     st.markdown("# QTC Smart Sales Pro")
-    st.caption("Sistema Profesional de Cotización")
+    st.caption(f"Bienvenido, {st.session_state.get('usuario_nombre', st.session_state.get('usuario', 'Usuario'))}")
 with col3:
     st.markdown(f"""
     <div style="background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 12px; text-align: right;">
-        <span>👤 admin</span><br>
-        <span style="font-size: 0.7rem;">Administrador</span>
+        <span>👤 {st.session_state.get('usuario', 'admin')}</span><br>
+        <span style="font-size: 0.7rem;">{st.session_state.get('usuario_rol', 'Administrador')}</span>
     </div>
     """, unsafe_allow_html=True)
+    
     if st.button("🚪 Cerrar Sesión", key="logout"):
-        st.session_state.auth = False
-        st.session_state.carrito = []
+        registrar_actividad("LOGOUT")
+        for key in ['auth', 'usuario', 'usuario_id', 'usuario_nombre', 'usuario_rol', 'carrito']:
+            if key in st.session_state:
+                del st.session_state[key]
         st.rerun()
 
 st.markdown("---")
