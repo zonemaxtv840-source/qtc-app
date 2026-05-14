@@ -846,7 +846,8 @@ with tab1:
                             'stock_apri001': prod['stock_apri001']
                         }
                         st.session_state.carrito.append(item_carrito)
-                        agregados += 1                st.success(f"✅ Agregados {agregados} productos al carrito")
+                        agregados += 1
+                st.success(f"✅ Agregados {agregados} productos al carrito")
                 st.rerun()
     
     if hasattr(st.session_state, 'resultados_bulk') and st.session_state.resultados_bulk:
