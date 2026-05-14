@@ -1,4 +1,4 @@
-# app.py - QTC Smart Sales Pro v4.1 (PREMIUM UI EDITION)
+# app.py - QTC Smart Sales Pro v4.1
 import streamlit as st
 import pandas as pd
 import re
@@ -17,133 +17,137 @@ warnings.filterwarnings('ignore')
 
 st.set_page_config(
     page_title="QTC Smart Sales Pro",
-    page_icon="💎",
+    page_icon="💼",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ============================================
-# CSS COMPLETO - ESTILO "MIDNIGHT GLASS" PREMIUM
+# CSS COMPLETO
 # ============================================
 
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-    /* Fondo principal de la App */
     .stApp {
-        background-color: #0B0F19;
-        font-family: 'Inter', sans-serif;
-        color: #E2E8F0;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     }
     
-    /* Sidebar Moderno */
     [data-testid="stSidebar"] {
-        background-color: #111827;
-        border-right: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    [data-testid="stSidebar"] * { color: #D1D5DB !important; }
-    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
-        color: #E11D48 !important;
-        font-weight: 600;
-    }
-
-    /* Inputs y Text Areas */
-    .stTextInput>div>div>input, .stTextArea>div>div>textarea, .stNumberInput>div>div>input {
-        background-color: #1F2937 !important;
-        color: white !important;
-        border: 1px solid rgba(255,255,255,0.1) !important;
-        border-radius: 8px !important;
+        background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
+        border-right: 1px solid #e94560;
     }
     
-    /* Botones Premium */
-    .stButton > button {
-        background: linear-gradient(135deg, #E11D48 0%, #BE123C 100%);
-        color: white !important;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 10px rgba(225, 29, 72, 0.2);
+    [data-testid="stSidebar"] * {
+        color: #e0e0e0 !important;
     }
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(225, 29, 72, 0.4);
+    
+    [data-testid="stSidebar"] h1, 
+    [data-testid="stSidebar"] h2, 
+    [data-testid="stSidebar"] h3 {
+        color: #e94560 !important;
     }
-
-    /* Estilo de las Pestañas (Tabs) */
-    .stTabs [data-baseweb="tab-list"] { gap: 8px; background-color: transparent; }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #1F2937;
-        border-radius: 8px 8px 0 0;
-        padding: 10px 20px;
-        color: #9CA3AF;
-        border: 1px solid rgba(255,255,255,0.05);
-        border-bottom: none;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #E11D48 !important;
-        color: white !important;
-        border-color: #E11D48;
-    }
-
-    /* Tarjetas de Producto / Glassmorphism */
-    .card-premium {
-        background: #1F2937;
+    
+    .result-card {
+        background: white;
         border-radius: 16px;
-        padding: 1.5rem;
+        padding: 1rem;
         margin-bottom: 1rem;
-        border: 1px solid rgba(255,255,255,0.05);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-        transition: transform 0.2s, border-color 0.2s;
+        border-left: 5px solid #e94560;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
     }
-    .card-premium:hover {
-        transform: translateY(-2px);
-        border-color: rgba(255,255,255,0.15);
-    }
-
-    /* Badges Modernos tipo Pill */
-    .badge-yessica { background: rgba(16, 185, 129, 0.15); color: #34D399 !important; border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; display: inline-block; margin: 2px; }
-    .badge-apri004 { background: rgba(245, 158, 11, 0.15); color: #FBBF24 !important; border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; display: inline-block; margin: 2px; }
-    .badge-apri001 { background: rgba(244, 63, 94, 0.15); color: #FB7185 !important; border: 1px solid rgba(244, 63, 94, 0.3); padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; display: inline-block; margin: 2px; }
-    .badge-warning { background: rgba(156, 163, 175, 0.15); color: #9CA3AF !important; border: 1px solid rgba(156, 163, 175, 0.3); padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
     
-    /* Resumen de Contadores (Tab 1) */
-    .counter-summary {
-        background: #1F2937;
-        border-radius: 16px;
-        padding: 1.2rem;
-        margin: 1.5rem 0;
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-        border: 1px solid rgba(255,255,255,0.05);
+    .result-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
+    
+    .result-card, .result-card * {
+        color: #1a1a2e !important;
+    }
+    
+    .badge-yessica {
+        background: #4CAF50;
+        color: white !important;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        display: inline-block;
+        margin: 2px;
+    }
+    
+    .badge-apri004 {
+        background: #FF9800;
+        color: #1a1a2e !important;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        display: inline-block;
+        margin: 2px;
+    }
+    
+    .badge-apri001 {
+        background: #f44336;
+        color: white !important;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        display: inline-block;
+        margin: 2px;
+    }
+    
+    .badge-warning {
+        background: #ff9800;
+        color: #1a1a2e !important;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        display: inline-block;
+    }
+    
+    .counter-summary {
+        background: #f0f2f6;
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 1rem 0;
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        border: 1px solid #e0e0e0;
+    }
+    
     .counter-item {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 0.5rem;
         font-size: 0.9rem;
-        padding: 0.6rem 1.2rem;
-        border-radius: 10px;
-        background: #111827;
-        border: 1px solid rgba(255,255,255,0.05);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        background: white;
     }
-    .counter-number { font-weight: 700; font-size: 1.2rem; color: #E2E8F0; }
-    .counter-label { color: #9CA3AF; font-size: 0.85rem; font-weight: 500; }
-
-    /* Login Card Premium */
+    
+    .counter-number {
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    
+    .counter-label {
+        color: #666;
+    }
+    
     .login-card {
-        background: rgba(31, 41, 55, 0.7);
-        backdrop-filter: blur(16px);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 24px;
-        padding: 3rem;
+        background: rgba(255,255,255,0.95);
+        border-radius: 28px;
+        padding: 2.5rem;
         text-align: center;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        max-width: 420px;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        animation: fadeInUp 0.5s ease-out;
+        max-width: 450px;
         margin: 0 auto;
-        animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
     
     @keyframes fadeInUp {
@@ -151,21 +155,27 @@ st.markdown("""
         to { opacity: 1; transform: translateY(0); }
     }
     
-    .footer { text-align: center; padding: 1.5rem; color: #6B7280; font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 2rem; }
-    
-    /* Alternativas */
-    .alternativa-item {
-        background: #111827;
-        border-radius: 12px;
+    .footer {
+        text-align: center;
         padding: 1rem;
+        color: #888;
+        font-size: 0.7rem;
+        border-top: 1px solid #333;
+        margin-top: 2rem;
+    }
+    
+    .alternativa-item {
+        background: white;
+        border-radius: 10px;
+        padding: 0.75rem;
         margin: 0.5rem 0;
-        border: 1px solid rgba(245, 158, 11, 0.2);
+        border: 1px solid #FFE0B2;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================
-# FUNCIONES DE UTILIDAD (SIN CAMBIOS DE LÓGICA)
+# FUNCIONES DE UTILIDAD
 # ============================================
 
 def corregir_numero(valor) -> float:
@@ -292,7 +302,7 @@ def cargar_stock(archivos, modo: str) -> List[Dict]:
     return stocks
 
 # ============================================
-# FUNCIONES DE SIMILITUD Y BÚSQUEDA (SIN CAMBIOS)
+# FUNCIONES DE SIMILITUD Y BÚSQUEDA
 # ============================================
 
 def calcular_similitud(texto1: str, texto2: str) -> float:
@@ -410,16 +420,24 @@ def encontrar_alternativas_mismo_producto(sku_buscado: str, descripcion_buscada:
     alternativas_unicas.sort(key=lambda x: (-x['similitud'], -x['stock_total']))
     return alternativas_unicas[:5]
 
+# ============================================
+# FUNCIÓN PRINCIPAL MODIFICADA
+# ============================================
+
 def buscar_producto(sku: str, catalogos: List[Dict], stocks: List[Dict], precio_key: str) -> Dict:
+    """Busca producto por SKU. Si tiene stock pero no precio, busca SKU equivalente por descripción."""
     sku_limpio = sku.strip().upper()
     
+    # PASO 1: BUSCAR STOCK
     stock_info = buscar_stock_para_sku(sku_limpio, stocks)
     
+    # PASO 2: BUSCAR DESCRIPCIÓN
     descripcion = f"SKU: {sku}"
     precio = 0.0
     sku_equivalente = None
     similitud_equivalente = 0
     
+    # 2a. Buscar en catálogos por SKU exacto
     for cat in catalogos:
         df = cat['df']
         df_sku = df[cat['col_sku']].astype(str).str.strip().str.upper()
@@ -433,6 +451,7 @@ def buscar_producto(sku: str, catalogos: List[Dict], stocks: List[Dict], precio_
                 descripcion = str(row[cat['col_desc']])[:200]
             break
     
+    # 2b. Si no encontró descripción en catálogos pero tiene stock, buscarla en STOCK
     if descripcion == f"SKU: {sku}" and stock_info['total'] > 0:
         for stock in stocks:
             df = stock['df']
@@ -449,6 +468,7 @@ def buscar_producto(sku: str, catalogos: List[Dict], stocks: List[Dict], precio_
                             break
                 break
     
+    # PASO 3: SI TIENE STOCK PERO NO PRECIO → BUSCAR SKU EQUIVALENTE POR DESCRIPCIÓN
     if precio == 0 and stock_info['total'] > 0 and descripcion and descripcion != f"SKU: {sku}":
         mejor_match = None
         mejor_similitud = 70.0
@@ -485,6 +505,7 @@ def buscar_producto(sku: str, catalogos: List[Dict], stocks: List[Dict], precio_
             sku_equivalente = mejor_match['sku']
             similitud_equivalente = mejor_match['similitud']
     
+    # PASO 4: BUSCAR ALTERNATIVAS ADICIONALES
     alternativas = []
     if precio == 0 and stock_info['total'] > 0 and descripcion and descripcion != f"SKU: {sku}":
         alternativas = encontrar_alternativas_mismo_producto(
@@ -575,13 +596,13 @@ if 'carrito' not in st.session_state:
     st.session_state.carrito = []
 
 # ============================================
-# LOGIN PREMIUM
+# LOGIN
 # ============================================
 
 if not st.session_state.auth:
     st.markdown("""
     <style>
-        .stApp { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%) !important; }
+        .stApp { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; }
     </style>
     """, unsafe_allow_html=True)
     
@@ -590,25 +611,25 @@ if not st.session_state.auth:
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
         
         try:
-            st.image("logo.png", width=90)
+            st.image("logo.png", width=100)
         except:
-            st.markdown("<h1 style='color:#E11D48; font-weight:700;'>QTC</h1>", unsafe_allow_html=True)
+            st.markdown("<h1 style='color:#e94560;'>QTC</h1>", unsafe_allow_html=True)
         
-        st.markdown("<h2 style='color:#F1F5F9; font-weight:600; margin-top:10px;'>Smart Sales Pro</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='color:#9CA3AF; margin-bottom:30px;'>Acceso al Sistema Central</p>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color:#1a1a2e;'>QTC Smart Sales Pro</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#666;'>Sistema Profesional de Cotización</p>", unsafe_allow_html=True)
         
         user = st.text_input("👤 Usuario", placeholder="Ingresa tu usuario")
         pw = st.text_input("🔒 Contraseña", type="password", placeholder="Ingresa tu contraseña")
         
-        st.write("") # Espaciador
-        if st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True):
+        if st.button("🚀 Ingresar", use_container_width=True):
             if user == "admin" and pw == "qtc2026":
                 st.session_state.auth = True
                 st.rerun()
             else:
                 st.error("❌ Credenciales incorrectas")
+                st.info("💡 Usuario: admin | Contraseña: qtc2026")
         
-        st.markdown("<div class='footer'>⚡ Desarrollado para QTC Operations</div>", unsafe_allow_html=True)
+        st.markdown("<div class='footer'>⚡ QTC Smart Sales Pro</div>", unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
     
     st.stop()
@@ -622,18 +643,18 @@ with col1:
     try:
         st.image("logo.png", width=60)
     except:
-        st.markdown("<h2 style='color:#E11D48;'>QTC</h2>", unsafe_allow_html=True)
+        st.markdown("**QTC**", unsafe_allow_html=True)
 with col2:
-    st.markdown("## QTC Smart Sales Pro")
-    st.caption("Panel Central de Cotizaciones y Diagnóstico")
+    st.markdown("# QTC Smart Sales Pro")
+    st.caption("Sistema Profesional de Cotización")
 with col3:
     st.markdown(f"""
-    <div style="background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 8px; text-align: right; border: 1px solid rgba(255,255,255,0.05);">
-        <span style="color:#F1F5F9; font-weight:600;">👤 Admin Center</span><br>
-        <span style="color:#9CA3AF; font-size: 0.75rem;">Conectado</span>
+    <div style="background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 12px; text-align: right;">
+        <span>👤 admin</span><br>
+        <span style="font-size: 0.7rem;">Administrador</span>
     </div>
     """, unsafe_allow_html=True)
-    if st.button("🚪 Cerrar Sesión", key="logout", use_container_width=True):
+    if st.button("🚪 Cerrar Sesión", key="logout"):
         st.session_state.auth = False
         st.session_state.carrito = []
         st.rerun()
@@ -645,10 +666,10 @@ st.markdown("---")
 # ============================================
 
 with st.sidebar:
-    st.markdown("### ⚙️ Configuración")
+    st.markdown("### 🎯 Configuración")
     
     modo = st.radio(
-        "Modo de inventario",
+        "Modo de cotización",
         ["XIAOMI", "GENERAL"],
         index=0 if st.session_state.modo == "XIAOMI" else 1
     )
@@ -661,7 +682,7 @@ with st.sidebar:
     st.markdown("---")
     
     precio_opcion = st.radio(
-        "💰 Estructura de Precio",
+        "💰 Nivel de precio",
         ["P. VIP", "P. BOX", "P. IR"],
         index=0
     )
@@ -669,11 +690,11 @@ with st.sidebar:
     
     st.markdown("---")
     
-    st.markdown("### 📂 Data Sources")
+    st.markdown("### 📂 Archivos")
     
-    st.markdown("<span style='color:#9CA3AF; font-size:0.85rem;'>📚 Catálogos Oficiales</span>", unsafe_allow_html=True)
+    st.markdown("**📚 Catálogos de precios**")
     archivos_cat = st.file_uploader(
-        "Formatos: Excel o CSV",
+        "Excel o CSV",
         type=['xlsx', 'xls', 'csv'],
         accept_multiple_files=True,
         key="cat_upload"
@@ -686,9 +707,10 @@ with st.sidebar:
                 st.session_state.catalogos.append(cat)
                 st.success(f"✅ {archivo.name[:30]}")
     
-    st.markdown("<span style='color:#9CA3AF; font-size:0.85rem;'>📦 Reportes de Almacén</span>", unsafe_allow_html=True)
+    st.markdown("**📦 Reportes de stock**")
+    st.caption("Prioridad: YESSICA → APRI.004 → APRI.001")
     archivos_stock = st.file_uploader(
-        "Formatos: Excel",
+        "Excel",
         type=['xlsx', 'xls'],
         accept_multiple_files=True,
         key="stock_upload"
@@ -699,12 +721,12 @@ with st.sidebar:
     st.markdown("---")
     
     if st.session_state.carrito:
-        st.markdown(f"### 🛒 Resumen Carrito")
-        st.metric("Ítems", len(st.session_state.carrito))
+        st.markdown(f"### 🛒 Carrito")
+        st.metric("Productos", len(st.session_state.carrito))
         total = sum(item['total'] for item in st.session_state.carrito)
-        st.metric("Valor Total", f"S/ {total:,.2f}")
+        st.metric("Total", f"S/ {total:,.2f}")
         
-        if st.button("🧹 Limpiar Carrito", use_container_width=True):
+        if st.button("🧹 Limpiar carrito", use_container_width=True):
             st.session_state.carrito = []
             st.rerun()
 
@@ -712,22 +734,22 @@ with st.sidebar:
 # TABS PRINCIPALES
 # ============================================
 
-tab1, tab2, tab3 = st.tabs(["🚀 MODO MASIVO", "🔍 BÚSQUEDA DIAGNÓSTICO", "🛒 CARRITO"])
+tab1, tab2, tab3 = st.tabs(["📦 MODO MASIVO (Bulk)", "🔍 BÚSQUEDA INTELIGENTE", "🛒 CARRITO DE COTIZACIÓN"])
 
 # ========== TAB 1: MODO MASIVO ==========
 with tab1:
-    st.markdown("### 🚀 Procesamiento de Pedidos por Lotes")
-    st.caption("Pega tu lista en formato `SKU:CANTIDAD` (uno por línea)")
+    st.markdown("### 📦 Ingresa productos en formato masivo")
+    st.caption("Formato: `SKU:CANTIDAD` (uno por línea)")
     
     texto_bulk = st.text_area(
         "",
         height=200,
-        placeholder="Ejemplo:\nRN9401276NA8:100\nCN0200047BK8:100"
+        placeholder="Ejemplo:\nRN9401276NA8:100\nCN0200047BK8:100\nRN0200065BK8:50"
     )
     
     col_b1, col_b2 = st.columns([1, 1])
     with col_b1:
-        if st.button("⚡ Iniciar Análisis", type="primary", use_container_width=True):
+        if st.button("🚀 Procesar lista", type="primary", use_container_width=True):
             if texto_bulk and st.session_state.catalogos and st.session_state.stocks:
                 pedidos = []
                 for line in texto_bulk.strip().split('\n'):
@@ -744,7 +766,7 @@ with tab1:
                                 pass
                 
                 if pedidos:
-                    with st.spinner("Procesando lógicas de cruce..."):
+                    with st.spinner("Procesando..."):
                         resultados_procesados = []
                         encontrados = 0
                         con_precio = 0
@@ -753,21 +775,27 @@ with tab1:
                         for pedido in pedidos:
                             prod = buscar_producto(pedido['sku'], st.session_state.catalogos, st.session_state.stocks, st.session_state.precio_key)
                             
-                            if prod['tiene_precio']: encontrados += 1; con_precio += 1
-                            if prod['tiene_stock']: con_stock += 1
+                            if prod['tiene_precio']:
+                                encontrados += 1
+                                con_precio += 1
+                            
+                            if prod['tiene_stock']:
+                                con_stock += 1
                             
                             if prod['tiene_precio'] and prod['tiene_stock']:
                                 cantidad_cotizar = min(pedido['cantidad'], prod['stock_total'])
                                 estado = "✅ OK"
                                 if cantidad_cotizar < pedido['cantidad']:
-                                    estado = f"⚠️ Stock parcial ({cantidad_cotizar}/{pedido['cantidad']})"
+                                    estado = f"⚠️ Stock insuficiente ({cantidad_cotizar}/{pedido['cantidad']})"
                             elif not prod['tiene_precio'] and prod['tiene_stock']:
                                 cantidad_cotizar = 0
-                                estado = "⚠️ Stock sin precio (Error SKU)"
+                                estado = "⚠️ Stock disponible - SIN PRECIO (Error de SKU)"
                             elif not prod['tiene_precio']:
-                                cantidad_cotizar = 0; estado = "❌ Sin precio"
+                                cantidad_cotizar = 0
+                                estado = "❌ Sin precio"
                             else:
-                                cantidad_cotizar = 0; estado = "❌ Sin stock"
+                                cantidad_cotizar = 0
+                                estado = "❌ Sin stock"
                             
                             resultados_procesados.append({
                                 **prod,
@@ -784,37 +812,36 @@ with tab1:
                         total_sin_precio = total_ingresados - total_encontrados
                         total_sin_stock = total_ingresados - total_con_stock
                         
-                        # NUEVO DISEÑO HTML PARA CONTADORES
                         st.markdown(f"""
                         <div class="counter-summary">
-                            <div class="counter-item"><span class="counter-label">Ingresados</span><span class="counter-number">{total_ingresados}</span></div>
-                            <div class="counter-item" style="border-left: 3px solid #10B981;"><span class="counter-label">Completos</span><span class="counter-number" style="color:#34D399;">{total_encontrados}</span></div>
-                            <div class="counter-item" style="border-left: 3px solid #F59E0B;"><span class="counter-label">Con Stock</span><span class="counter-number" style="color:#FBBF24;">{total_con_stock}</span></div>
-                            <div class="counter-item" style="border-left: 3px solid #F43F5E;"><span class="counter-label">Sin Precio</span><span class="counter-number" style="color:#FB7185;">{total_sin_precio}</span></div>
-                            <div class="counter-item" style="border-left: 3px solid #9CA3AF;"><span class="counter-label">Sin Stock</span><span class="counter-number" style="color:#9CA3AF;">{total_sin_stock}</span></div>
+                            <div class="counter-item"><span>📋</span><span class="counter-label">Ingresados:</span><span class="counter-number">{total_ingresados}</span></div>
+                            <div class="counter-item" style="background:#4CAF50;color:white;"><span>✅</span><span class="counter-label" style="color:white;">Encontrados:</span><span class="counter-number" style="color:white;">{total_encontrados}</span></div>
+                            <div class="counter-item"><span>📦</span><span class="counter-label">Con stock:</span><span class="counter-number">{total_con_stock}</span></div>
+                            <div class="counter-item" style="background:#ffebee;"><span>❌</span><span class="counter-label">Sin precio:</span><span class="counter-number" style="color:#f44336;">{total_sin_precio}</span></div>
+                            <div class="counter-item" style="background:#ffebee;"><span>🚫</span><span class="counter-label">Sin stock:</span><span class="counter-number" style="color:#f44336;">{total_sin_stock}</span></div>
                         </div>
                         """, unsafe_allow_html=True)
                         
                         error_sku = [p for p in resultados_procesados if p['tiene_stock'] and not p['tiene_precio']]
                         if error_sku:
                             st.markdown("""
-                            <div style="background:rgba(244, 63, 94, 0.1); border-radius:12px; padding:1.2rem; margin:1rem 0; border:1px solid rgba(244, 63, 94, 0.3); border-left:4px solid #F43F5E;">
-                                <strong style="color:#FB7185;">⚠️ DIAGNÓSTICO: ERRORES DE CATÁLOGO DETECTADOS</strong><br>
-                                <span style="font-size:0.85rem; color:#D1D5DB;">Los siguientes productos tienen inventario físico, pero su SKU no existe en el catálogo de precios actual.</span>
+                            <div style="background:#FFEBEE;border-radius:12px;padding:1rem;margin:1rem 0;border-left:4px solid #f44336;">
+                                <strong style="color:#c62828;">⚠️ ERRORES DE SKU DETECTADOS</strong>
+                                <span style="font-size:0.8rem;margin-left:8px;">Productos con stock pero sin precio</span>
                             </div>
                             """, unsafe_allow_html=True)
-                            df_error = pd.DataFrame([{'SKU Físico': p['sku'], 'Descripción Detectada': p['descripcion'][:60], 'Unidades': p['stock_total']} for p in error_sku])
+                            df_error = pd.DataFrame([{'SKU': p['sku'], 'Descripción': p['descripcion'][:50], 'Stock': p['stock_total']} for p in error_sku])
                             st.dataframe(df_error, use_container_width=True, hide_index=True)
                         
-                        st.success(f"✅ Análisis completado para {len(pedidos)} SKUs.")
+                        st.success(f"✅ Procesados {len(pedidos)} productos")
                         st.rerun()
                 else:
-                    st.warning("El formato de texto no es válido.")
+                    st.warning("No se encontraron productos válidos")
             else:
-                st.warning("⚠️ Debes cargar al menos un catálogo y un reporte de stock primero.")
+                st.warning("Carga catálogos y stock primero")
     
     with col_b2:
-        if st.button("📥 Trasladar Disponibles al Carrito", use_container_width=True):
+        if st.button("📋 Agregar válidos al carrito", use_container_width=True):
             if hasattr(st.session_state, 'resultados_bulk'):
                 agregados = 0
                 for prod in st.session_state.resultados_bulk:
@@ -831,80 +858,91 @@ with tab1:
                         }
                         st.session_state.carrito.append(item_carrito)
                         agregados += 1
-                st.success(f"✅ Se han movido {agregados} líneas al carrito.")
+                st.success(f"✅ Agregados {agregados} productos al carrito")
                 st.rerun()
 
 # ========== TAB 2: BÚSQUEDA INTELIGENTE CON DIAGNÓSTICO ==========
 with tab2:
-    st.markdown("### 🔍 Motor de Búsqueda y Diagnóstico")
-    st.caption("Explora el inventario o investiga problemas de SKU cruzando datos.")
+    st.markdown("### 🔍 Buscar productos por SKU o descripción")
+    st.caption("Escribe parte del nombre, modelo o SKU del producto")
+    st.info("💡 **Diagnóstico automático**: Detecta productos con stock pero sin precio y sugiere SKU equivalentes.")
     
-    busqueda = st.text_input("", placeholder="🔍 Buscar por nombre de producto, modelo o código SKU...")
+    busqueda = st.text_input("", placeholder="Ej: 'earphone black', 'cargador', 'RN0200065BK8'")
     
     if busqueda and len(busqueda) >= 2 and st.session_state.catalogos and st.session_state.stocks:
-        with st.spinner("Ejecutando algoritmos de búsqueda y similitud..."):
+        with st.spinner("🔍 Buscando y diagnosticando..."):
             resultados_busqueda = []
             skus_vistos = set()
             
+            # Buscar en catálogos
             for cat in st.session_state.catalogos:
                 df = cat['df']
                 mask_sku = df[cat['col_sku']].astype(str).str.contains(busqueda, case=False, na=False)
                 mask_desc = pd.Series([False] * len(df))
-                if cat['col_desc']: mask_desc = df[cat['col_desc']].astype(str).str.contains(busqueda, case=False, na=False)
+                if cat['col_desc']:
+                    mask_desc = df[cat['col_desc']].astype(str).str.contains(busqueda, case=False, na=False)
                 mask = mask_sku | mask_desc
+                
                 for _, row in df[mask].iterrows():
                     sku = str(row[cat['col_sku']]).strip().upper()
-                    if sku in skus_vistos: continue
+                    if sku in skus_vistos:
+                        continue
                     skus_vistos.add(sku)
                     prod = buscar_producto(sku, st.session_state.catalogos, st.session_state.stocks, st.session_state.precio_key)
                     prod['fuente'] = '📋 Catálogo'
                     resultados_busqueda.append(prod)
             
+            # Buscar en stocks
             for stock in st.session_state.stocks:
                 df = stock['df']
                 col_sku = stock['col_sku']
                 mask_sku = df[col_sku].astype(str).str.contains(busqueda, case=False, na=False)
+                
                 mask_desc = pd.Series([False] * len(df))
                 for col in df.columns:
                     col_upper = str(col).upper()
                     if any(p in col_upper for p in ['DESC', 'PRODUCTO', 'NOMBRE', 'ARTICULO']):
                         mask_desc = mask_desc | df[col].astype(str).str.contains(busqueda, case=False, na=False)
+                
                 mask = mask_sku | mask_desc
+                
                 for _, row in df[mask].iterrows():
                     sku = str(row[col_sku]).strip().upper()
-                    if sku in skus_vistos: continue
+                    if sku in skus_vistos:
+                        continue
                     skus_vistos.add(sku)
                     prod = buscar_producto(sku, st.session_state.catalogos, st.session_state.stocks, st.session_state.precio_key)
                     prod['fuente'] = f'📦 Stock ({stock["hoja"]})'
                     resultados_busqueda.append(prod)
             
             if resultados_busqueda:
-                st.markdown(f"<div style='margin-bottom: 15px; color:#10B981; font-weight:600;'>✅ {len(resultados_busqueda)} resultados encontrados</div>", unsafe_allow_html=True)
+                st.success(f"✅ {len(resultados_busqueda)} productos encontrados")
                 
                 for prod in resultados_busqueda:
                     badge_stock = construir_badge_stock(prod['stock_yessica'], prod['stock_apri004'], prod['stock_apri001'])
                     
-                    # CASO: STOCK SIN PRECIO - ERROR DE SKU (ROJO)
+                    # CASO: STOCK SIN PRECIO - ERROR DE SKU
                     if prod['tiene_stock'] and not prod['tiene_precio']:
                         st.markdown(f"""
-                        <div class="card-premium" style="border-left: 4px solid #F43F5E; background: rgba(244, 63, 94, 0.03);">
+                        <div style="background:#FFEBEE;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #f44336;">
                             <div style="display:flex;justify-content:space-between;align-items:center;">
-                                <div><span style="background:rgba(244, 63, 94, 0.2);color:#FB7185;padding:4px 12px;border-radius:6px;font-size:0.75rem;font-weight:600; border: 1px solid rgba(244, 63, 94, 0.3);">⚠️ ERROR DE CATÁLOGO DETECTADO</span></div>
-                                <div><span style="background:rgba(255, 255, 255, 0.1);color:#D1D5DB;padding:4px 10px;border-radius:6px;font-size:0.7rem;">Fuente: {prod['fuente']}</span></div>
+                                <div><span style="background:#f44336;color:white;padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:bold;">⚠️ PROBLEMA DETECTADO - ERROR DE SKU</span></div>
+                                <div><span style="background:#ff9800;color:white;padding:2px 8px;border-radius:12px;font-size:0.6rem;">{prod['fuente']}</span></div>
                             </div>
-                            <div style="margin-top:16px;">
-                                <strong style="color:#F8FAFC; font-size:1.1rem;">📦 {prod['sku']}</strong><br>
-                                <span style="color:#9CA3AF; font-size:0.95rem;">{prod['descripcion']}</span><br>
+                            <div style="margin-top:12px;">
+                                <strong>📦 SKU BUSCADO:</strong> {prod['sku']}<br>
+                                <strong>📝 Descripción:</strong> {prod['descripcion']}<br>
+                                <strong>📦 Stock disponible:</strong> {prod['stock_total']} unidades
                             </div>
-                            <div style="margin-top:12px; display:flex; gap: 15px; font-weight: 500;">
-                                <span style="color:#D1D5DB;">💰 Precio: <span style="color:#FB7185;">No Oficial</span></span>
-                                <span style="color:#D1D5DB;">📦 Stock Total: {prod['stock_total']} ud.</span>
+                            <div style="margin-top:10px;background:#FFF3E0;padding:8px;border-radius:8px;">
+                                <strong>🔍 Análisis:</strong> Este SKU tiene stock pero no existe en los catálogos de precios.
                             </div>
-                            <div style="margin-top:12px;">{badge_stock}</div>
                         </div>
                         """, unsafe_allow_html=True)
                         
+                        # Mostrar SKU equivalente encontrado
                         if prod.get('sku_equivalente'):
+                            # Buscar precio y descripción del equivalente
                             precio_eq = 0
                             desc_eq = ""
                             for cat in st.session_state.catalogos:
@@ -921,116 +959,130 @@ with tab2:
                                     break
                             
                             st.markdown(f"""
-                            <div style="background:rgba(16, 185, 129, 0.05); border-radius:12px; padding:1.2rem; margin-top:-0.5rem; margin-bottom:1rem; border:1px solid rgba(16, 185, 129, 0.2); border-left:4px solid #10B981;">
-                                <strong style="color:#34D399;">💡 SOLUCIÓN: SKU EQUIVALENTE ENCONTRADO</strong>
-                                <div style="margin-top:10px; color:#D1D5DB;">
-                                    El sistema detectó que <code>{prod['sku_equivalente']}</code> comparte la misma descripción.<br>
-                                    <strong style="color:#F8FAFC;">Precio Oficial:</strong> S/ {precio_eq:,.2f} &nbsp;|&nbsp; <strong>Match:</strong> {prod['similitud_equivalente']:.0f}%
+                            <div style="background:#E8F5E9;border-radius:12px;padding:1rem;margin:0.5rem 0;border-left:4px solid #4CAF50;">
+                                <strong style="color:#2E7D32;">💡 SE ENCONTRÓ EL ARTÍCULO CON MISMA DESCRIPCIÓN PERO OTRO SKU</strong>
+                                <div style="margin-top:10px;">
+                                    <strong>SKU equivalente:</strong> <code>{prod['sku_equivalente']}</code><br>
+                                    <strong>Descripción:</strong> {desc_eq}<br>
+                                    <strong>Precio {st.session_state.precio_key}:</strong> S/ {precio_eq:,.2f}<br>
+                                    <strong>Coincidencia:</strong> {prod['similitud_equivalente']:.0f}%
                                 </div>
                             </div>
                             """, unsafe_allow_html=True)
                             
                             col_eq1, col_eq2 = st.columns(2)
                             with col_eq1:
-                                if st.button(f"✅ Reemplazar con {prod['sku_equivalente']}", key=f"use_eq_{prod['sku']}"):
+                                if st.button(f"➕ Usar SKU equivalente ({prod['sku_equivalente']})", key=f"use_eq_{prod['sku']}"):
                                     item_carrito = {
-                                        'sku': prod['sku_equivalente'], 'descripcion': desc_eq,
-                                        'cantidad': 1, 'precio': precio_eq, 'total': precio_eq,
-                                        'stock_yessica': 0, 'stock_apri004': prod['stock_apri004'], 'stock_apri001': prod['stock_apri001']
+                                        'sku': prod['sku_equivalente'],
+                                        'descripcion': desc_eq,
+                                        'cantidad': 1,
+                                        'precio': precio_eq,
+                                        'total': precio_eq,
+                                        'stock_yessica': 0,
+                                        'stock_apri004': prod['stock_apri004'],
+                                        'stock_apri001': prod['stock_apri001']
                                     }
                                     st.session_state.carrito.append(item_carrito)
-                                    st.success("Reemplazo exitoso.")
+                                    st.success(f"✅ Agregado {prod['sku_equivalente']} al carrito")
                                     st.rerun()
                             with col_eq2:
-                                if st.button(f"Ignorar y mantener ({prod['sku']})", key=f"use_orig_{prod['sku']}"):
-                                    st.warning("SKU sin precio. Imposible cotizar.")
+                                if st.button(f"📝 Seguir con SKU original ({prod['sku']}) sin precio", key=f"use_orig_{prod['sku']}"):
+                                    st.warning(f"⚠️ El SKU {prod['sku']} no tiene precio. No se puede agregar al carrito.")
                         
+                        # Mostrar alternativas
                         elif prod.get('alternativas') and len(prod['alternativas']) > 0:
-                            st.markdown('<div style="margin:1rem 0; color:#FBBF24; font-weight:600;">⚡ Otras alternativas tarifadas:</div>', unsafe_allow_html=True)
+                            st.markdown('<div style="background:#FFF8E1;border-radius:12px;padding:0.75rem;margin:0.5rem 0;"><strong>💡 PRODUCTOS SIMILARES ENCONTRADOS:</strong></div>', unsafe_allow_html=True)
                             for alt in prod['alternativas'][:3]:
                                 badge_alt = construir_badge_stock(alt['stock_yessica'], alt['stock_apri004'], alt['stock_apri001'])
                                 st.markdown(f"""
                                 <div class="alternativa-item">
-                                    <strong style="color:#F8FAFC;">📦 {alt['sku']}</strong>
-                                    <span style="background:rgba(245, 158, 11, 0.2);color:#FBBF24;padding:2px 8px;border-radius:6px;font-size:0.7rem; float:right;">Match: {alt['similitud']:.0f}%</span><br>
-                                    <span style="font-size:0.85rem; color:#9CA3AF;">{alt['descripcion'][:80]}</span>
-                                    <div style="margin-top:8px; color:#D1D5DB;">💰 S/ {alt['precio']:,.2f} &nbsp;|&nbsp; 📦 {alt['stock_total']} ud.</div>
-                                    <div style="margin-top:8px;">{badge_alt}</div>
+                                    <strong>📦 {alt['sku']}</strong>
+                                    <span style="background:#FF9800;color:white;padding:2px 6px;border-radius:10px;font-size:0.6rem;">{alt['similitud']:.0f}% coincidencia</span><br>
+                                    <span style="font-size:0.75rem;">{alt['descripcion'][:80]}</span>
+                                    <div>💰 Precio: S/ {alt['precio']:,.2f} | 📦 Stock: {alt['stock_total']}</div>
+                                    <div>{badge_alt}</div>
                                 </div>
                                 """, unsafe_allow_html=True)
+                        else:
+                            st.info("No se encontraron SKU alternativos con la misma descripción.")
                     
-                    # CASO NORMAL: CON STOCK Y PRECIO (VERDE)
+                    # CASO NORMAL: CON STOCK Y PRECIO
                     elif prod['tiene_stock'] and prod['tiene_precio']:
                         st.markdown(f"""
-                        <div class="card-premium" style="border-left: 4px solid #10B981;">
-                            <div><strong style="color:#F8FAFC; font-size:1.1rem;">📦 {prod['sku']}</strong> <span style="background:rgba(16, 185, 129, 0.2);color:#34D399;padding:4px 10px;border-radius:6px;font-size:0.7rem; font-weight:600; float:right;">✅ DISPONIBLE</span></div>
-                            <div style="margin-top:12px;"><span style="color:#9CA3AF; font-size:0.95rem;">{prod['descripcion']}</span></div>
-                            <div style="margin-top:12px; display:flex; gap: 15px; font-weight: 500;">
-                                <span style="color:#D1D5DB;">💰 S/ <strong style="color:#34D399;">{prod['precio']:,.2f}</strong></span>
-                                <span style="color:#D1D5DB;">📦 <strong style="color:#F8FAFC;">{prod['stock_total']}</strong> ud.</span>
-                            </div>
-                            <div style="margin-top:12px;">{badge_stock}</div>
+                        <div style="background:white;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #4CAF50;">
+                            <div><strong>📦 {prod['sku']}</strong> <span style="background:#4CAF50;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">✅ CON STOCK Y PRECIO</span></div>
+                            <div style="margin-top:8px;"><span style="font-size:0.85rem;">{prod['descripcion']}</span></div>
+                            <div style="margin-top:8px;">💰 Precio: <strong>S/ {prod['precio']:,.2f}</strong> | 📦 Stock: <strong>{prod['stock_total']}</strong></div>
+                            <div style="margin-top:8px;">{badge_stock}</div>
                         """, unsafe_allow_html=True)
                         
-                        col_cant, col_btn = st.columns([1, 3])
+                        if prod['usa_apri001']:
+                            st.markdown('<div style="background:#FCE4EC;padding:0.25rem 0.5rem;border-radius:8px;margin:0.5rem 0;font-size:0.7rem;">⚠️ Stock en APRI.001 - Solicitar transferencia</div>', unsafe_allow_html=True)
+                        
+                        col_cant, col_btn = st.columns([1, 2])
                         with col_cant:
-                            cantidad = st.number_input("Cant.", min_value=1, max_value=prod['stock_total'], value=1, step=1, key=f"ok_{prod['sku']}")
+                            cantidad = st.number_input("Cantidad", min_value=1, max_value=prod['stock_total'], value=1, step=1, key=f"ok_{prod['sku']}")
                         with col_btn:
-                            st.write("") # Spacer
-                            if st.button(f"🛒 Añadir al Carrito", key=f"add_ok_{prod['sku']}"):
+                            if st.button(f"➕ Agregar a cotización", key=f"add_ok_{prod['sku']}"):
                                 item_carrito = {
-                                    'sku': prod['sku'], 'descripcion': prod['descripcion'], 'cantidad': cantidad,
-                                    'precio': prod['precio'], 'total': prod['precio'] * cantidad,
-                                    'stock_yessica': prod['stock_yessica'], 'stock_apri004': prod['stock_apri004'], 'stock_apri001': prod['stock_apri001']
+                                    'sku': prod['sku'],
+                                    'descripcion': prod['descripcion'],
+                                    'cantidad': cantidad,
+                                    'precio': prod['precio'],
+                                    'total': prod['precio'] * cantidad,
+                                    'stock_yessica': prod['stock_yessica'],
+                                    'stock_apri004': prod['stock_apri004'],
+                                    'stock_apri001': prod['stock_apri001']
                                 }
                                 st.session_state.carrito.append(item_carrito)
-                                st.success("Añadido exitosamente.")
+                                st.success(f"✅ Agregado {cantidad}x {prod['sku']}")
                                 st.rerun()
                         st.markdown('</div>', unsafe_allow_html=True)
                     
-                    # CASO: SOLO PRECIO (AZUL)
+                    # CASO: SOLO PRECIO
                     elif not prod['tiene_stock'] and prod['tiene_precio']:
                         st.markdown(f"""
-                        <div class="card-premium" style="border-left: 4px solid #3B82F6;">
-                            <div><strong style="color:#F8FAFC; font-size:1.1rem;">📦 {prod['sku']}</strong> <span style="background:rgba(59, 130, 246, 0.2);color:#60A5FA;padding:4px 10px;border-radius:6px;font-size:0.7rem; font-weight:600; float:right;">📋 SOLO EN CATÁLOGO</span></div>
-                            <div style="margin-top:12px;"><span style="color:#9CA3AF; font-size:0.95rem;">{prod['descripcion']}</span></div>
-                            <div style="margin-top:12px; font-weight: 500;">
-                                <span style="color:#D1D5DB;">💰 S/ <strong style="color:#60A5FA;">{prod['precio']:,.2f}</strong></span>
-                            </div>
-                            <div style="margin-top:12px;">{badge_stock}</div>
+                        <div style="background:#E3F2FD;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #2196F3;">
+                            <div><strong>📦 {prod['sku']}</strong> <span style="background:#2196F3;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">📋 SOLO PRECIO - SIN STOCK</span></div>
+                            <div style="margin-top:8px;"><span style="font-size:0.85rem;">{prod['descripcion']}</span></div>
+                            <div style="margin-top:8px;">💰 Precio: <strong>S/ {prod['precio']:,.2f}</strong></div>
+                            <div style="margin-top:8px;">{badge_stock}</div>
                         </div>
                         """, unsafe_allow_html=True)
                     
-                    # CASO: NO DISPONIBLE (GRIS)
+                    # CASO: NO DISPONIBLE
                     else:
                         st.markdown(f"""
-                        <div class="card-premium" style="border-left: 4px solid #6B7280; opacity: 0.7;">
-                            <div><strong style="color:#F8FAFC; font-size:1.1rem;">📦 {prod['sku']}</strong> <span style="background:rgba(107, 114, 128, 0.2);color:#9CA3AF;padding:4px 10px;border-radius:6px;font-size:0.7rem; font-weight:600; float:right;">❌ AGOTADO / INACTIVO</span></div>
-                            <div style="margin-top:12px;"><span style="color:#9CA3AF; font-size:0.95rem;">{prod['descripcion']}</span></div>
-                            <div style="margin-top:12px;">{badge_stock}</div>
+                        <div style="background:#F5F5F5;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #9e9e9e;">
+                            <div><strong>📦 {prod['sku']}</strong> <span style="background:#9e9e9e;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">❌ NO DISPONIBLE</span></div>
+                            <div style="margin-top:8px;"><span style="font-size:0.85rem;">{prod['descripcion']}</span></div>
+                            <div style="margin-top:8px;">{badge_stock}</div>
                         </div>
                         """, unsafe_allow_html=True)
+                    
+                    st.divider()
             else:
-                st.info("Sin coincidencias en la base de datos.")
+                st.info("No se encontraron productos.")
     elif busqueda and len(busqueda) >= 2:
-        st.warning("⚠️ Asegúrate de cargar Data Sources (Catálogo y Stock) en el panel izquierdo.")
+        if not st.session_state.catalogos:
+            st.warning("⚠️ No hay catálogos cargados.")
+        if not st.session_state.stocks:
+            st.warning("⚠️ No hay stocks cargados.")
 
 # ========== TAB 3: CARRITO ==========
 with tab3:
-    st.markdown("### 🛒 Documento de Cotización")
+    st.markdown("### 🛒 Cotización actual")
     
     if not st.session_state.carrito:
-        st.info("El carrito de cotización está vacío.")
+        st.info("No hay productos en el carrito.")
     else:
         for idx, item in enumerate(st.session_state.carrito):
-            st.markdown(f"""<div style="background:#1F2937; padding:1rem; border-radius:12px; margin-bottom:10px; border: 1px solid rgba(255,255,255,0.05);">""", unsafe_allow_html=True)
-            col1, col2, col3, col4, col5, col6 = st.columns([1.5, 3, 1, 1, 1, 0.5])
+            col1, col2, col3, col4, col5, col6 = st.columns([2, 3, 1, 1, 1, 0.5])
             with col1:
-                st.write(f"<span style='color:#F8FAFC; font-weight:600;'>{item['sku']}</span>", unsafe_allow_html=True)
-                badge = construir_badge_stock(item['stock_yessica'], item['stock_apri004'], item['stock_apri001'])
-                st.markdown(badge, unsafe_allow_html=True)
+                st.write(f"**{item['sku']}**")
             with col2:
-                st.write(f"<span style='color:#9CA3AF; font-size:0.9rem;'>{item['descripcion'][:60]}...</span>", unsafe_allow_html=True)
+                st.write(item['descripcion'][:50])
             with col3:
                 nueva_cant = st.number_input("Cant", min_value=0, max_value=item['stock_yessica']+item['stock_apri004']+item['stock_apri001'], value=item['cantidad'], step=1, key=f"edit_{idx}", label_visibility="collapsed")
                 if nueva_cant != item['cantidad']:
@@ -1040,49 +1092,52 @@ with tab3:
                         st.session_state.carrito.pop(idx)
                         st.rerun()
             with col4:
-                st.write(f"<span style='color:#D1D5DB;'>S/ {item['precio']:,.2f}</span>", unsafe_allow_html=True)
+                st.write(f"S/ {item['precio']:,.2f}")
             with col5:
-                st.write(f"<span style='color:#34D399; font-weight:600;'>S/ {item['total']:,.2f}</span>", unsafe_allow_html=True)
+                st.write(f"S/ {item['total']:,.2f}")
             with col6:
                 if st.button("🗑️", key=f"del_{idx}"):
                     st.session_state.carrito.pop(idx)
                     st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
+            
+            badge = construir_badge_stock(item['stock_yessica'], item['stock_apri004'], item['stock_apri001'])
+            st.markdown(f'<div style="margin-bottom:0.5rem;">{badge}</div>', unsafe_allow_html=True)
+            st.divider()
         
         total_general = sum(item['total'] for item in st.session_state.carrito)
         st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #E11D48 0%, #BE123C 100%); border-radius:16px; padding:1.5rem; margin:1.5rem 0; text-align:right; box-shadow: 0 4px 15px rgba(225, 29, 72, 0.3);">
-            <span style="color:rgba(255,255,255,0.8); font-size:1.2rem; margin-right: 15px;">IMPORTE TOTAL:</span>
-            <span style="color:white; font-size:2rem; font-weight:700;">S/ {total_general:,.2f}</span>
+        <div style="background:linear-gradient(135deg,#e94560 0%,#c73e54 100%);border-radius:12px;padding:1rem;margin:1rem 0;text-align:center;">
+            <span style="color:white;font-size:1.5rem;font-weight:bold;">TOTAL: S/ {total_general:,.2f}</span>
         </div>
         """, unsafe_allow_html=True)
         
-        st.markdown("### 📋 Emisión de Documento")
+        st.markdown("### 📋 Datos del cliente")
         col_cli1, col_cli2 = st.columns(2)
         with col_cli1:
-            cliente = st.text_input("Razón Social", placeholder="Ej: Empresa SAC")
+            cliente = st.text_input("Nombre del cliente", placeholder="Ej: Empresa SAC")
         with col_cli2:
-            ruc = st.text_input("RUC / DNI", placeholder="Ej: 20123456789")
+            ruc = st.text_input("RUC/DNI", placeholder="Ej: 20123456789")
         
         col_exp1, col_exp2, col_exp3 = st.columns(3)
         with col_exp1:
-            if st.button("📥 Generar Excel Oficial", type="primary", use_container_width=True):
+            if st.button("📥 Exportar Excel", type="primary", use_container_width=True):
                 if cliente:
                     items_export = [{'sku': i['sku'], 'descripcion': i['descripcion'], 'cantidad': i['cantidad'], 'precio': i['precio'], 'total': i['total']} for i in st.session_state.carrito]
                     excel = generar_excel(items_export, cliente, ruc)
-                    st.download_button("💾 Descargar Archivo", data=excel, file_name=f"Cotizacion_{cliente}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx", use_container_width=True)
-                    st.success("✅ Documento listo.")
+                    st.download_button("💾 Descargar", data=excel, file_name=f"Cotizacion_{cliente}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx", use_container_width=True)
+                    st.balloons()
+                    st.success("✅ Cotización generada")
                 else:
-                    st.warning("⚠️ La Razón Social es obligatoria.")
+                    st.warning("Ingresa el nombre del cliente")
         with col_exp2:
-            if st.button("📋 Copiar formato CSV", use_container_width=True):
+            if st.button("📋 Copiar CSV", use_container_width=True):
                 csv_text = "SKU,Descripción,Cantidad,Precio,Subtotal\n"
                 for item in st.session_state.carrito:
                     csv_text += f"{item['sku']},{item['descripcion']},{item['cantidad']},{item['precio']:.2f},{item['total']:.2f}\n"
                 csv_text += f"TOTAL,{total_general:.2f}"
                 st.code(csv_text, language="csv")
         with col_exp3:
-            if st.button("🗑️ Vaciar Bandeja", use_container_width=True):
+            if st.button("🧹 Limpiar todo", use_container_width=True):
                 st.session_state.carrito = []
                 st.rerun()
 
@@ -1091,4 +1146,4 @@ with tab3:
 # ============================================
 
 st.markdown("---")
-st.markdown('<div class="footer">⚙️ QTC Smart Sales Pro v4.1 | UI Premium Edition</div>', unsafe_allow_html=True)
+st.markdown('<div class="footer">⚡ QTC Smart Sales Pro v4.1 | Con detección de SKU equivalentes</div>', unsafe_allow_html=True)
