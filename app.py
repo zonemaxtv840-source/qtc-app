@@ -834,7 +834,7 @@ with tab1:
                             st.dataframe(df_error, use_container_width=True, hide_index=True)
                         
                         st.success(f"✅ Procesados {len(pedidos)} productos")
-                        # ELIMINÉ EL st.rerun() DE AQUÍ
+                        # NO hay st.rerun() aquí para que se vean los resultados
                 else:
                     st.warning("No se encontraron productos válidos")
             else:
@@ -842,7 +842,7 @@ with tab1:
     
     with col_b2:
         if st.button("📋 Agregar válidos al carrito", use_container_width=True):
-            if hasattr(st.session_state, 'resultados_bulk'):
+            if hasattr(st.session_state, 'resultados_bulk') and st.session_state.resultados_bulk:
                 agregados = 0
                 for prod in st.session_state.resultados_bulk:
                     if prod['cantidad_cotizar'] > 0 and prod['tiene_precio']:
@@ -860,44 +860,122 @@ with tab1:
                         agregados += 1
                 st.success(f"✅ Agregados {agregados} productos al carrito")
                 st.rerun()
+            else:
+                st.warning("Primero procesa una lista de productos")
     
-    # ========== NUEVO: MOSTRAR RESULTADOS DESPUÉS DE PROCESAR ==========
+    # ========== MOSTRAR RESULTADOS SI EXISTEN (CON EL MISMO ESTILO ORIGINAL) ==========
     if 'resultados_bulk' in st.session_state and st.session_state.resultados_bulk:
         st.markdown("---")
-        st.markdown("### 📋 Resultados detallados del procesamiento")
+        st.markdown("### 📋 Productos procesados")
         
-        # Tabla de resultados
-        df_resultados = pd.DataFrame([{
-            'SKU': p['sku'],
-            'Descripción': p['descripcion'][:60] + ('...' if len(p['descripcion']) > 60 else ''),
-            'Solicitado': p['cantidad_solicitada'],
-            'Cotizable': p['cantidad_cotizar'],
-            'Precio': f"S/ {p['precio']:.2f}" if p['tiene_precio'] else 'SIN PRECIO',
-            'Stock': p['stock_total'],
-            'Estado': p['estado']
-        } for p in st.session_state.resultados_bulk])
-        
-        st.dataframe(df_resultados, use_container_width=True, hide_index=True)
-        
-        # Mostrar sugerencias de SKU equivalentes para productos con error
-        errores = [p for p in st.session_state.resultados_bulk if p['tiene_stock'] and not p['tiene_precio']]
-        for error in errores:
-            if error.get('sku_equivalente'):
-                st.markdown("---")
+        # Mostrar cada producto con el mismo estilo que usas en TAB 2
+        for prod in st.session_state.resultados_bulk:
+            badge_stock = construir_badge_stock(prod['stock_yessica'], prod['stock_apri004'], prod['stock_apri001'])
+            
+            # CASO: STOCK SIN PRECIO - ERROR DE SKU
+            if prod['tiene_stock'] and not prod['tiene_precio']:
                 st.markdown(f"""
-                <div style="background:#E8F5E9;border-radius:12px;padding:1rem;margin:1rem 0;">
-                    <strong>💡 SKU EQUIVALENTE ENCONTRADO</strong><br>
-                    <strong>SKU original:</strong> {error['sku']}<br>
-                    <strong>SKU sugerido:</strong> <code>{error['sku_equivalente']}</code><br>
-                    <strong>Coincidencia:</strong> {error['similitud_equivalente']:.0f}%
+                <div style="background:#FFEBEE;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #f44336;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div><span style="background:#f44336;color:white;padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:bold;">⚠️ PROBLEMA DETECTADO - ERROR DE SKU</span></div>
+                        <div><span style="background:#ff9800;color:white;padding:2px 8px;border-radius:12px;font-size:0.6rem;">Solicitado: {prod['cantidad_solicitada']}</span></div>
+                    </div>
+                    <div style="margin-top:12px;">
+                        <strong>📦 SKU BUSCADO:</strong> {prod['sku']}<br>
+                        <strong>📝 Descripción:</strong> {prod['descripcion']}<br>
+                        <strong>📦 Stock disponible:</strong> {prod['stock_total']} unidades<br>
+                        <strong>⚠️ Estado:</strong> {prod['estado']}
+                    </div>
+                    <div style="margin-top:8px;">{badge_stock}</div>
                 </div>
                 """, unsafe_allow_html=True)
+                
+                # Mostrar SKU equivalente encontrado
+                if prod.get('sku_equivalente'):
+                    precio_eq = 0
+                    desc_eq = ""
+                    for cat in st.session_state.catalogos:
+                        df = cat['df']
+                        df_sku = df[cat['col_sku']].astype(str).str.strip().str.upper()
+                        mask = df_sku == prod['sku_equivalente']
+                        if mask.any():
+                            row = df[mask].iloc[0]
+                            if st.session_state.precio_key in cat['precios']:
+                                col_precio = cat['precios'][st.session_state.precio_key]
+                                precio_eq = corregir_numero(row[col_precio])
+                            if cat['col_desc']:
+                                desc_eq = str(row[cat['col_desc']])[:100]
+                            break
+                    
+                    st.markdown(f"""
+                    <div style="background:#E8F5E9;border-radius:12px;padding:1rem;margin:0.5rem 0;border-left:4px solid #4CAF50;">
+                        <strong style="color:#2E7D32;">💡 SE ENCONTRÓ EL ARTÍCULO CON MISMA DESCRIPCIÓN PERO OTRO SKU</strong>
+                        <div style="margin-top:10px;">
+                            <strong>SKU equivalente:</strong> <code>{prod['sku_equivalente']}</code><br>
+                            <strong>Descripción:</strong> {desc_eq}<br>
+                            <strong>Precio {st.session_state.precio_key}:</strong> S/ {precio_eq:,.2f}<br>
+                            <strong>Coincidencia:</strong> {prod['similitud_equivalente']:.0f}%
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                elif prod.get('alternativas') and len(prod['alternativas']) > 0:
+                    st.markdown('<div style="background:#FFF8E1;border-radius:12px;padding:0.75rem;margin:0.5rem 0;"><strong>💡 PRODUCTOS SIMILARES ENCONTRADOS:</strong></div>', unsafe_allow_html=True)
+                    for alt in prod['alternativas'][:3]:
+                        badge_alt = construir_badge_stock(alt['stock_yessica'], alt['stock_apri004'], alt['stock_apri001'])
+                        st.markdown(f"""
+                        <div class="alternativa-item">
+                            <strong>📦 {alt['sku']}</strong>
+                            <span style="background:#FF9800;color:white;padding:2px 6px;border-radius:10px;font-size:0.6rem;">{alt['similitud']:.0f}% coincidencia</span><br>
+                            <span style="font-size:0.75rem;">{alt['descripcion'][:80]}</span>
+                            <div>💰 Precio: S/ {alt['precio']:,.2f} | 📦 Stock: {alt['stock_total']}</div>
+                            <div>{badge_alt}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+            
+            # CASO NORMAL: CON STOCK Y PRECIO
+            elif prod['tiene_stock'] and prod['tiene_precio']:
+                cantidad_final = prod['cantidad_cotizar']
+                st.markdown(f"""
+                <div style="background:white;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #4CAF50;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div><strong>📦 {prod['sku']}</strong> <span style="background:#4CAF50;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">✅ CON STOCK Y PRECIO</span></div>
+                        <div><span style="background:#2196F3;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">Cotizar: {cantidad_final}/{prod['cantidad_solicitada']}</span></div>
+                    </div>
+                    <div style="margin-top:8px;"><span style="font-size:0.85rem;">{prod['descripcion']}</span></div>
+                    <div style="margin-top:8px;">💰 Precio: <strong>S/ {prod['precio']:,.2f}</strong> | 📦 Stock: <strong>{prod['stock_total']}</strong></div>
+                    <div style="margin-top:8px;">{badge_stock}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # CASO: SOLO PRECIO
+            elif not prod['tiene_stock'] and prod['tiene_precio']:
+                st.markdown(f"""
+                <div style="background:#E3F2FD;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #2196F3;">
+                    <div><strong>📦 {prod['sku']}</strong> <span style="background:#2196F3;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">📋 SOLO PRECIO - SIN STOCK</span></div>
+                    <div style="margin-top:8px;"><span style="font-size:0.85rem;">{prod['descripcion']}</span></div>
+                    <div style="margin-top:8px;">💰 Precio: <strong>S/ {prod['precio']:,.2f}</strong></div>
+                    <div style="margin-top:8px;">{badge_stock}</div>
+                    <div style="margin-top:8px;"><strong>⚠️ Estado:</strong> {prod['estado']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # CASO: NO DISPONIBLE
+            else:
+                st.markdown(f"""
+                <div style="background:#F5F5F5;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #9e9e9e;">
+                    <div><strong>📦 {prod['sku']}</strong> <span style="background:#9e9e9e;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">❌ NO DISPONIBLE</span></div>
+                    <div style="margin-top:8px;"><span style="font-size:0.85rem;">{prod['descripcion']}</span></div>
+                    <div style="margin-top:8px;">{badge_stock}</div>
+                    <div style="margin-top:8px;"><strong>⚠️ Estado:</strong> {prod['estado']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.divider()
         
         # Botón para limpiar resultados
-        if st.button("🗑️ Limpiar resultados", key="clear_bulk_results"):
+        if st.button("🗑️ Limpiar resultados", key="clear_bulk_results", use_container_width=True):
             del st.session_state.resultados_bulk
             st.rerun()
-
 
 # ========== TAB 2: BÚSQUEDA INTELIGENTE CON DIAGNÓSTICO ==========
 with tab2:
