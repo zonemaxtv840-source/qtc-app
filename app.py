@@ -21,6 +21,69 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+# ======== ESTILOS VISUALES ========
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+.stApp {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #0f3460 0%, #16213e 50%, #1a1a2e 100%);
+    color: #e0e0e0;
+}
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
+    border-right: 2px solid #e94560;
+}
+[data-testid="stSidebar"] * { color: #e0e0e0 !important; }
+[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { color: #e94560 !important; }
+
+.stButton > button {
+    background: linear-gradient(90deg, #e94560, #ff6f61);
+    color: white;
+    border-radius: 25px;
+    font-weight: bold;
+    padding: 0.6rem 1.2rem;
+    transition: all 0.3s ease;
+    border: none;
+}
+.stButton > button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.result-card {
+    background: #fff;
+    border-left: 6px solid #e94560;
+    border-radius: 18px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: transform 0.2s ease;
+}
+.result-card:hover { transform: translateY(-3px); }
+.result-card h4 { margin: 0; color: #16213e; font-weight: bold; }
+.result-card p { color: #444; }
+
+.badge-yessica { background: #4CAF50; color: white !important; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin: 2px; }
+.badge-apri004 { background: #FF9800; color: #1a1a2e !important; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin: 2px; }
+.badge-apri001 { background: #f44336; color: white !important; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin: 2px; }
+
+.counter-summary {
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 1rem;
+    margin: 1rem 0;
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+.counter-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; padding: 0.25rem 0.75rem; border-radius: 20px; background: rgba(255,255,255,0.15); color: white; }
+.counter-number { font-weight: bold; font-size: 1.2rem; }
+
+.footer { text-align: center; padding: 1rem; color: #aaa; font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.2); margin-top: 2rem; }
+</style>
+""", unsafe_allow_html=True)
 
 # ============================================
 # CSS COMPLETO
