@@ -295,60 +295,78 @@ st.markdown("""
         background-color: #e94560;
         color: white !important;
     }
-    /* ============================================
-   MENSAJES DE STREAMLIT - PERSONALIZABLES
+  /* ============================================
+   MENSAJES DE STREAMLIT - FORZADO
    ============================================ */
 
 /* ✅ ÉXITO (st.success) - Fondo verde intenso + letras negras */
-div[data-testid="stAlert"][data-kind="success"] {
+div[data-testid="stAlert"][data-kind="success"],
+div.stAlert[data-kind="success"],
+div.element-container div.stAlert[data-kind="success"] {
+    background-color: #2e7d32 !important;
     background: #2e7d32 !important;
     border-left: 4px solid #1b5e20 !important;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
 }
 
-div[data-testid="stAlert"][data-kind="success"] .stMarkdown {
+div[data-testid="stAlert"][data-kind="success"] .stMarkdown,
+div[data-testid="stAlert"][data-kind="success"] p,
+div[data-testid="stAlert"][data-kind="success"] span,
+div.stAlert[data-kind="success"] .stMarkdown {
     color: #000000 !important;
-    font-weight: 500;
+    font-weight: bold !important;
 }
 
 /* ⚠️ ADVERTENCIA (st.warning) - Fondo amarillo fuerte + letras negras */
-div[data-testid="stAlert"][data-kind="warning"] {
+div[data-testid="stAlert"][data-kind="warning"],
+div.stAlert[data-kind="warning"] {
+    background-color: #f9a825 !important;
     background: #f9a825 !important;
     border-left: 4px solid #f57f17 !important;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
 }
 
-div[data-testid="stAlert"][data-kind="warning"] .stMarkdown {
+div[data-testid="stAlert"][data-kind="warning"] .stMarkdown,
+div[data-testid="stAlert"][data-kind="warning"] p,
+div.stAlert[data-kind="warning"] .stMarkdown {
     color: #000000 !important;
-    font-weight: 500;
+    font-weight: bold !important;
 }
 
 /* ❌ ERROR (st.error) - Fondo rojo fuerte + letras negras */
-div[data-testid="stAlert"][data-kind="error"] {
+div[data-testid="stAlert"][data-kind="error"],
+div.stAlert[data-kind="error"] {
+    background-color: #d32f2f !important;
     background: #d32f2f !important;
     border-left: 4px solid #b71c1c !important;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
 }
 
-div[data-testid="stAlert"][data-kind="error"] .stMarkdown {
+div[data-testid="stAlert"][data-kind="error"] .stMarkdown,
+div[data-testid="stAlert"][data-kind="error"] p,
+div.stAlert[data-kind="error"] .stMarkdown {
     color: #000000 !important;
-    font-weight: 500;
+    font-weight: bold !important;
 }
 
 /* ℹ️ INFORMACIÓN (st.info) - Fondo azul fuerte + letras negras */
-div[data-testid="stAlert"][data-kind="info"] {
+div[data-testid="stAlert"][data-kind="info"],
+div.stAlert[data-kind="info"] {
+    background-color: #1976d2 !important;
     background: #1976d2 !important;
     border-left: 4px solid #0d47a1 !important;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
 }
 
-div[data-testid="stAlert"][data-kind="info"] .stMarkdown {
+div[data-testid="stAlert"][data-kind="info"] .stMarkdown,
+div[data-testid="stAlert"][data-kind="info"] p,
+div.stAlert[data-kind="info"] .stMarkdown {
     color: #000000 !important;
-    font-weight: 500;
+    font-weight: bold !important;
 }
 </style>
 """, unsafe_allow_html=True)
