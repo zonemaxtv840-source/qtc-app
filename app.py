@@ -893,7 +893,7 @@ with tab1:
             else:
                 st.warning("Primero procesa una lista de productos")
     
-    # ========== MOSTRAR RESULTADOS SI EXISTEN (CON EL MISMO ESTILO ORIGINAL) ==========
+        # ========== MOSTRAR RESULTADOS SI EXISTEN (CON EL MISMO ESTILO ORIGINAL) ==========
     if 'resultados_bulk' in st.session_state and st.session_state.resultados_bulk:
         st.markdown("---")
         st.markdown("### 📋 Productos procesados")
@@ -905,7 +905,7 @@ with tab1:
             # CASO: STOCK SIN PRECIO - ERROR DE SKU
             if prod['tiene_stock'] and not prod['tiene_precio']:
                 st.markdown(f"""
-                <div style="background:#FFEBEE;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #f44336;">
+                <div style="background:#FFEBEE;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #f44336;color:#1a1a2e;">
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <div><span style="background:#f44336;color:white;padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:bold;">⚠️ PROBLEMA DETECTADO - ERROR DE SKU</span></div>
                         <div><span style="background:#ff9800;color:white;padding:2px 8px;border-radius:12px;font-size:0.6rem;">Solicitado: {prod['cantidad_solicitada']}</span></div>
@@ -938,7 +938,7 @@ with tab1:
                             break
                     
                     st.markdown(f"""
-                    <div style="background:#E8F5E9;border-radius:12px;padding:1rem;margin:0.5rem 0;border-left:4px solid #4CAF50;">
+                    <div style="background:#E8F5E9;border-radius:12px;padding:1rem;margin:0.5rem 0;border-left:4px solid #4CAF50;color:#1a1a2e;">
                         <strong style="color:#2E7D32;">💡 SE ENCONTRÓ EL ARTÍCULO CON MISMA DESCRIPCIÓN PERO OTRO SKU</strong>
                         <div style="margin-top:10px;">
                             <strong>SKU equivalente:</strong> <code>{prod['sku_equivalente']}</code><br>
@@ -949,11 +949,11 @@ with tab1:
                     </div>
                     """, unsafe_allow_html=True)
                 elif prod.get('alternativas') and len(prod['alternativas']) > 0:
-                    st.markdown('<div style="background:#FFF8E1;border-radius:12px;padding:0.75rem;margin:0.5rem 0;"><strong>💡 PRODUCTOS SIMILARES ENCONTRADOS:</strong></div>', unsafe_allow_html=True)
+                    st.markdown('<div style="background:#FFF8E1;border-radius:12px;padding:0.75rem;margin:0.5rem 0;color:#1a1a2e;"><strong>💡 PRODUCTOS SIMILARES ENCONTRADOS:</strong></div>', unsafe_allow_html=True)
                     for alt in prod['alternativas'][:3]:
                         badge_alt = construir_badge_stock(alt['stock_yessica'], alt['stock_apri004'], alt['stock_apri001'])
                         st.markdown(f"""
-                        <div class="alternativa-item">
+                        <div style="background:white;border-radius:12px;padding:0.75rem;margin:0.5rem 0;border:1px solid #FFE0B2;color:#1a1a2e;">
                             <strong>📦 {alt['sku']}</strong>
                             <span style="background:#FF9800;color:white;padding:2px 6px;border-radius:10px;font-size:0.6rem;">{alt['similitud']:.0f}% coincidencia</span><br>
                             <span style="font-size:0.75rem;">{alt['descripcion'][:80]}</span>
@@ -966,7 +966,7 @@ with tab1:
             elif prod['tiene_stock'] and prod['tiene_precio']:
                 cantidad_final = prod['cantidad_cotizar']
                 st.markdown(f"""
-                <div style="background:white;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #1a1a2e;">
+                <div style="background:white;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #4CAF50;color:#1a1a2e;">
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <div><strong>📦 {prod['sku']}</strong> <span style="background:#4CAF50;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">✅ CON STOCK Y PRECIO</span></div>
                         <div><span style="background:#2196F3;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">Cotizar: {cantidad_final}/{prod['cantidad_solicitada']}</span></div>
@@ -980,7 +980,7 @@ with tab1:
             # CASO: SOLO PRECIO
             elif not prod['tiene_stock'] and prod['tiene_precio']:
                 st.markdown(f"""
-                <div style="background:#E3F2FD;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #2196F3;">
+                <div style="background:#E3F2FD;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #2196F3;color:#1a1a2e;">
                     <div><strong>📦 {prod['sku']}</strong> <span style="background:#2196F3;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">📋 SOLO PRECIO - SIN STOCK</span></div>
                     <div style="margin-top:8px;"><span style="font-size:0.85rem;">{prod['descripcion']}</span></div>
                     <div style="margin-top:8px;">💰 Precio: <strong>S/ {prod['precio']:,.2f}</strong></div>
@@ -992,7 +992,7 @@ with tab1:
             # CASO: NO DISPONIBLE
             else:
                 st.markdown(f"""
-                <div style="background:#F5F5F5;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #9e9e9e;">
+                <div style="background:#F5F5F5;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #9e9e9e;color:#1a1a2e;">
                     <div><strong>📦 {prod['sku']}</strong> <span style="background:#9e9e9e;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">❌ NO DISPONIBLE</span></div>
                     <div style="margin-top:8px;"><span style="font-size:0.85rem;">{prod['descripcion']}</span></div>
                     <div style="margin-top:8px;">{badge_stock}</div>
@@ -1001,6 +1001,11 @@ with tab1:
                 """, unsafe_allow_html=True)
             
             st.divider()
+        
+        # Botón para limpiar resultados
+        if st.button("🗑️ Limpiar resultados", key="clear_bulk_results", use_container_width=True):
+            del st.session_state.resultados_bulk
+            st.rerun()
         
         # Botón para limpiar resultados
         if st.button("🗑️ Limpiar resultados", key="clear_bulk_results", use_container_width=True):
