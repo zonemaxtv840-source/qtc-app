@@ -6,3 +6,11 @@ pillow
 chardet
 numpy
 supabase
+streamlit
+pandas
+plotly
+openpyxl
+xlsxwriter
+streamlit-option-menu
+streamlit-extras
+Pillow
