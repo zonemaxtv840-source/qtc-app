@@ -171,6 +171,36 @@ st.markdown("""
         margin: 0.5rem 0;
         border: 1px solid #FFE0B2;
     }
+     /* ===== NUEVO CSS PARA ARREGLAR TEXTO BLANCO EN RESULTADOS ===== */
+    /* Forzar colores oscuros en los resultados del TAB 1 y TAB 2 */
+    div[style*="background:white"],
+    div[style*="background:#FFEBEE"],
+    div[style*="background:#E3F2FD"],
+    div[style*="background:#F5F5F5"],
+    div[style*="background:#E8F5E9"],
+    div[style*="background:#FFF8E1"],
+    .alternativa-item {
+        color: #1a1a2e !important;
+    }
+    
+    div[style*="background:white"] *,
+    div[style*="background:#FFEBEE"] *,
+    div[style*="background:#E3F2FD"] *,
+    div[style*="background:#F5F5F5"] *,
+    div[style*="background:#E8F5E9"] *,
+    div[style*="background:#FFF8E1"] *,
+    .alternativa-item * {
+        color: #1a1a2e !important;
+    }
+    
+    /* Mantener colores de badges */
+    .badge-yessica, .badge-apri001, .badge-warning {
+        color: white !important;
+    }
+    
+    .badge-apri004 {
+        color: #1a1a2e !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
