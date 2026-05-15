@@ -1380,183 +1380,195 @@ with tab2:
                     )
                     prod['alternativas'] = alternativas
             
-                        # ============================================
-            # 4. MOSTRAR RESULTADOS CON ESTILO APPLE
+           
             # ============================================
-            if productos_por_sku:
-                st.success(f"✅ {len(productos_por_sku)} productos encontrados")
+# 4. MOSTRAR RESULTADOS CON ESTILO APPLE
+# ============================================
+if productos_por_sku:
+    st.success(f"✅ {len(productos_por_sku)} productos encontrados")
+    
+    # Convertir a lista para mostrar
+    resultados_lista = list(productos_por_sku.values())
+    
+    # Ordenar: primero los que tienen stock, luego los que tienen precio
+    resultados_lista.sort(key=lambda x: (-x['tiene_stock'], -x['tiene_precio']))
+    
+    # Contador para delay de animación
+    for idx, prod in enumerate(resultados_lista):
+        # Determinar clase de borde y estado
+        if prod['tiene_stock'] and not prod['tiene_precio']:
+            border_class = "border-error"
+            status_type = "error"
+            status_text = "⚠️ STOCK SIN PRECIO"
+        elif prod['tiene_stock'] and prod['tiene_precio']:
+            border_class = "border-success"
+            status_type = "success"
+            status_text = "✅ DISPONIBLE"
+        elif not prod['tiene_stock'] and prod['tiene_precio']:
+            border_class = "border-info"
+            status_type = "info"
+            status_text = "📋 SOLO PRECIO"
+        else:
+            border_class = "border-muted"
+            status_type = "muted"
+            status_text = "❌ NO DISPONIBLE"
+        
+        # Aplicar delay de animación en cascada
+        delay = min(idx * 0.05, 0.5)
+        
+        # Construir badges de stock (pill)
+        stock_badges = []
+        if prod['stock_yessica'] > 0:
+            stock_badges.append(f'<span class="apple-stock-badge yessica">🏪 YESSICA {prod["stock_yessica"]}</span>')
+        if prod['stock_apri004'] > 0:
+            stock_badges.append(f'<span class="apple-stock-badge apri004">📦 APRI.004 {prod["stock_apri004"]}</span>')
+        if prod['stock_apri001'] > 0:
+            msg_apri = " ⚠️ Solicitar" if st.session_state.modo == "XIAOMI" else ""
+            stock_badges.append(f'<span class="apple-stock-badge apri001">🔴 APRI.001 {prod["stock_apri001"]}{msg_apri}</span>')
+        
+        if not stock_badges:
+            stock_badges.append('<span class="apple-stock-badge warning">❌ Sin stock</span>')
+        
+        # Orígenes
+        origenes_html = '<br>'.join(prod.get('origenes', ['📁 Origen no disponible']))
+        
+        # Descripción completa (visible)
+        descripcion_html = prod['descripcion'] if prod['descripcion'] else f"🔖 SKU: {prod['sku']}"
+        
+        # Precio formateado
+        precio_text = f"S/ {prod['precio']:,.2f}" if prod['tiene_precio'] else "💰 No disponible"
+        
+        # Usar HTML seguro
+        st.markdown(f"""
+        <div class="apple-card {border_class}" style="animation-delay: {delay}s;">
+            <div class="apple-card-header">
+                <span class="apple-card-sku">🔗 # {prod['sku']}</span>
+                <span class="apple-status-badge {status_type}">{status_text}</span>
+            </div>
+            
+            <div class="apple-card-description">
+                📄 {descripcion_html}
+            </div>
+            
+            <div class="apple-card-info-grid">
+                <div class="apple-info-item">
+                    <div class="apple-info-label">💰 {st.session_state.precio_key}</div>
+                    <div class="apple-info-value">{precio_text}</div>
+                </div>
+                <div class="apple-info-item">
+                    <div class="apple-info-label">📦 STOCK TOTAL</div>
+                    <div class="apple-info-value">{prod['stock_total']} <small>📦 unidades</small></div>
+                </div>
+            </div>
+            
+            <div>
+                {''.join(stock_badges)}
+            </div>
+            
+            <div class="apple-card-origen">
+                <strong>📁 Fuentes de información</strong><br>
+                {origenes_html}
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Advertencia APRI.001 modo XIAOMI
+        if prod.get('usa_apri001') and st.session_state.modo == "XIAOMI":
+            st.markdown('<div style="background:#FEF3C7;border-radius:16px;padding:10px 12px;margin:8px 0;font-size:0.75rem;color:#D97706;">⚠️ Stock disponible SOLO en APRI.001 - Solicitar transferencia a logística</div>', unsafe_allow_html=True)
+        
+        # CASO: STOCK SIN PRECIO - Mostrar SKU equivalente
+        if prod['tiene_stock'] and not prod['tiene_precio']:
+            if prod.get('sku_equivalente'):
+                st.markdown(f"""
+                <div style="background:#E8F5E9;border-radius:16px;padding:12px;margin:8px 0;">
+                    <strong style="color:#2E7D32;">💡 SKU EQUIVALENTE SUGERIDO</strong>
+                    <div style="margin-top:8px;">
+                        <code style="background:#fff;padding:4px 8px;border-radius:8px;">🔗 {prod['sku_equivalente']}</code><br>
+                        <span style="font-size:0.8rem;">📄 {prod.get('desc_equivalente', '')[:100]}</span><br>
+                        <strong>💰 Precio:</strong> S/ {prod.get('precio_equivalente', 0):,.2f}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
                 
-                # Convertir a lista para mostrar
-                resultados_lista = list(productos_por_sku.values())
-                
-                # Ordenar: primero los que tienen stock, luego los que tienen precio
-                resultados_lista.sort(key=lambda x: (-x['tiene_stock'], -x['tiene_precio']))
-                
-                # Contador para delay de animación
-                for idx, prod in enumerate(resultados_lista):
-                    # Determinar clase de borde y estado
-                    if prod['tiene_stock'] and not prod['tiene_precio']:
-                        border_class = "border-error"
-                        status_type = "error"
-                        status_text = "⚠️ STOCK SIN PRECIO"
-                    elif prod['tiene_stock'] and prod['tiene_precio']:
-                        border_class = "border-success"
-                        status_type = "success"
-                        status_text = "✅ DISPONIBLE"
-                    elif not prod['tiene_stock'] and prod['tiene_precio']:
-                        border_class = "border-info"
-                        status_type = "info"
-                        status_text = "📋 SOLO PRECIO"
-                    else:
-                        border_class = "border-muted"
-                        status_type = "muted"
-                        status_text = "❌ NO DISPONIBLE"
-                    
-                    # Aplicar delay de animación en cascada
-                    delay = min(idx * 0.05, 0.5)
-                    
-                    # Construir badges de stock (pill)
-                    stock_badges = []
-                    if prod['stock_yessica'] > 0:
-                        stock_badges.append(f'<span class="apple-stock-badge yessica">🏪 YESSICA {prod["stock_yessica"]}</span>')
-                    if prod['stock_apri004'] > 0:
-                        stock_badges.append(f'<span class="apple-stock-badge apri004">📦 APRI.004 {prod["stock_apri004"]}</span>')
-                    if prod['stock_apri001'] > 0:
-                        msg_apri = " ⚠️ Solicitar" if st.session_state.modo == "XIAOMI" else ""
-                        stock_badges.append(f'<span class="apple-stock-badge apri001">🔴 APRI.001 {prod["stock_apri001"]}{msg_apri}</span>')
-                    
-                    if not stock_badges:
-                        stock_badges.append('<span class="apple-stock-badge warning">❌ Sin stock</span>')
-                    
-                    # Orígenes
-                    origenes_html = '<br>'.join(prod.get('origenes', ['Origen no disponible']))
-                    
-                    # Descripción completa (visible)
-                    descripcion_html = prod['descripcion'] if prod['descripcion'] else f"SKU: {prod['sku']}"
-                    
-                    # Precio formateado
-                    precio_text = f"S/ {prod['precio']:,.2f}" if prod['tiene_precio'] else "No disponible"
-                    
-                    # Usar HTML seguro (sin emojis en f-string problemáticos)
+                col_eq1, col_eq2 = st.columns(2)
+                with col_eq1:
+                    if st.button(f"➕ Usar SKU equivalente", key=f"apple_eq_{prod['sku']}", use_container_width=True):
+                        item_carrito = {
+                            'sku': prod['sku_equivalente'],
+                            'descripcion': prod.get('desc_equivalente', ''),
+                            'cantidad': 1,
+                            'precio': prod.get('precio_equivalente', 0),
+                            'total': prod.get('precio_equivalente', 0),
+                            'stock_yessica': 0,
+                            'stock_apri004': prod['stock_apri004'],
+                            'stock_apri001': prod['stock_apri001']
+                        }
+                        st.session_state.carrito.append(item_carrito)
+                        st.success(f"✅ Agregado {prod['sku_equivalente']} al carrito")
+                        st.rerun()
+            
+            elif prod.get('alternativas') and len(prod['alternativas']) > 0:
+                st.markdown('<div style="background:#FEF3E2;border-radius:16px;padding:12px;margin:8px 0;"><strong>💡 Productos similares:</strong></div>', unsafe_allow_html=True)
+                for alt in prod['alternativas'][:2]:
                     st.markdown(f"""
-                    <div class="apple-card {border_class}" style="animation-delay: {delay}s;">
-                        <div class="apple-card-header">
-                            <span class="apple-card-sku"># {prod['sku']}</span>
-                            <span class="apple-status-badge {status_type}">{status_text}</span>
-                        </div>
-                        
-                        <div class="apple-card-description">
-                            📄 {descripcion_html}
-                        </div>
-                        
-                        <div class="apple-card-info-grid">
-                            <div class="apple-info-item">
-                                <div class="apple-info-label">💰 {st.session_state.precio_key}</div>
-                                <div class="apple-info-value">{precio_text}</div>
-                            </div>
-                            <div class="apple-info-item">
-                                <div class="apple-info-label">📦 STOCK TOTAL</div>
-                                <div class="apple-info-value">{prod['stock_total']} <small>unidades</small></div>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            {''.join(stock_badges)}
-                        </div>
-                        
-                        <div class="apple-card-origen">
-                            <strong>📁 Fuentes de informacion</strong><br>
-                            {origenes_html}
-                        </div>
+                    <div style="background:white;border-radius:16px;padding:10px;margin:8px 0;border:0.5px solid #E5E5EA;">
+                        <strong>🔗 {alt['sku']}</strong>
+                        <span style="background:#FF9800;color:white;padding:2px 8px;border-radius:20px;font-size:0.6rem;">📊 {alt['similitud']:.0f}%</span>
+                        <div style="font-size:0.75rem;color:#666;">📄 {alt['descripcion'][:60]}</div>
+                        <div>💰 S/ {alt['precio']:,.2f} | 📦 Stock: {alt['stock_total']}</div>
+                    </div>
                     """, unsafe_allow_html=True)
-                    
-                    # Advertencia APRI.001 modo XIAOMI
-                    if prod['usa_apri001'] and st.session_state.modo == "XIAOMI":
-                        st.markdown('<div style="background:#FEF3C7;border-radius:16px;padding:10px 12px;margin:8px 0;font-size:0.75rem;color:#D97706;">⚠️ Stock disponible SOLO en APRI.001 - Solicitar transferencia a logistica</div>', unsafe_allow_html=True)
-                    
-                    # CASO: STOCK SIN PRECIO - Mostrar SKU equivalente
-                    if prod['tiene_stock'] and not prod['tiene_precio']:
-                        if prod.get('sku_equivalente'):
-                            st.markdown(f"""
-                            <div style="background:#E8F5E9;border-radius:16px;padding:12px;margin:8px 0;">
-                                <strong style="color:#2E7D32;">💡 SKU EQUIVALENTE SUGERIDO</strong>
-                                <div style="margin-top:8px;">
-                                    <code style="background:#fff;padding:4px 8px;border-radius:8px;">{prod['sku_equivalente']}</code><br>
-                                    <span style="font-size:0.8rem;">{prod.get('desc_equivalente', '')[:100]}</span><br>
-                                    <strong>Precio:</strong> S/ {prod.get('precio_equivalente', 0):,.2f}
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            
-                            col_eq1, col_eq2 = st.columns(2)
-                            with col_eq1:
-                                if st.button(f"➕ Usar SKU equivalente", key=f"apple_eq_{prod['sku']}", use_container_width=True):
-                                    item_carrito = {
-                                        'sku': prod['sku_equivalente'],
-                                        'descripcion': prod.get('desc_equivalente', ''),
-                                        'cantidad': 1,
-                                        'precio': prod.get('precio_equivalente', 0),
-                                        'total': prod.get('precio_equivalente', 0),
-                                        'stock_yessica': 0,
-                                        'stock_apri004': prod['stock_apri004'],
-                                        'stock_apri001': prod['stock_apri001']
-                                    }
-                                    st.session_state.carrito.append(item_carrito)
-                                    st.success(f"✅ Agregado {prod['sku_equivalente']} al carrito")
-                                    st.rerun()
-                        
-                        elif prod.get('alternativas') and len(prod['alternativas']) > 0:
-                            st.markdown('<div style="background:#FEF3E2;border-radius:16px;padding:12px;margin:8px 0;"><strong>💡 Productos similares:</strong></div>', unsafe_allow_html=True)
-                            for alt in prod['alternativas'][:2]:
-                                st.markdown(f"""
-                                <div style="background:white;border-radius:16px;padding:10px;margin:8px 0;border:0.5px solid #E5E5EA;">
-                                    <strong>📦 {alt['sku']}</strong>
-                                    <span style="background:#FF9800;color:white;padding:2px 8px;border-radius:20px;font-size:0.6rem;">{alt['similitud']:.0f}%</span>
-                                    <div style="font-size:0.75rem;color:#666;">{alt['descripcion'][:60]}</div>
-                                    <div>💰 S/ {alt['precio']:,.2f} | 📦 Stock: {alt['stock_total']}</div>
-                                </div>
-                                """, unsafe_allow_html=True)
-                    
-                    # CASO NORMAL: Con stock y precio
-                    elif prod['tiene_stock'] and prod['tiene_precio']:
-                        # Usar columnas para cantidad y botones
-                        col_cant, col_btn1, col_btn2 = st.columns([1, 1, 1])
-                        with col_cant:
-                            cantidad = st.number_input("", min_value=1, max_value=prod['stock_total'], value=1, step=1, key=f"apple_qty_{prod['sku']}", label_visibility="collapsed", placeholder="Cantidad")
-                        with col_btn1:
-                            if st.button(f"🛒 Agregar", key=f"apple_add_{prod['sku']}", use_container_width=True):
-                                item_carrito = {
-                                    'sku': prod['sku'],
-                                    'descripcion': prod['descripcion'],
-                                    'cantidad': cantidad,
-                                    'precio': prod['precio'],
-                                    'total': prod['precio'] * cantidad,
-                                    'stock_yessica': prod['stock_yessica'],
-                                    'stock_apri004': prod['stock_apri004'],
-                                    'stock_apri001': prod['stock_apri001']
-                                }
-                                st.session_state.carrito.append(item_carrito)
-                                st.success(f"✅ Agregado {cantidad}x {prod['sku']}")
-                                st.rerun()
-                        with col_btn2:
-                            if prod.get('alternativas') and len(prod['alternativas']) > 0:
-                                if st.button(f"🔄 Similares", key=f"apple_sim_{prod['sku']}", use_container_width=True):
-                                    with st.expander(f"Productos similares a {prod['sku']}"):
-                                        for alt in prod['alternativas'][:3]:
-                                            st.markdown(f"- **{alt['sku']}** ({alt['similitud']:.0f}%): S/ {alt['precio']:,.2f} - Stock: {alt['stock_total']}")
-                    
-                    # CASO: Solo precio o no disponible
-                    elif prod['tiene_precio'] or not prod['tiene_stock']:
-                        if st.button(f"📋 Ver detalles", key=f"apple_details_{prod['sku']}", use_container_width=True):
-                            with st.expander(f"Detalles de {prod['sku']}"):
-                                st.write(f"**Descripcion:** {prod['descripcion']}")
-                                st.write(f"**Precio:** S/ {prod['precio']:,.2f}" if prod['tiene_precio'] else "**Precio:** No disponible")
-                                st.write(f"**Stock:** {prod['stock_total']} unidades")
-                    
-                    st.markdown('</div>', unsafe_allow_html=True)
-                    st.markdown('<hr class="apple-divider">', unsafe_allow_html=True)
-            else:
-                st.info("No se encontraron productos con esa busqueda.")
+        
+        # CASO NORMAL: Con stock y precio
+        elif prod['tiene_stock'] and prod['tiene_precio']:
+            # Usar columnas para cantidad y botones
+            col_cant, col_btn1, col_btn2 = st.columns([1, 1, 1])
+            with col_cant:
+                cantidad = st.number_input(
+                    "", 
+                    min_value=1, 
+                    max_value=prod['stock_total'], 
+                    value=1, 
+                    step=1, 
+                    key=f"apple_qty_{prod['sku']}", 
+                    label_visibility="collapsed", 
+                    placeholder="🔢 Cantidad"
+                )
+            with col_btn1:
+                if st.button(f"🛒 Agregar", key=f"apple_add_{prod['sku']}", use_container_width=True):
+                    item_carrito = {
+                        'sku': prod['sku'],
+                        'descripcion': prod['descripcion'],
+                        'cantidad': cantidad,
+                        'precio': prod['precio'],
+                        'total': prod['precio'] * cantidad,
+                        'stock_yessica': prod['stock_yessica'],
+                        'stock_apri004': prod['stock_apri004'],
+                        'stock_apri001': prod['stock_apri001']
+                    }
+                    st.session_state.carrito.append(item_carrito)
+                    st.success(f"✅ Agregado {cantidad}x {prod['sku']}")
+                    st.rerun()
+            with col_btn2:
+                if prod.get('alternativas') and len(prod['alternativas']) > 0:
+                    if st.button(f"🔄 Similares", key=f"apple_sim_{prod['sku']}", use_container_width=True):
+                        with st.expander(f"📦 Productos similares a {prod['sku']}"):
+                            for alt in prod['alternativas'][:3]:
+                                st.markdown(f"- 🔗 **{alt['sku']}** (📊 {alt['similitud']:.0f}%): 💰 S/ {alt['precio']:,.2f} - 📦 Stock: {alt['stock_total']}")
+        
+        # CASO: Solo precio o no disponible
+        elif prod['tiene_precio'] or not prod['tiene_stock']:
+            if st.button(f"📋 Ver detalles", key=f"apple_details_{prod['sku']}", use_container_width=True):
+                with st.expander(f"🔍 Detalles de {prod['sku']}"):
+                    st.write(f"**📄 Descripción:** {prod['descripcion']}")
+                    st.write(f"**💰 Precio:** S/ {prod['precio']:,.2f}" if prod['tiene_precio'] else "**💰 Precio:** No disponible")
+                    st.write(f"**📦 Stock:** {prod['stock_total']} unidades")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('<hr class="apple-divider">', unsafe_allow_html=True)
+
+else:
+    st.info("🔍 No se encontraron productos con esa búsqueda.")
+           
 # ========== TAB 3: CARRITO ==========
 with tab3:
     st.markdown("### 🛒 Cotización actual")
