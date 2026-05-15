@@ -43,10 +43,40 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* ========== SIDEBAR OSCURO ========== */
+       /* ========== 4. SIDEBAR - DURAZNO INTENSO ========== */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0a0a1a 0%, #0f0f2a 100%);
-        border-right: 1px solid #1e88e5;
+        background: linear-gradient(180deg, #f8a35e 0%, #e87a2d 50%, #d45a1a 100%);
+        border-right: 1px solid #ffcc80;
+    }
+    
+    [data-testid="stSidebar"] * {
+        color: #ffffff !important;
+    }
+    
+    [data-testid="stSidebar"] h1, 
+    [data-testid="stSidebar"] h2, 
+    [data-testid="stSidebar"] h3 {
+        color: #ffffff !important;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+    
+    /* Selector de marca dentro del sidebar - fondo más oscuro para contraste */
+    [data-testid="stSidebar"] .stRadio > div {
+        background: rgba(0,0,0,0.2);
+        border-radius: 10px;
+        padding: 8px;
+    }
+    
+    /* Botones dentro del sidebar */
+    [data-testid="stSidebar"] .stButton > button {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        border: 1px solid rgba(255,255,255,0.3);
+    }
+    
+    [data-testid="stSidebar"] .stButton > button:hover {
+        background: rgba(255,255,255,0.3);
+        border-color: rgba(255,255,255,0.5);
     }
     
     /* ========== TEXTOS GENERALES (blancos para contraste) ========== */
