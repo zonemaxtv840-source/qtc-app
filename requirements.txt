@@ -14,3 +14,4 @@ xlsxwriter
 streamlit-option-menu
 streamlit-extras
 Pillow
+matplotlib
