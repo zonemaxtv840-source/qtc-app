@@ -330,13 +330,26 @@ st.markdown("""
     
     /* Mensaje de información */
     div[data-testid="stAlert"][data-kind="info"] {
-        background: rgba(33, 150, 243, 0.12) !important;
+        background: rgba(33, 150, 243, 0.5) !important;
         border-left-color: #2196F3 !important;
     }
     
     div[data-testid="stAlert"][data-kind="info"] .stMarkdown {
-        color: #0d47a1 !important;
+        color: #c69437 !important;
     }
+    /* Mensaje de error - FONDO */
+/* Gradiente en el fondo del mensaje de error */
+div[data-testid="stAlert"][data-kind="error"] {
+    background-image: linear-gradient(135deg, #dfb15b 0%, #c69437 50%, #a4741f 100%) !important;
+    border-left-color: #f44336 !important;
+    border-radius: 12px;
+}
+
+/* Mensaje de error - TEXTO (agrega esto) */
+div[data-testid="stAlert"][data-kind="error"] .stMarkdown {
+    color: #540000 !important;
+    font-weight: 600;
+}
 </style>
 """, unsafe_allow_html=True)
 
