@@ -966,7 +966,7 @@ with tab1:
             elif prod['tiene_stock'] and prod['tiene_precio']:
                 cantidad_final = prod['cantidad_cotizar']
                 st.markdown(f"""
-                <div style="background:white;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #4CAF50;">
+                <div style="background:white;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #1a1a2e;">
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <div><strong>📦 {prod['sku']}</strong> <span style="background:#4CAF50;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">✅ CON STOCK Y PRECIO</span></div>
                         <div><span style="background:#2196F3;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">Cotizar: {cantidad_final}/{prod['cantidad_solicitada']}</span></div>
