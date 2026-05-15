@@ -704,103 +704,92 @@ def construir_badge_stock(stock_yessica, stock_apri004, stock_apri001):
 def generar_excel(items: List[Dict], cliente: str, ruc: str) -> bytes:
     output = io.BytesIO()
     
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df = pd.DataFrame(items)
-        df.to_excel(writer, sheet_name='Cotizacion', index=False, startrow=8)
+    # Crear DataFrame con los datos
+    df = pd.DataFrame(items)
+    
+    # Crear Excel sin formatos complejos
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name='Cotizacion', index=False, startrow=6)
         
+        # Acceder al workbook y worksheet
         workbook = writer.book
         ws = writer.sheets['Cotizacion']
         
-        # ========== FORMATOS ==========
-        fmt_header = workbook.add_format({
-            'bg_color': '#e67e22',
-            'bold': True,
-            'border': 1,
-            'align': 'center',
-            'font_color': 'white',
-            'font_size': 11
-        })
+        # ========== ENCABEZADOS SIMPLES ==========
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
         
-        fmt_money = workbook.add_format({
-            'num_format': '"S/." #,##0.00',
-            'border': 1,
-            'align': 'right',
-            'bg_color': '#f5f5f5'
-        })
+        # Estilos básicos
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="e67e22", end_color="e67e22", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center")
+        money_alignment = Alignment(horizontal="right", vertical="center")
+        border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
         
-        fmt_border = workbook.add_format({
-            'border': 1,
-            'align': 'left',
-            'valign': 'vcenter'
-        })
+        # Escribir encabezados de empresa
+        ws['A1'] = 'QTC SMART SALES PRO'
+        ws['A1'].font = Font(bold=True, size=14, color="e67e22")
         
-        fmt_bold = workbook.add_format({'bold': True, 'font_size': 11})
-        fmt_title = workbook.add_format({'bold': True, 'font_size': 14, 'color': '#e67e22'})
+        ws['A3'] = 'FECHA:'
+        ws['B3'] = datetime.now().strftime("%d/%m/%Y %H:%M")
+        ws['A4'] = 'CLIENTE:'
+        ws['B4'] = cliente.upper()
+        ws['A5'] = 'RUC:'
+        ws['B5'] = ruc
         
-        fmt_total = workbook.add_format({
-            'bold': True,
-            'bg_color': '#e67e22',
-            'font_color': 'white',
-            'border': 1,
-            'align': 'center'
-        })
-        
-        # ========== LOGO (tamaño ajustado a celda TOTAL - columna E) ==========
-        try:
-            # Columna E tiene ancho 18, el logo se escala para que quepa
-            ws.insert_image('E2', 'logo.png', {
-                'x_offset': 5,
-                'y_offset': 5,
-                'x_scale': 0.07,
-                'y_scale': 0.07
-            })
-        except:
-            ws.write('E2', 'QTC', fmt_title)
-        
-        # ========== ENCABEZADOS DE EMPRESA ==========
-        ws.write('A1', 'QTC SMART SALES PRO', fmt_title)
-        ws.write('A3', 'FECHA:', fmt_bold)
-        ws.write('B3', datetime.now().strftime("%d/%m/%Y %H:%M"))
-        ws.write('A4', 'CLIENTE:', fmt_bold)
-        ws.write('B4', cliente.upper())
-        ws.write('A5', 'RUC:', fmt_bold)
-        ws.write('B5', ruc)
-        
-        # Línea separadora
-        ws.write('A7', '=' * 100, fmt_border)
-        
-        # ========== ENCABEZADOS DE TABLA ==========
+        # Encabezados de tabla
         headers = ['SKU', 'DESCRIPCIÓN', 'CANTIDAD', 'PRECIO UNIT.', 'TOTAL']
-        for i, header in enumerate(headers):
-            ws.write(8, i, header, fmt_header)
+        for i, header in enumerate(headers, start=1):
+            cell = ws.cell(row=7, column=i, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = border
         
-        # ========== DATOS ==========
-        for row_idx, item in enumerate(items):
-            ws.write(row_idx + 9, 0, item['sku'], fmt_border)
-            ws.write(row_idx + 9, 1, item['descripcion'], fmt_border)
-            ws.write(row_idx + 9, 2, item['cantidad'], fmt_border)
-            ws.write(row_idx + 9, 3, item['precio'], fmt_money)
-            ws.write(row_idx + 9, 4, item['total'], fmt_money)
+        # Datos
+        for row_idx, item in enumerate(items, start=8):
+            ws.cell(row=row_idx, column=1, value=item['sku']).border = border
+            ws.cell(row=row_idx, column=2, value=item['descripcion']).border = border
+            ws.cell(row=row_idx, column=3, value=item['cantidad']).border = border
+            
+            # Precio y total con formato moneda
+            precio_cell = ws.cell(row=row_idx, column=4, value=item['precio'])
+            precio_cell.number_format = '"S/." #,##0.00'
+            precio_cell.alignment = money_alignment
+            precio_cell.border = border
+            
+            total_cell = ws.cell(row=row_idx, column=5, value=item['total'])
+            total_cell.number_format = '"S/." #,##0.00'
+            total_cell.alignment = money_alignment
+            total_cell.border = border
         
-        # ========== TOTAL GENERAL ==========
-        total_row = len(items) + 9
-        ws.write(total_row, 3, 'TOTAL S/.', fmt_total)
-        ws.write(total_row, 4, sum(item['total'] for item in items), fmt_money)
+        # Total general
+        total_row = len(items) + 8
+        total_label = ws.cell(row=total_row, column=4, value='TOTAL S/.')
+        total_label.font = Font(bold=True, color="FFFFFF")
+        total_label.fill = PatternFill(start_color="e67e22", end_color="e67e22", fill_type="solid")
+        total_label.alignment = Alignment(horizontal="center")
+        total_label.border = border
+        
+        total_valor = ws.cell(row=total_row, column=5, value=sum(item['total'] for item in items))
+        total_valor.number_format = '"S/." #,##0.00'
+        total_valor.alignment = money_alignment
+        total_valor.border = border
         
         # ========== AJUSTE DE COLUMNAS ==========
-        ws.set_column('A:A', 22)   # SKU
-        ws.set_column('B:B', 120)  # DESCRIPCIÓN (ancho 120)
-        ws.set_column('C:C', 12)   # Cantidad
-        ws.set_column('D:D', 18)   # Precio unitario
-        ws.set_column('E:E', 18)   # Total
+        # Anchos fijos
+        ws.column_dimensions['A'].width = 22   # SKU
+        ws.column_dimensions['B'].width = 110  # DESCRIPCIÓN
+        ws.column_dimensions['C'].width = 12   # Cantidad
+        ws.column_dimensions['D'].width = 18   # Precio
+        ws.column_dimensions['E'].width = 18   # Total
         
-        # ========== EXTRAS ==========
-        ws.freeze_panes(9, 0)                      # Congelar encabezados
-        ws.autofilter(8, 0, total_row - 1, 4)      # Filtros
-        ws.set_landscape()                          # Orientación horizontal
-        ws.set_margins(left=0.3, right=0.3, top=0.5, bottom=0.5)  # Márgenes reducidos
-        ws.repeat_rows(8)                           # Repetir encabezados al imprimir
-        ws.set_zoom(80)                             # Zoom 80% para mejor visualización
+        # Congelar panel
+        ws.freeze_panes = 'A8'
     
     return output.getvalue()
 
