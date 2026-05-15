@@ -21,51 +21,156 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
 # ============================================
-# ESTILOS VISUALES
+# CSS COMPLETO
 # ============================================
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-.stApp {
-    font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #0f3460 0%, #16213e 50%, #1a1a2e 100%);
-    color: #e0e0e0;
-}
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
-    border-right: 2px solid #e94560;
-}
-[data-testid="stSidebar"] * { color: #e0e0e0 !important; }
-[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 { color: #e94560 !important; }
-
-.stButton > button {
-    background: linear-gradient(90deg, #e94560, #ff6f61);
-    color: white;
-    border-radius: 25px;
-    font-weight: bold;
-    padding: 0.6rem 1.2rem;
-    transition: all 0.3s ease;
-    border: none;
-}
-.stButton > button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-
-.result-card {
-    background: #fff;
-    border-left: 6px solid #e94560;
-    border-radius: 18px;
-    padding: 1.2rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    transition: transform 0.2s ease;
-}
-.result-card:hover { transform: translateY(-3px); }
-.result-card h4 { margin: 0; color: #16213e; font-weight: bold; }
-.result-card p { color: #444; }
+    .stApp {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    }
+    
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
+        border-right: 1px solid #e94560;
+    }
+    
+    [data-testid="stSidebar"] * {
+        color: #e0e0e0 !important;
+    }
+    
+    [data-testid="stSidebar"] h1, 
+    [data-testid="stSidebar"] h2, 
+    [data-testid="stSidebar"] h3 {
+        color: #e94560 !important;
+    }
+    
+    .result-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-left: 5px solid #e94560;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+    
+    .result-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .result-card, .result-card * {
+        color: #1a1a2e !important;
+    }
+    
+    .badge-yessica {
+        background: #4CAF50;
+        color: white !important;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        display: inline-block;
+        margin: 2px;
+    }
+    
+    .badge-apri004 {
+        background: #FF9800;
+        color: #1a1a2e !important;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        display: inline-block;
+        margin: 2px;
+    }
+    
+    .badge-apri001 {
+        background: #f44336;
+        color: white !important;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        display: inline-block;
+        margin: 2px;
+    }
+    
+    .badge-warning {
+        background: #ff9800;
+        color: #1a1a2e !important;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        display: inline-block;
+    }
+    
+    .counter-summary {
+        background: #f0f2f6;
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 1rem 0;
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        border: 1px solid #e0e0e0;
+    }
+    
+    .counter-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        background: white;
+    }
+    
+    .counter-number {
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    
+    .counter-label {
+        color: #666;
+    }
+    
+    .login-card {
+        background: rgba(255,255,255,0.95);
+        border-radius: 28px;
+        padding: 2.5rem;
+        text-align: center;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        animation: fadeInUp 0.5s ease-out;
+        max-width: 450px;
+        margin: 0 auto;
+    }
+    
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(40px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .footer {
+        text-align: center;
+        padding: 1rem;
+        color: #888;
+        font-size: 0.7rem;
+        border-top: 1px solid #333;
+        margin-top: 2rem;
+    }
+    
+    .alternativa-item {
+        background: white;
+        border-radius: 10px;
+        padding: 0.75rem;
+        margin: 0.5rem 0;
+        border: 1px solid #FFE0B2;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -628,62 +733,6 @@ with st.sidebar:
 # ============================================
 # TABS PRINCIPALES
 # ============================================
-# ============================================
-# HEADER PRINCIPAL
-# ============================================
-
-col1, col2, col3 = st.columns([3, 4, 3])
-with col1:
-    st.markdown("### Bienvenido, admin")
-    st.markdown('<span class="badge-yessica">YESSICA</span> <span class="badge-apri004">APRI.004</span> <span class="badge-apri001">APRI.001</span>', unsafe_allow_html=True)
-with col2:
-    st.markdown("## QTC Smart Sales Pro v4.1")
-    st.caption("Sistema Profesional de Cotización")
-with col3:
-    st.metric("🛒 Carrito", f"{len(st.session_state.carrito)} items", f"S/ {sum(item['total'] for item in st.session_state.carrito):,.2f}")
-    st.button("Generar Cotización")
-    st.button("Limpiar Carrito")
-
-st.markdown("---")
-
-# ============================================
-# DASHBOARD SUPERIOR (REAL)
-# ============================================
-
-total_productos = sum(len(cat['df']) for cat in st.session_state.catalogos) if st.session_state.catalogos else 0
-con_precio = 0
-sin_precio = 0
-for cat in st.session_state.catalogos:
-    if cat['precios']:
-        con_precio += cat['df'][cat['col_sku']].count()
-    else:
-        sin_precio += cat['df'][cat['col_sku']].count()
-con_stock = sum(len(stock['df']) for stock in st.session_state.stocks) if st.session_state.stocks else 0
-
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("📦 Productos en Catálogo", total_productos)
-col2.metric("💵 Con Precio", con_precio)
-col3.metric("❓ Sin Precio", sin_precio)
-col4.metric("📦 Reportes de Stock", con_stock)
-
-# Gráfico de stock por proveedor
-import pandas as pd
-if st.session_state.stocks:
-    proveedores = {"YESSICA":0, "APRI.004":0, "APRI.001":0}
-    for stock in st.session_state.stocks:
-        hoja = stock['hoja'].upper()
-        if "YESSICA" in hoja: proveedores["YESSICA"] += len(stock['df'])
-        elif "APRI.004" in hoja: proveedores["APRI.004"] += len(stock['df'])
-        elif "APRI.001" in hoja: proveedores["APRI.001"] += len(stock['df'])
-    st.bar_chart(pd.DataFrame.from_dict(proveedores, orient="index", columns=["Productos"]))
-
-# Gráfico de disponibilidad con/sin precio
-import matplotlib.pyplot as plt
-fig, ax = plt.subplots()
-ax.pie([con_precio, sin_precio], labels=["Con Precio", "Sin Precio"], autopct='%1.1f%%', colors=["#e94560","#00bcd4"])
-st.pyplot(fig)
-
-st.markdown("---")
 
 tab1, tab2, tab3 = st.tabs(["📦 MODO MASIVO (Bulk)", "🔍 BÚSQUEDA INTELIGENTE", "🛒 CARRITO DE COTIZACIÓN"])
 
