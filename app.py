@@ -30,10 +30,12 @@ st.set_page_config(
 
 st.markdown("""
 <style>
+    /* ========== FONDO DE PÁGINA - BEIGE CÁLIDO PROFESIONAL ========== */
     .stApp {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        background: linear-gradient(135deg, #fdfbf7 0%, #f3eee8 50%, #e8dfd1 100%);
     }
     
+    /* ========== SIDEBAR OSCURO (CONTRASTE PROFESIONAL) ========== */
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
         border-right: 1px solid #e94560;
@@ -49,25 +51,55 @@ st.markdown("""
         color: #e94560 !important;
     }
     
+    /* ========== TEXTOS GENERALES DE STREAMLIT ========== */
+    .stMarkdown, .stText, .stNumberInput label, .stSelectbox label, .stRadio label,
+    .stTextInput label, .stTextArea label, .stSlider label, .stCheckbox label {
+        color: #2d2d2d !important;
+    }
+    
+    /* ========== TÍTULOS Y HEADERS ========== */
+    h1, h2, h3, h4, h5, h6,
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4,
+    .stMarkdown h5, .stMarkdown h6 {
+        color: #1a1a2e !important;
+    }
+    
+    /* ========== TARJETAS DE RESULTADOS - GLASSMORPHISM ========== */
     .result-card {
-        background: white;
+        background: rgba(30, 30, 35, 0.85) !important;
+        backdrop-filter: blur(12px);
         border-radius: 16px;
         padding: 1rem;
         margin-bottom: 1rem;
         border-left: 5px solid #e94560;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        transition: transform 0.2s;
+        border: 1px solid rgba(255,255,255,0.15);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        transition: transform 0.2s, box-shadow 0.2s;
     }
     
     .result-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.2);
     }
     
+    /* Todo el texto dentro de las tarjetas debe ser blanco */
     .result-card, .result-card * {
-        color: #1a1a2e !important;
+        color: #ffffff !important;
     }
     
+    /* Tarjetas dinámicas generadas por el código (divs con border-radius) */
+    div[style*="border-radius:16px"] {
+        background: rgba(30, 30, 35, 0.85) !important;
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.15);
+        color: #ffffff !important;
+    }
+    
+    div[style*="border-radius:16px"] * {
+        color: #ffffff !important;
+    }
+    
+    /* ========== BADGES DE STOCK (MANTENER COLORES VIVOS) ========== */
     .badge-yessica {
         background: #4CAF50;
         color: white !important;
@@ -81,7 +113,7 @@ st.markdown("""
     
     .badge-apri004 {
         background: #FF9800;
-        color: #1a1a2e !important;
+        color: white !important;
         padding: 4px 10px;
         border-radius: 20px;
         font-size: 0.7rem;
@@ -103,75 +135,12 @@ st.markdown("""
     
     .badge-warning {
         background: #ff9800;
-        color: #1a1a2e !important;
+        color: white !important;
         padding: 4px 10px;
         border-radius: 20px;
         font-size: 0.7rem;
         font-weight: bold;
         display: inline-block;
-    }
-    
-    .counter-summary {
-        background: #f0f2f6;
-        border-radius: 12px;
-        padding: 1rem;
-        margin: 1rem 0;
-        display: flex;
-        gap: 1.5rem;
-        flex-wrap: wrap;
-        border: 1px solid #e0e0e0;
-    }
-    
-    .counter-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.9rem;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        background: white;
-    }
-    
-    .counter-number {
-        font-weight: bold;
-        font-size: 1.2rem;
-    }
-    
-    .counter-label {
-        color: #666;
-    }
-    
-    .login-card {
-        background: rgba(255,255,255,0.95);
-        border-radius: 28px;
-        padding: 2.5rem;
-        text-align: center;
-        box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-        animation: fadeInUp 0.5s ease-out;
-        max-width: 450px;
-        margin: 0 auto;
-    }
-    
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(40px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .footer {
-        text-align: center;
-        padding: 1rem;
-        color: #888;
-        font-size: 0.7rem;
-        border-top: 1px solid #333;
-        margin-top: 2rem;
-    }
-    
-    .alternativa-item {
-        background: white;
-        border-radius: 10px;
-        padding: 0.75rem;
-        margin: 0.5rem 0;
-        border: 1px solid #FFE0B2;
     }
     
     .badge-ugreen {
@@ -183,6 +152,148 @@ st.markdown("""
         font-weight: bold;
         display: inline-block;
         margin: 2px;
+    }
+    
+    /* ========== CONTADORES Y SUMMARY ========== */
+    .counter-summary {
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(4px);
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 1rem 0;
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        border: 1px solid rgba(0,0,0,0.08);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    
+    .counter-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        background: white;
+        color: #1a1a2e;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .counter-number {
+        font-weight: bold;
+        font-size: 1.2rem;
+        color: #1a1a2e;
+    }
+    
+    .counter-label {
+        color: #555;
+    }
+    
+    /* ========== LOGIN CARD ========== */
+    .login-card {
+        background: rgba(255,255,255,0.96);
+        border-radius: 28px;
+        padding: 2.5rem;
+        text-align: center;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+        animation: fadeInUp 0.5s ease-out;
+        max-width: 450px;
+        margin: 0 auto;
+        border: 1px solid rgba(233,69,96,0.3);
+    }
+    
+    .login-card h1, .login-card h2, .login-card p {
+        color: #1a1a2e !important;
+    }
+    
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(40px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* ========== ALTERNATIVAS ========== */
+    .alternativa-item {
+        background: rgba(255,255,255,0.12);
+        backdrop-filter: blur(8px);
+        border-radius: 12px;
+        padding: 0.75rem;
+        margin: 0.5rem 0;
+        border: 1px solid rgba(255,255,255,0.2);
+        color: white;
+    }
+    
+    .alternativa-item * {
+        color: white;
+    }
+    
+    /* ========== DIVISORES ========== */
+    hr {
+        border-color: rgba(0,0,0,0.1);
+    }
+    
+    /* ========== FOOTER ========== */
+    .footer {
+        text-align: center;
+        padding: 1rem;
+        color: #5a5a5a !important;
+        font-size: 0.7rem;
+        border-top: 1px solid rgba(0,0,0,0.1);
+        margin-top: 2rem;
+    }
+    
+    /* ========== BOTONES ========== */
+    .stButton > button {
+        transition: all 0.3s ease;
+        border-radius: 10px;
+        font-weight: 500;
+    }
+    
+    .stButton > button:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    /* ========== EXPANDER ========== */
+    div[data-testid="stExpander"] {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        background: rgba(255,255,255,0.6);
+        backdrop-filter: blur(4px);
+    }
+    
+    /* ========== DATAFRAME ========== */
+    .stDataFrame {
+        background: rgba(255,255,255,0.9);
+        border-radius: 12px;
+        padding: 0.5rem;
+    }
+    
+    /* ========== INFO, SUCCESS, WARNING, ERROR ========== */
+    .stAlert {
+        border-radius: 12px;
+        backdrop-filter: blur(4px);
+    }
+    
+    /* ========== TABS ========== */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: rgba(255,255,255,0.4);
+        border-radius: 12px;
+        padding: 6px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 10px;
+        padding: 8px 20px;
+        color: #1a1a2e;
+        font-weight: 500;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background-color: #e94560;
+        color: white !important;
     }
 </style>
 """, unsafe_allow_html=True)
