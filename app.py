@@ -1437,10 +1437,11 @@ with tab2:
                     # Precio formateado
                     precio_text = f"S/ {prod['precio']:,.2f}" if prod['tiene_precio'] else "No disponible"
                     
+                    # Usar HTML seguro (sin emojis en f-string problemáticos)
                     st.markdown(f"""
                     <div class="apple-card {border_class}" style="animation-delay: {delay}s;">
                         <div class="apple-card-header">
-                            <span class="apple-card-sku">🔖 {prod['sku']}</span>
+                            <span class="apple-card-sku"># {prod['sku']}</span>
                             <span class="apple-status-badge {status_type}">{status_text}</span>
                         </div>
                         
@@ -1460,18 +1461,18 @@ with tab2:
                         </div>
                         
                         <div>
-                            {' '.join(stock_badges)}
+                            {''.join(stock_badges)}
                         </div>
                         
                         <div class="apple-card-origen">
-                            <strong>📁 Fuentes de información</strong><br>
+                            <strong>📁 Fuentes de informacion</strong><br>
                             {origenes_html}
                         </div>
                     """, unsafe_allow_html=True)
                     
                     # Advertencia APRI.001 modo XIAOMI
                     if prod['usa_apri001'] and st.session_state.modo == "XIAOMI":
-                        st.markdown('<div style="background:#FEF3C7;border-radius:16px;padding:10px 12px;margin:8px 0;font-size:0.75rem;color:#D97706;">⚠️ Stock disponible SOLO en APRI.001 - Solicitar transferencia a logística</div>', unsafe_allow_html=True)
+                        st.markdown('<div style="background:#FEF3C7;border-radius:16px;padding:10px 12px;margin:8px 0;font-size:0.75rem;color:#D97706;">⚠️ Stock disponible SOLO en APRI.001 - Solicitar transferencia a logistica</div>', unsafe_allow_html=True)
                     
                     # CASO: STOCK SIN PRECIO - Mostrar SKU equivalente
                     if prod['tiene_stock'] and not prod['tiene_precio']:
@@ -1548,16 +1549,15 @@ with tab2:
                     elif prod['tiene_precio'] or not prod['tiene_stock']:
                         if st.button(f"📋 Ver detalles", key=f"apple_details_{prod['sku']}", use_container_width=True):
                             with st.expander(f"Detalles de {prod['sku']}"):
-                                st.write(f"**Descripción:** {prod['descripcion']}")
+                                st.write(f"**Descripcion:** {prod['descripcion']}")
                                 st.write(f"**Precio:** S/ {prod['precio']:,.2f}" if prod['tiene_precio'] else "**Precio:** No disponible")
                                 st.write(f"**Stock:** {prod['stock_total']} unidades")
                     
                     st.markdown('</div>', unsafe_allow_html=True)
                     st.markdown('<hr class="apple-divider">', unsafe_allow_html=True)
             else:
-                st.info("No se encontraron productos con esa búsqueda.")
-            
-
+                st.info("No se encontraron productos con esa busqueda.")
+          
 # ========== TAB 3: CARRITO ==========
 with tab3:
     st.markdown("### 🛒 Cotización actual")
