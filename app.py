@@ -295,6 +295,48 @@ st.markdown("""
         background-color: #e94560;
         color: white !important;
     }
+     /* ========== NUEVO: PERSONALIZAR MENSAJES DE STREAMLIT ========== */
+    .stAlert {
+        background: rgba(76, 175, 80, 0.12) !important;
+        backdrop-filter: blur(4px);
+        border-radius: 12px;
+        border-left: 4px solid #4CAF50 !important;
+    }
+    
+    .stAlert .stMarkdown {
+        color: #1a4d2a !important;
+        font-weight: 500;
+    }
+    
+    /* Mensaje de error */
+    div[data-testid="stAlert"][data-kind="error"] {
+        background: rgba(244, 67, 54, 0.12) !important;
+        border-left-color: #f44336 !important;
+    }
+    
+    div[data-testid="stAlert"][data-kind="error"] .stMarkdown {
+        color: #8b0000 !important;
+    }
+    
+    /* Mensaje de advertencia */
+    div[data-testid="stAlert"][data-kind="warning"] {
+        background: rgba(255, 152, 0, 0.12) !important;
+        border-left-color: #FF9800 !important;
+    }
+    
+    div[data-testid="stAlert"][data-kind="warning"] .stMarkdown {
+        color: #cc7000 !important;
+    }
+    
+    /* Mensaje de información */
+    div[data-testid="stAlert"][data-kind="info"] {
+        background: rgba(33, 150, 243, 0.12) !important;
+        border-left-color: #2196F3 !important;
+    }
+    
+    div[data-testid="stAlert"][data-kind="info"] .stMarkdown {
+        color: #0d47a1 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
