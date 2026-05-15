@@ -834,7 +834,7 @@ with tab1:
                             st.dataframe(df_error, use_container_width=True, hide_index=True)
                         
                         st.success(f"✅ Procesados {len(pedidos)} productos")
-                        st.rerun()
+                        # ELIMINÉ EL st.rerun() DE AQUÍ
                 else:
                     st.warning("No se encontraron productos válidos")
             else:
@@ -860,6 +860,44 @@ with tab1:
                         agregados += 1
                 st.success(f"✅ Agregados {agregados} productos al carrito")
                 st.rerun()
+    
+    # ========== NUEVO: MOSTRAR RESULTADOS DESPUÉS DE PROCESAR ==========
+    if 'resultados_bulk' in st.session_state and st.session_state.resultados_bulk:
+        st.markdown("---")
+        st.markdown("### 📋 Resultados detallados del procesamiento")
+        
+        # Tabla de resultados
+        df_resultados = pd.DataFrame([{
+            'SKU': p['sku'],
+            'Descripción': p['descripcion'][:60] + ('...' if len(p['descripcion']) > 60 else ''),
+            'Solicitado': p['cantidad_solicitada'],
+            'Cotizable': p['cantidad_cotizar'],
+            'Precio': f"S/ {p['precio']:.2f}" if p['tiene_precio'] else 'SIN PRECIO',
+            'Stock': p['stock_total'],
+            'Estado': p['estado']
+        } for p in st.session_state.resultados_bulk])
+        
+        st.dataframe(df_resultados, use_container_width=True, hide_index=True)
+        
+        # Mostrar sugerencias de SKU equivalentes para productos con error
+        errores = [p for p in st.session_state.resultados_bulk if p['tiene_stock'] and not p['tiene_precio']]
+        for error in errores:
+            if error.get('sku_equivalente'):
+                st.markdown("---")
+                st.markdown(f"""
+                <div style="background:#E8F5E9;border-radius:12px;padding:1rem;margin:1rem 0;">
+                    <strong>💡 SKU EQUIVALENTE ENCONTRADO</strong><br>
+                    <strong>SKU original:</strong> {error['sku']}<br>
+                    <strong>SKU sugerido:</strong> <code>{error['sku_equivalente']}</code><br>
+                    <strong>Coincidencia:</strong> {error['similitud_equivalente']:.0f}%
+                </div>
+                """, unsafe_allow_html=True)
+        
+        # Botón para limpiar resultados
+        if st.button("🗑️ Limpiar resultados", key="clear_bulk_results"):
+            del st.session_state.resultados_bulk
+            st.rerun()
+
 
 # ========== TAB 2: BÚSQUEDA INTELIGENTE CON DIAGNÓSTICO ==========
 with tab2:
