@@ -30,8 +30,7 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-  <style>
-    /* ========== FONDO DE PÁGINA - AZUL MIRAMAR VIVO ========== */
+      /* ========== FONDO DE PÁGINA - AZUL MIRAMAR VIVO ========== */
     .stApp {
         background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1e88e5 100%);
     }
