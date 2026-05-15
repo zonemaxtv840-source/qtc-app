@@ -21,7 +21,10 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-# ======== ESTILOS VISUALES ========
+# ============================================
+# ESTILOS VISUALES
+# ============================================
+
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
@@ -63,28 +66,8 @@ st.markdown("""
 .result-card:hover { transform: translateY(-3px); }
 .result-card h4 { margin: 0; color: #16213e; font-weight: bold; }
 .result-card p { color: #444; }
-
-.badge-yessica { background: #4CAF50; color: white !important; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin: 2px; }
-.badge-apri004 { background: #FF9800; color: #1a1a2e !important; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin: 2px; }
-.badge-apri001 { background: #f44336; color: white !important; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin: 2px; }
-
-.counter-summary {
-    background: rgba(255,255,255,0.1);
-    border-radius: 12px;
-    padding: 1rem;
-    margin: 1rem 0;
-    display: flex;
-    gap: 1.5rem;
-    flex-wrap: wrap;
-    border: 1px solid rgba(255,255,255,0.2);
-}
-.counter-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; padding: 0.25rem 0.75rem; border-radius: 20px; background: rgba(255,255,255,0.15); color: white; }
-.counter-number { font-weight: bold; font-size: 1.2rem; }
-
-.footer { text-align: center; padding: 1rem; color: #aaa; font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.2); margin-top: 2rem; }
 </style>
 """, unsafe_allow_html=True)
-
 
 # ============================================
 # FUNCIONES DE UTILIDAD
@@ -645,13 +628,61 @@ with st.sidebar:
 # ============================================
 # TABS PRINCIPALES
 # ============================================
-# ======== DASHBOARD SUPERIOR ========
-st.markdown("## 📊 Panel de Resumen")
+# ============================================
+# HEADER PRINCIPAL
+# ============================================
+
+col1, col2, col3 = st.columns([3, 4, 3])
+with col1:
+    st.markdown("### Bienvenido, admin")
+    st.markdown('<span class="badge-yessica">YESSICA</span> <span class="badge-apri004">APRI.004</span> <span class="badge-apri001">APRI.001</span>', unsafe_allow_html=True)
+with col2:
+    st.markdown("## QTC Smart Sales Pro v4.1")
+    st.caption("Sistema Profesional de Cotización")
+with col3:
+    st.metric("🛒 Carrito", f"{len(st.session_state.carrito)} items", f"S/ {sum(item['total'] for item in st.session_state.carrito):,.2f}")
+    st.button("Generar Cotización")
+    st.button("Limpiar Carrito")
+
+st.markdown("---")
+
+# ============================================
+# DASHBOARD SUPERIOR (REAL)
+# ============================================
+
+total_productos = sum(len(cat['df']) for cat in st.session_state.catalogos) if st.session_state.catalogos else 0
+con_precio = 0
+sin_precio = 0
+for cat in st.session_state.catalogos:
+    if cat['precios']:
+        con_precio += cat['df'][cat['col_sku']].count()
+    else:
+        sin_precio += cat['df'][cat['col_sku']].count()
+con_stock = sum(len(stock['df']) for stock in st.session_state.stocks) if st.session_state.stocks else 0
+
 col1, col2, col3, col4 = st.columns(4)
-col1.metric("📦 Productos en Stock", 120)
-col2.metric("💵 Con Precio", 85)
-col3.metric("❓ Sin Precio", 35)
-col4.metric("🔄 Equivalentes", 42)
+col1.metric("📦 Productos en Catálogo", total_productos)
+col2.metric("💵 Con Precio", con_precio)
+col3.metric("❓ Sin Precio", sin_precio)
+col4.metric("📦 Reportes de Stock", con_stock)
+
+# Gráfico de stock por proveedor
+import pandas as pd
+if st.session_state.stocks:
+    proveedores = {"YESSICA":0, "APRI.004":0, "APRI.001":0}
+    for stock in st.session_state.stocks:
+        hoja = stock['hoja'].upper()
+        if "YESSICA" in hoja: proveedores["YESSICA"] += len(stock['df'])
+        elif "APRI.004" in hoja: proveedores["APRI.004"] += len(stock['df'])
+        elif "APRI.001" in hoja: proveedores["APRI.001"] += len(stock['df'])
+    st.bar_chart(pd.DataFrame.from_dict(proveedores, orient="index", columns=["Productos"]))
+
+# Gráfico de disponibilidad con/sin precio
+import matplotlib.pyplot as plt
+fig, ax = plt.subplots()
+ax.pie([con_precio, sin_precio], labels=["Con Precio", "Sin Precio"], autopct='%1.1f%%', colors=["#e94560","#00bcd4"])
+st.pyplot(fig)
+
 st.markdown("---")
 
 tab1, tab2, tab3 = st.tabs(["📦 MODO MASIVO (Bulk)", "🔍 BÚSQUEDA INTELIGENTE", "🛒 CARRITO DE COTIZACIÓN"])
