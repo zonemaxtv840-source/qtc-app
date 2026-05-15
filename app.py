@@ -32,7 +32,7 @@ st.markdown("""
 <style>
     /* ========== FONDO DE PÁGINA - BEIGE CÁLIDO PROFESIONAL ========== */
     .stApp {
-        background: linear-gradient(135deg, #fdfbf7 0%, #f3eee8 50%, #e8dfd1 100%);
+        background: linear-gradient(135deg, #f5f8f7 0%, #ebf2f0 50%, #dde8e4 100%);
     }
     
     /* ========== SIDEBAR OSCURO (CONTRASTE PROFESIONAL) ========== */
