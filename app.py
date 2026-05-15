@@ -751,8 +751,8 @@ def generar_excel(items: List[Dict], cliente: str, ruc: str) -> bytes:
             ws.insert_image('E2', 'logo.png', {
                 'x_offset': 5,
                 'y_offset': 5,
-                'x_scale': 0.18,
-                'y_scale': 0.18
+                'x_scale': 0.09,
+                'y_scale': 0.09
             })
         except:
             ws.write('E2', 'QTC', fmt_title)
