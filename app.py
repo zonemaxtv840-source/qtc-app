@@ -236,7 +236,7 @@ st.markdown("""
                         </div>
                         
                         <div class="apple-card-description">
-                            📄 {descripcion_html}
+                             {descripcion_html}
                         </div>
                         
                         <div class="apple-card-info-grid">
