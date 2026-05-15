@@ -745,18 +745,19 @@ def generar_excel(items: List[Dict], cliente: str, ruc: str) -> bytes:
             'align': 'center'
         })
         
-        # ========== LOGO (escala reducida) ==========
+        # ========== LOGO (tamaño ajustado a celda TOTAL - columna E) ==========
         try:
+            # Columna E tiene ancho 18, el logo se escala para que quepa
             ws.insert_image('E2', 'logo.png', {
-                'x_offset': 10,
+                'x_offset': 5,
                 'y_offset': 5,
-                'x_scale': 0.2,     # Logo más pequeño
-                'y_scale': 0.2
+                'x_scale': 0.18,
+                'y_scale': 0.18
             })
         except:
             ws.write('E2', 'QTC', fmt_title)
         
-        # ========== ENCABEZADOS ==========
+        # ========== ENCABEZADOS DE EMPRESA ==========
         ws.write('A1', 'QTC SMART SALES PRO', fmt_title)
         ws.write('A3', 'FECHA:', fmt_bold)
         ws.write('B3', datetime.now().strftime("%d/%m/%Y %H:%M"))
@@ -764,9 +765,11 @@ def generar_excel(items: List[Dict], cliente: str, ruc: str) -> bytes:
         ws.write('B4', cliente.upper())
         ws.write('A5', 'RUC:', fmt_bold)
         ws.write('B5', ruc)
-        ws.write('A7', '=' * 80, fmt_border)
         
-        # ========== ENCABEZADOS TABLA ==========
+        # Línea separadora
+        ws.write('A7', '=' * 100, fmt_border)
+        
+        # ========== ENCABEZADOS DE TABLA ==========
         headers = ['SKU', 'DESCRIPCIÓN', 'CANTIDAD', 'PRECIO UNIT.', 'TOTAL']
         for i, header in enumerate(headers):
             ws.write(8, i, header, fmt_header)
@@ -779,25 +782,25 @@ def generar_excel(items: List[Dict], cliente: str, ruc: str) -> bytes:
             ws.write(row_idx + 9, 3, item['precio'], fmt_money)
             ws.write(row_idx + 9, 4, item['total'], fmt_money)
         
-        # ========== TOTAL ==========
+        # ========== TOTAL GENERAL ==========
         total_row = len(items) + 9
         ws.write(total_row, 3, 'TOTAL S/.', fmt_total)
         ws.write(total_row, 4, sum(item['total'] for item in items), fmt_money)
         
-        # ========== COLUMNAS (descripción más ancha) ==========
+        # ========== AJUSTE DE COLUMNAS ==========
         ws.set_column('A:A', 22)   # SKU
-        ws.set_column('B:B', 65)   # Descripción (MÁS ANCHA)
+        ws.set_column('B:B', 120)  # DESCRIPCIÓN (ancho 120)
         ws.set_column('C:C', 12)   # Cantidad
         ws.set_column('D:D', 18)   # Precio unitario
         ws.set_column('E:E', 18)   # Total
         
         # ========== EXTRAS ==========
-        ws.freeze_panes(9, 0)           # Congelar encabezados
-        ws.autofilter(8, 0, total_row - 1, 4)  # Filtros
-        ws.set_landscape()               # Orientación horizontal
-        ws.set_margins(left=0.5, right=0.5, top=0.5, bottom=0.5)  # Márgenes
-        ws.repeat_rows(8)               # Repetir encabezados
-        ws.set_zoom(85)                 # Zoom 85%
+        ws.freeze_panes(9, 0)                      # Congelar encabezados
+        ws.autofilter(8, 0, total_row - 1, 4)      # Filtros
+        ws.set_landscape()                          # Orientación horizontal
+        ws.set_margins(left=0.3, right=0.3, top=0.5, bottom=0.5)  # Márgenes reducidos
+        ws.repeat_rows(8)                           # Repetir encabezados al imprimir
+        ws.set_zoom(80)                             # Zoom 80% para mejor visualización
     
     return output.getvalue()
 
