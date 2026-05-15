@@ -796,6 +796,14 @@ with st.sidebar:
 # ============================================
 # TABS PRINCIPALES
 # ============================================
+# ======== DASHBOARD SUPERIOR ========
+st.markdown("## 📊 Panel de Resumen")
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("📦 Productos en Stock", 120)
+col2.metric("💵 Con Precio", 85)
+col3.metric("❓ Sin Precio", 35)
+col4.metric("🔄 Equivalentes", 42)
+st.markdown("---")
 
 tab1, tab2, tab3 = st.tabs(["📦 MODO MASIVO (Bulk)", "🔍 BÚSQUEDA INTELIGENTE", "🛒 CARRITO DE COTIZACIÓN"])
 
