@@ -295,60 +295,60 @@ st.markdown("""
         background-color: #e94560;
         color: white !important;
     }
-     /* ========== NUEVO: PERSONALIZAR MENSAJES DE STREAMLIT ========== */
-    .stAlert {
-        background: rgba(76, 175, 80, 0.12) !important;
-        backdrop-filter: blur(4px);
-        border-radius: 12px;
-        border-left: 4px solid #4CAF50 !important;
-    }
-    
-    .stAlert .stMarkdown {
-        color: #1a4d2a !important;
-        font-weight: 500;
-    }
-    
-    /* Mensaje de error */
-    div[data-testid="stAlert"][data-kind="error"] {
-        background: rgba(244, 67, 54, 0.12) !important;
-        border-left-color: #f44336 !important;
-    }
-    
-    div[data-testid="stAlert"][data-kind="error"] .stMarkdown {
-        color: #8b0000 !important;
-    }
-    
-    /* Mensaje de advertencia */
-    div[data-testid="stAlert"][data-kind="warning"] {
-        background: rgba(255, 152, 0, 0.12) !important;
-        border-left-color: #FF9800 !important;
-    }
-    
-    div[data-testid="stAlert"][data-kind="warning"] .stMarkdown {
-        color: #cc7000 !important;
-    }
-    
-    /* Mensaje de información */
-    div[data-testid="stAlert"][data-kind="info"] {
-        background: rgba(33, 150, 243, 0.5) !important;
-        border-left-color: #2196F3 !important;
-    }
-    
-    div[data-testid="stAlert"][data-kind="info"] .stMarkdown {
-        color: #c69437 !important;
-    }
-    /* Mensaje de error - FONDO */
-/* Gradiente en el fondo del mensaje de error */
-div[data-testid="stAlert"][data-kind="error"] {
-    background-image: linear-gradient(135deg, #dfb15b 0%, #c69437 50%, #a4741f 100%) !important;
-    border-left-color: #f44336 !important;
+    /* ============================================
+   MENSAJES DE STREAMLIT - PERSONALIZABLES
+   ============================================ */
+
+/* ✅ ÉXITO (st.success) - Fondo verde intenso + letras negras */
+div[data-testid="stAlert"][data-kind="success"] {
+    background: #2e7d32 !important;
+    border-left: 4px solid #1b5e20 !important;
     border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-/* Mensaje de error - TEXTO (agrega esto) */
+div[data-testid="stAlert"][data-kind="success"] .stMarkdown {
+    color: #000000 !important;
+    font-weight: 500;
+}
+
+/* ⚠️ ADVERTENCIA (st.warning) - Fondo amarillo fuerte + letras negras */
+div[data-testid="stAlert"][data-kind="warning"] {
+    background: #f9a825 !important;
+    border-left: 4px solid #f57f17 !important;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+div[data-testid="stAlert"][data-kind="warning"] .stMarkdown {
+    color: #000000 !important;
+    font-weight: 500;
+}
+
+/* ❌ ERROR (st.error) - Fondo rojo fuerte + letras negras */
+div[data-testid="stAlert"][data-kind="error"] {
+    background: #d32f2f !important;
+    border-left: 4px solid #b71c1c !important;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
 div[data-testid="stAlert"][data-kind="error"] .stMarkdown {
-    color: #540000 !important;
-    font-weight: 600;
+    color: #000000 !important;
+    font-weight: 500;
+}
+
+/* ℹ️ INFORMACIÓN (st.info) - Fondo azul fuerte + letras negras */
+div[data-testid="stAlert"][data-kind="info"] {
+    background: #1976d2 !important;
+    border-left: 4px solid #0d47a1 !important;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+div[data-testid="stAlert"][data-kind="info"] .stMarkdown {
+    color: #000000 !important;
+    font-weight: 500;
 }
 </style>
 """, unsafe_allow_html=True)
