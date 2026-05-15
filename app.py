@@ -148,7 +148,60 @@ st.markdown("""
         border-top: 1px solid rgba(255,255,255,0.2);
         margin-top: 2rem;
     }
-</style>
+    /* ========== 14. TARJETAS DEL TAB 1 (MODO MASIVO) ========== */
+    /* Fondo blanco para todos los divs con fondo gris/rojo/azul/verde del Tab 1 */
+    div[style*="background:#FFEBEE"],
+    div[style*="background:#FFEBEE"] *,
+    div[style*="background:white"],
+    div[style*="background:white"] *,
+    div[style*="background:#E3F2FD"],
+    div[style*="background:#E3F2FD"] *,
+    div[style*="background:#F5F5F5"],
+    div[style*="background:#F5F5F5"] *,
+    div[style*="background:#E8F5E9"],
+    div[style*="background:#E8F5E9"] *,
+    div[style*="background:#FFF8E1"],
+    div[style*="background:#FFF8E1"] * {
+        color: #1a1a2e !important;
+    }
+    
+    /* Forzar fondo blanco a las tarjetas de resultados del Tab 1 */
+    div[style*="border-radius:16px"][style*="margin-bottom:1rem"] {
+        background: #ffffff !important;
+        color: #1a1a2e !important;
+    }
+    
+    /* Texto específico dentro de las tarjetas del Tab 1 */
+    div[style*="border-radius:16px"] strong,
+    div[style*="border-radius:16px"] span,
+    div[style*="border-radius:16px"] div {
+        color: #1a1a2e !important;
+    }
+    
+    /* Badges dentro del Tab 1 - mantener colores originales */
+    div[style*="border-radius:16px"] .badge-yessica,
+    div[style*="border-radius:16px"] .badge-apri004,
+    div[style*="border-radius:16px"] .badge-apri001,
+    div[style*="border-radius:16px"] .badge-warning,
+    div[style*="border-radius:16px"] .badge-ugreen {
+        color: white !important;
+    }
+    
+    /* Enlaces y códigos dentro de tarjetas */
+    div[style*="border-radius:16px"] code,
+    div[style*="border-radius:16px"] a {
+        color: #1e88e5 !important;
+    }
+    
+    /* Alertas internas dentro de tarjetas (como "⚠️ con stock pero debes solicitar transferencia") */
+    div[style*="background:#FCE4EC"] {
+        background: #fce4ec !important;
+        color: #c62828 !important;
+    }
+    
+    div[style*="background:#FCE4EC"] * {
+        color: #c62828 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
