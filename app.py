@@ -171,285 +171,7 @@ st.markdown("""
         margin: 0.5rem 0;
         border: 1px solid #FFE0B2;
     }
-             /* ============================================
-   ESTILO APPLE PARA CARDS
-   ============================================ */
-
-/* Animación de entrada */
-@keyframes cardFadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Card estilo Apple */
-.apple-card {
-    background: #FFFFFF;
-    border-radius: 24px;
-    margin-bottom: 20px;
-    padding: 20px;
-    transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-    border-left: 4px solid;
-    animation: cardFadeInUp 0.4s ease-out forwards;
-    opacity: 0;
-}
-
-/* Efecto hover */
-.apple-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.02);
-}
-
-/* Colores de borde por estado */
-.apple-card.border-success {
-    border-left-color: #34C759;
-    border-image: linear-gradient(180deg, #34C759 0%, #30D158 100%);
-    border-image-slice: 1;
-}
-
-.apple-card.border-error {
-    border-left-color: #FF3B30;
-    border-image: linear-gradient(180deg, #FF3B30 0%, #FF453A 100%);
-    border-image-slice: 1;
-}
-
-.apple-card.border-info {
-    border-left-color: #007AFF;
-    border-image: linear-gradient(180deg, #007AFF 0%, #0A84FF 100%);
-    border-image-slice: 1;
-}
-
-.apple-card.border-muted {
-    border-left-color: #8E8E93;
-    border-image: linear-gradient(180deg, #8E8E93 0%, #98989D 100%);
-    border-image-slice: 1;
-}
-
-/* Header de la card */
-.apple-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-}
-
-.apple-card-sku {
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
-    font-weight: 700;
-    font-size: 1rem;
-    color: #1d1d1f;
-    background: #f5f5f7;
-    padding: 4px 12px;
-    border-radius: 20px;
-    display: inline-block;
-}
-
-/* Badge de estado tipo pill */
-.apple-status-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 6px 14px;
-    border-radius: 30px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: -0.2px;
-}
-
-.apple-status-badge.success {
-    background: #E8F5E9;
-    color: #2E7D32;
-}
-
-.apple-status-badge.error {
-    background: #FFEBEE;
-    color: #C62828;
-}
-
-.apple-status-badge.info {
-    background: #E3F2FD;
-    color: #1565C0;
-}
-
-.apple-status-badge.muted {
-    background: #F5F5F5;
-    color: #757575;
-}
-
-/* Descripción */
-.apple-card-description {
-    font-size: 0.85rem;
-    line-height: 1.5;
-    color: #1d1d1f;
-    margin: 12px 0;
-    padding: 8px 0;
-    border-top: 0.5px solid #E5E5EA;
-    border-bottom: 0.5px solid #E5E5EA;
-}
-
-/* Grid de 2 columnas para info */
-.apple-card-info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin: 12px 0;
-}
-
-.apple-info-item {
-    background: #F9F9FB;
-    border-radius: 16px;
-    padding: 10px 12px;
-}
-
-.apple-info-label {
-    font-size: 0.7rem;
-    color: #86868b;
-    letter-spacing: 0.3px;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-}
-
-.apple-info-value {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #1d1d1f;
-}
-
-.apple-info-value small {
-    font-size: 0.7rem;
-    font-weight: normal;
-    color: #86868b;
-}
-
-/* Badges de stock tipo pill */
-.apple-stock-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #F5F5F7;
-    border-radius: 30px;
-    padding: 6px 14px;
-    margin: 4px 6px 4px 0;
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
-.apple-stock-badge.yessica {
-    background: #E8F5E9;
-    color: #2E7D32;
-}
-
-.apple-stock-badge.apri004 {
-    background: #FFF3E0;
-    color: #EF6C00;
-}
-
-.apple-stock-badge.apri001 {
-    background: #FFEBEE;
-    color: #C62828;
-}
-
-.apple-stock-badge.warning {
-    background: #FEF3E2;
-    color: #F59E0B;
-}
-
-/* Orígenes */
-.apple-card-origen {
-    background: #F9F9FB;
-    border-radius: 16px;
-    padding: 10px 12px;
-    margin: 12px 0;
-    font-size: 0.7rem;
-    color: #86868b;
-}
-
-.apple-card-origen strong {
-    color: #1d1d1f;
-}
-
-/* Botones estilo Apple */
-.apple-btn {
-    border: none;
-    border-radius: 40px;
-    padding: 10px 20px;
-    font-weight: 600;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-}
-
-.apple-btn-primary {
-    background: #007AFF;
-    color: white;
-}
-
-.apple-btn-primary:hover {
-    background: #0055CC;
-    transform: scale(0.98);
-}
-
-.apple-btn-secondary {
-    background: #F5F5F7;
-    color: #007AFF;
-}
-
-.apple-btn-secondary:hover {
-    background: #E5E5EA;
-    transform: scale(0.98);
-}
-
-/* Contenedor de botones */
-.apple-card-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-top: 12px;
-}
-
-/* Input cantidad estilo Apple */
-.apple-quantity-input {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #F5F5F7;
-    border-radius: 40px;
-    padding: 4px 8px 4px 16px;
-}
-
-.apple-quantity-input label {
-    font-size: 0.75rem;
-    color: #86868b;
-}
-
-.apple-quantity-input input {
-    background: white;
-    border: 0.5px solid #E5E5EA;
-    border-radius: 30px;
-    padding: 8px 12px;
-    width: 80px;
-    text-align: center;
-    font-weight: 600;
-}
-
-/* Separador */
-.apple-divider {
-    margin: 16px 0;
-    border: none;
-    border-top: 0.5px solid #E5E5EA;
-}
 </style>
-
 """, unsafe_allow_html=True)
 
 # ============================================
@@ -1481,9 +1203,8 @@ with tab2:
                     )
                     prod['alternativas'] = alternativas
             
-           
-# ============================================
-            # 4. MOSTRAR RESULTADOS CON ESTILO APPLE
+            # ============================================
+            # 4. MOSTRAR RESULTADOS
             # ============================================
             if productos_por_sku:
                 st.success(f"✅ {len(productos_por_sku)} productos encontrados")
@@ -1494,105 +1215,94 @@ with tab2:
                 # Ordenar: primero los que tienen stock, luego los que tienen precio
                 resultados_lista.sort(key=lambda x: (-x['tiene_stock'], -x['tiene_precio']))
                 
-                # Contador para delay de animación
-                for idx, prod in enumerate(resultados_lista):
-                    # Determinar clase de borde y estado
-                    if prod['tiene_stock'] and not prod['tiene_precio']:
-                        border_class = "border-error"
-                        status_type = "error"
-                        status_text = "STOCK SIN PRECIO"
-                    elif prod['tiene_stock'] and prod['tiene_precio']:
-                        border_class = "border-success"
-                        status_type = "success"
-                        status_text = "DISPONIBLE"
-                    elif not prod['tiene_stock'] and prod['tiene_precio']:
-                        border_class = "border-info"
-                        status_type = "info"
-                        status_text = "SOLO PRECIO"
-                    else:
-                        border_class = "border-muted"
-                        status_type = "muted"
-                        status_text = "NO DISPONIBLE"
-                    
-                    # Aplicar delay de animación en cascada
-                    delay = min(idx * 0.05, 0.5)
-                    
-                    # Construir badges de stock (pill)
-                    stock_badges = []
+                for prod in resultados_lista:
+                    # Construir badges de stock
+                    badges = []
                     if prod['stock_yessica'] > 0:
-                        stock_badges.append(f'<span class="apple-stock-badge yessica">YESSICA {prod["stock_yessica"]}</span>')
+                        badges.append(f'<span class="badge-yessica">🟢 YESSICA: {prod["stock_yessica"]}</span>')
                     if prod['stock_apri004'] > 0:
-                        stock_badges.append(f'<span class="apple-stock-badge apri004">APRI.004 {prod["stock_apri004"]}</span>')
+                        badges.append(f'<span class="badge-apri004">🟡 APRI.004: {prod["stock_apri004"]}</span>')
                     if prod['stock_apri001'] > 0:
-                        msg_apri = " Solicitar" if st.session_state.modo == "XIAOMI" else ""
-                        stock_badges.append(f'<span class="apple-stock-badge apri001">APRI.001 {prod["stock_apri001"]}{msg_apri}</span>')
+                        msg_apri = "⚠️ SOLICITAR TRANSFERENCIA" if st.session_state.modo == "XIAOMI" else ""
+                        badges.append(f'<span class="badge-apri001">🔴 APRI.001: {prod["stock_apri001"]} {msg_apri}</span>')
                     
-                    if not stock_badges:
-                        stock_badges.append('<span class="apple-stock-badge warning">Sin stock</span>')
+                    badges_html = ' '.join(badges) if badges else '<span class="badge-warning">❌ Sin stock</span>'
                     
                     # Orígenes
                     origenes_html = '<br>'.join(prod.get('origenes', ['Origen no disponible']))
                     
-                    # Descripción completa (visible)
-                    descripcion_html = prod['descripcion'] if prod['descripcion'] else f"SKU: {prod['sku']}"
+                    # Determinar color de borde
+                    if prod['tiene_stock'] and not prod['tiene_precio']:
+                        border_color = "#f44336"
+                        bg_color = "#FFEBEE"
+                    elif prod['tiene_stock'] and prod['tiene_precio']:
+                        border_color = "#4CAF50"
+                        bg_color = "white"
+                    elif not prod['tiene_stock'] and prod['tiene_precio']:
+                        border_color = "#2196F3"
+                        bg_color = "#E3F2FD"
+                    else:
+                        border_color = "#9e9e9e"
+                        bg_color = "#F5F5F5"
                     
-                    # Precio formateado
-                    precio_text = f"S/ {prod['precio']:,.2f}" if prod['tiene_precio'] else "No disponible"
-                    
-                    # Usar HTML seguro
+                    # ========== CARD CON TEXTO EN NEGRO ==========
                     st.markdown(f"""
-                    <div class="apple-card {border_class}" style="animation-delay: {delay}s;">
-                        <div class="apple-card-header">
-                            <span class="apple-card-sku"># {prod['sku']}</span>
-                            <span class="apple-status-badge {status_type}">{status_text}</span>
-                        </div>
-                        
-                        <div class="apple-card-description">
-                            {descripcion_html}
-                        </div>
-                        
-                        <div class="apple-card-info-grid">
-                            <div class="apple-info-item">
-                                <div class="apple-info-label">{st.session_state.precio_key}</div>
-                                <div class="apple-info-value">{precio_text}</div>
+                    <div style="background:{bg_color};border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid {border_color};color:#1a1a2e;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+                            <div>
+                                <strong style="font-size:1rem;color:#1a1a2e;">📦 {prod['sku']}</strong>
+                    """, unsafe_allow_html=True)
+                    
+                    # Badge de estado
+                    if prod['tiene_stock'] and prod['tiene_precio']:
+                        st.markdown('<span style="background:#4CAF50;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;margin-left:8px;">✅ CON STOCK Y PRECIO</span>', unsafe_allow_html=True)
+                    elif prod['tiene_stock'] and not prod['tiene_precio']:
+                        st.markdown('<span style="background:#f44336;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;margin-left:8px;">⚠️ STOCK SIN PRECIO - ERROR DE SKU</span>', unsafe_allow_html=True)
+                    elif not prod['tiene_stock'] and prod['tiene_precio']:
+                        st.markdown('<span style="background:#2196F3;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;margin-left:8px;">📋 SOLO PRECIO - SIN STOCK</span>', unsafe_allow_html=True)
+                    else:
+                        st.markdown('<span style="background:#9e9e9e;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;margin-left:8px;">❌ NO DISPONIBLE</span>', unsafe_allow_html=True)
+                    
+                    st.markdown(f"""
                             </div>
-                            <div class="apple-info-item">
-                                <div class="apple-info-label">STOCK TOTAL</div>
-                                <div class="apple-info-value">{prod['stock_total']} <small>unidades</small></div>
-                            </div>
                         </div>
-                        
-                        <div>
-                            {''.join(stock_badges)}
+                        <div style="margin-top:12px;color:#333;">
+                            <strong>📝 Descripción:</strong> {prod['descripcion']}
                         </div>
-                        
-                        <div class="apple-card-origen">
-                            <strong>Fuentes de informacion</strong><br>
-                            {origenes_html}
+                        <div style="margin-top:8px;color:#333;">
+                            <strong>💰 Precio {st.session_state.precio_key}:</strong> <span style="font-weight:bold;">S/ {prod['precio']:,.2f}</span>
+                            <span style="margin-left:16px;"><strong>📦 Stock total:</strong> {prod['stock_total']}</span>
+                        </div>
+                        <div style="margin-top:8px;">
+                            {badges_html}
+                        </div>
+                        <div style="margin-top:8px;font-size:0.7rem;color:#666;">
+                            📁 {origenes_html}
                         </div>
                     """, unsafe_allow_html=True)
                     
                     # Advertencia APRI.001 modo XIAOMI
                     if prod['usa_apri001'] and st.session_state.modo == "XIAOMI":
-                        st.markdown('<div style="background:#FEF3C7;border-radius:16px;padding:10px 12px;margin:8px 0;font-size:0.75rem;color:#D97706;">Stock disponible SOLO en APRI.001 - Solicitar transferencia a logistica</div>', unsafe_allow_html=True)
+                        st.markdown('<div style="background:#FCE4EC;padding:0.5rem;border-radius:8px;margin:0.5rem 0;color:#c62828;font-size:0.75rem;">⚠️ Stock disponible SOLO en APRI.001 - Solicitar transferencia a logística</div>', unsafe_allow_html=True)
                     
                     # CASO: STOCK SIN PRECIO - Mostrar SKU equivalente
                     if prod['tiene_stock'] and not prod['tiene_precio']:
                         if prod.get('sku_equivalente'):
                             st.markdown(f"""
-                            <div style="background:#E8F5E9;border-radius:16px;padding:12px;margin:8px 0;">
-                                <strong style="color:#2E7D32;">SKU EQUIVALENTE SUGERIDO</strong>
+                            <div style="background:#E8F5E9;border-radius:12px;padding:1rem;margin:0.5rem 0;border-left:4px solid #4CAF50;color:#1a1a2e;">
+                                <strong style="color:#2E7D32;">💡 SKU EQUIVALENTE SUGERIDO</strong>
                                 <div style="margin-top:8px;">
-                                    <code style="background:#fff;padding:4px 8px;border-radius:8px;">{prod['sku_equivalente']}</code><br>
-                                    <span style="font-size:0.8rem;">{prod.get('desc_equivalente', '')[:100]}</span><br>
-                                    <strong>Precio:</strong> S/ {prod.get('precio_equivalente', 0):,.2f}
+                                    <strong>SKU:</strong> <code>{prod['sku_equivalente']}</code><br>
+                                    <strong>Descripción:</strong> {prod.get('desc_equivalente', '')}<br>
+                                    <strong>Precio:</strong> S/ {prod.get('precio_equivalente', 0):,.2f}<br>
+                                    <strong>Coincidencia:</strong> {prod.get('similitud_equivalente', 0):.0f}%
                                 </div>
                             </div>
                             """, unsafe_allow_html=True)
                             
                             col_eq1, col_eq2 = st.columns(2)
                             with col_eq1:
-                                if st.button(f"Usar SKU equivalente", key=f"apple_eq_{prod['sku']}", use_container_width=True):
+                                if st.button(f"➕ Usar SKU equivalente ({prod['sku_equivalente']})", key=f"use_eq_{prod['sku']}"):
                                     item_carrito = {
                                         'sku': prod['sku_equivalente'],
                                         'descripcion': prod.get('desc_equivalente', ''),
@@ -1604,29 +1314,34 @@ with tab2:
                                         'stock_apri001': prod['stock_apri001']
                                     }
                                     st.session_state.carrito.append(item_carrito)
-                                    st.success(f"Agregado {prod['sku_equivalente']} al carrito")
+                                    st.success(f"✅ Agregado {prod['sku_equivalente']} al carrito")
                                     st.rerun()
+                            with col_eq2:
+                                if st.button(f"📝 Seguir con SKU original ({prod['sku']})", key=f"use_orig_{prod['sku']}"):
+                                    st.warning(f"El SKU {prod['sku']} no tiene precio. No se puede agregar al carrito.")
                         
                         elif prod.get('alternativas') and len(prod['alternativas']) > 0:
-                            st.markdown('<div style="background:#FEF3E2;border-radius:16px;padding:12px;margin:8px 0;"><strong>Productos similares:</strong></div>', unsafe_allow_html=True)
-                            for alt in prod['alternativas'][:2]:
+                            st.markdown('<div style="background:#FFF8E1;border-radius:12px;padding:0.75rem;margin:0.5rem 0;color:#1a1a2e;"><strong>💡 PRODUCTOS SIMILARES ENCONTRADOS:</strong></div>', unsafe_allow_html=True)
+                            for alt in prod['alternativas'][:3]:
+                                badge_alt = construir_badge_stock(alt['stock_yessica'], alt['stock_apri004'], alt['stock_apri001'])
                                 st.markdown(f"""
-                                <div style="background:white;border-radius:16px;padding:10px;margin:8px 0;border:0.5px solid #E5E5EA;">
-                                    <strong>{alt['sku']}</strong>
-                                    <span style="background:#FF9800;color:white;padding:2px 8px;border-radius:20px;font-size:0.6rem;">{alt['similitud']:.0f}%</span>
-                                    <div style="font-size:0.75rem;color:#666;">{alt['descripcion'][:60]}</div>
-                                    <div>S/ {alt['precio']:,.2f} | Stock: {alt['stock_total']}</div>
+                                <div style="background:white;border-radius:12px;padding:0.75rem;margin:0.5rem 0;border:1px solid #FFE0B2;color:#1a1a2e;">
+                                    <div><strong>📦 {alt['sku']}</strong> <span style="background:#FF9800;color:white;padding:2px 8px;border-radius:10px;font-size:0.6rem;">{alt['similitud']:.0f}% coincidencia</span></div>
+                                    <div style="font-size:0.8rem;margin-top:4px;">{alt['descripcion'][:80]}</div>
+                                    <div style="margin-top:6px;">💰 Precio: S/ {alt['precio']:,.2f} | 📦 Stock: {alt['stock_total']}</div>
+                                    <div style="margin-top:6px;">{badge_alt}</div>
                                 </div>
                                 """, unsafe_allow_html=True)
+                        else:
+                            st.info("No se encontraron SKU alternativos con la misma descripción.")
                     
-                    # CASO NORMAL: Con stock y precio
+                    # CASO NORMAL: Con stock y precio - Input cantidad
                     elif prod['tiene_stock'] and prod['tiene_precio']:
-                        # Usar columnas para cantidad y botones
-                        col_cant, col_btn1, col_btn2 = st.columns([1, 1, 1])
+                        col_cant, col_btn = st.columns([1, 2])
                         with col_cant:
-                            cantidad = st.number_input("", min_value=1, max_value=prod['stock_total'], value=1, step=1, key=f"apple_qty_{prod['sku']}", label_visibility="collapsed", placeholder="Cantidad")
-                        with col_btn1:
-                            if st.button(f"Agregar", key=f"apple_add_{prod['sku']}", use_container_width=True):
+                            cantidad = st.number_input("Cantidad", min_value=1, max_value=prod['stock_total'], value=1, step=1, key=f"ok_{prod['sku']}")
+                        with col_btn:
+                            if st.button(f"➕ Agregar a cotización", key=f"add_ok_{prod['sku']}"):
                                 item_carrito = {
                                     'sku': prod['sku'],
                                     'descripcion': prod['descripcion'],
@@ -1638,29 +1353,19 @@ with tab2:
                                     'stock_apri001': prod['stock_apri001']
                                 }
                                 st.session_state.carrito.append(item_carrito)
-                                st.success(f"Agregado {cantidad}x {prod['sku']}")
+                                st.success(f"✅ Agregado {cantidad}x {prod['sku']}")
                                 st.rerun()
-                        with col_btn2:
-                            if prod.get('alternativas') and len(prod['alternativas']) > 0:
-                                if st.button(f"Similares", key=f"apple_sim_{prod['sku']}", use_container_width=True):
-                                    with st.expander(f"Productos similares a {prod['sku']}"):
-                                        for alt in prod['alternativas'][:3]:
-                                            st.markdown(f"- **{alt['sku']}** ({alt['similitud']:.0f}%): S/ {alt['precio']:,.2f} - Stock: {alt['stock_total']}")
-                    
-                    # CASO: Solo precio o no disponible
-                    elif prod['tiene_precio'] or not prod['tiene_stock']:
-                        if st.button(f"Ver detalles", key=f"apple_details_{prod['sku']}", use_container_width=True):
-                            with st.expander(f"Detalles de {prod['sku']}"):
-                                st.write(f"**Descripcion:** {prod['descripcion']}")
-                                st.write(f"**Precio:** S/ {prod['precio']:,.2f}" if prod['tiene_precio'] else "**Precio:** No disponible")
-                                st.write(f"**Stock:** {prod['stock_total']} unidades")
                     
                     st.markdown('</div>', unsafe_allow_html=True)
-                    st.markdown('<hr class="apple-divider">', unsafe_allow_html=True)
+                    st.divider()
             else:
-                st.info("No se encontraron productos con esa busqueda.")            
+                st.info("No se encontraron productos con esa búsqueda.")
+    elif busqueda and len(busqueda) >= 2:
+        if not st.session_state.catalogos:
+            st.warning("⚠️ No hay catálogos cargados.")
+        if not st.session_state.stocks:
+            st.warning("⚠️ No hay stocks cargados.")
 
-           
 # ========== TAB 3: CARRITO ==========
 with tab3:
     st.markdown("### 🛒 Cotización actual")
