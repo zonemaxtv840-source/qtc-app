@@ -1557,7 +1557,6 @@ with tab2:
                     st.markdown('<hr class="apple-divider">', unsafe_allow_html=True)
             else:
                 st.info("No se encontraron productos con esa busqueda.")
-          
 # ========== TAB 3: CARRITO ==========
 with tab3:
     st.markdown("### 🛒 Cotización actual")
