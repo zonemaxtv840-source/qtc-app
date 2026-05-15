@@ -705,37 +705,114 @@ def generar_excel(items: List[Dict], cliente: str, ruc: str) -> bytes:
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df = pd.DataFrame(items)
-        df.to_excel(writer, sheet_name='Cotizacion', index=False, startrow=5)
+        df.to_excel(writer, sheet_name='Cotizacion', index=False, startrow=8)
         
         workbook = writer.book
         ws = writer.sheets['Cotizacion']
         
-        fmt_header = workbook.add_format({'bg_color': '#e94560', 'bold': True, 'border': 1, 'align': 'center', 'font_color': 'white'})
-        fmt_money = workbook.add_format({'num_format': '"S/." #,##0.00', 'border': 1, 'align': 'right'})
-        fmt_border = workbook.add_format({'border': 1})
-        fmt_bold = workbook.add_format({'bold': True})
+        # ========== FORMATOS ==========
+        # Encabezados (NARANJA)
+        fmt_header = workbook.add_format({
+            'bg_color': '#e67e22',
+            'bold': True,
+            'border': 1,
+            'align': 'center',
+            'font_color': 'white',
+            'font_size': 11
+        })
         
-        ws.write('A1', 'FECHA:', fmt_bold)
-        ws.write('B1', datetime.now().strftime("%d/%m/%Y"))
-        ws.write('A2', 'CLIENTE:', fmt_bold)
-        ws.write('B2', cliente.upper())
-        ws.write('A3', 'RUC:', fmt_bold)
-        ws.write('B3', ruc)
+        # Moneda
+        fmt_money = workbook.add_format({
+            'num_format': '"S/." #,##0.00',
+            'border': 1,
+            'align': 'right',
+            'bg_color': '#f5f5f5'
+        })
         
-        headers = ['SKU', 'Descripción', 'Cantidad', 'Precio Unit.', 'Total']
+        # Bordes normales
+        fmt_border = workbook.add_format({
+            'border': 1,
+            'align': 'left',
+            'valign': 'vcenter'
+        })
+        
+        # Títulos en negrita
+        fmt_bold = workbook.add_format({'bold': True, 'font_size': 11})
+        fmt_title = workbook.add_format({'bold': True, 'font_size': 14, 'color': '#e67e22'})
+        
+        # Total general
+        fmt_total = workbook.add_format({
+            'bold': True,
+            'bg_color': '#e67e22',
+            'font_color': 'white',
+            'border': 1,
+            'align': 'center'
+        })
+        
+        # ========== LOGO (insertar imagen) ==========
+        # Intenta cargar logo.png desde el mismo directorio
+        try:
+            # Ajusta la ruta según donde tengas el logo
+            # Opción 1: logo.png en el mismo directorio
+            workbook.add_worksheet('logo_temp')
+            ws.insert_image('E2', 'logo.png', {'x_offset': 10, 'y_offset': 5, 'x_scale': 0.5, 'y_scale': 0.5})
+        except:
+            # Si no encuentra el logo, escribe texto alternativo
+            ws.write('E2', 'QTC', fmt_title)
+        
+        # ========== ENCABEZADOS DE EMPRESA ==========
+        ws.write('A1', 'QTC SMART SALES PRO', fmt_title)
+        ws.write('A3', 'FECHA:', fmt_bold)
+        ws.write('B3', datetime.now().strftime("%d/%m/%Y %H:%M"))
+        ws.write('A4', 'CLIENTE:', fmt_bold)
+        ws.write('B4', cliente.upper())
+        ws.write('A5', 'RUC:', fmt_bold)
+        ws.write('B5', ruc)
+        
+        # Línea separadora
+        ws.write('A7', '=' * 80, fmt_border)
+        
+        # ========== ENCABEZADOS DE TABLA ==========
+        headers = ['SKU', 'DESCRIPCIÓN', 'CANTIDAD', 'PRECIO UNIT.', 'TOTAL']
         for i, header in enumerate(headers):
-            ws.write(5, i, header, fmt_header)
+            ws.write(8, i, header, fmt_header)
         
+        # ========== DATOS ==========
         for row_idx, item in enumerate(items):
-            ws.write(row_idx + 6, 0, item['sku'], fmt_border)
-            ws.write(row_idx + 6, 1, item['descripcion'], fmt_border)
-            ws.write(row_idx + 6, 2, item['cantidad'], fmt_border)
-            ws.write(row_idx + 6, 3, item['precio'], fmt_money)
-            ws.write(row_idx + 6, 4, item['total'], fmt_money)
+            ws.write(row_idx + 9, 0, item['sku'], fmt_border)
+            ws.write(row_idx + 9, 1, item['descripcion'], fmt_border)
+            ws.write(row_idx + 9, 2, item['cantidad'], fmt_border)
+            ws.write(row_idx + 9, 3, item['precio'], fmt_money)
+            ws.write(row_idx + 9, 4, item['total'], fmt_money)
         
-        total_row = len(items) + 6
-        ws.write(total_row, 3, 'TOTAL S/.', fmt_header)
+        # ========== TOTAL GENERAL ==========
+        total_row = len(items) + 9
+        ws.write(total_row, 3, 'TOTAL S/.', fmt_total)
         ws.write(total_row, 4, sum(item['total'] for item in items), fmt_money)
+        
+        # ========== AJUSTE DE COLUMNAS ==========
+        ws.set_column('A:A', 25)   # SKU
+        ws.set_column('B:B', 50)   # Descripción
+        ws.set_column('C:C', 12)   # Cantidad
+        ws.set_column('D:D', 18)   # Precio unitario
+        ws.set_column('E:E', 18)   # Total
+        
+        # ========== FORMATO ADICIONAL ==========
+        # Congelar panel de encabezados
+        ws.freeze_panes(9, 0)
+        
+        # Agregar filtros
+        ws.autofilter(8, 0, total_row - 1, 4)
+        
+        # Configurar orientación horizontal
+        ws.set_landscape()
+        ws.set_margins(left=0.5, right=0.5, top=0.5, bottom=0.5)
+        
+        # Repetir encabezados en cada página
+        ws.repeat_rows(8)
+        
+        # Ajustar el zoom al 85% para mejor visualización
+        ws.set_zoom(85)
     
     return output.getvalue()
 
