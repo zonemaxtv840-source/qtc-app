@@ -241,7 +241,7 @@ st.markdown("""
                         
                         <div class="apple-card-info-grid">
                             <div class="apple-info-item">
-                                <div class="apple-info-label">💰 {st.session_state.precio_key}</div>
+                                <div class="apple-info-label">{st.session_state.precio_key}</div>
                                 <div class="apple-info-value">{precio_text}</div>
                             </div>
                             <div class="apple-info-item">
