@@ -744,7 +744,7 @@ with tab1:
     texto_bulk = st.text_area(
         "",
         height=200,
-        placeholder="Ejemplo:\nRN9401276NA8:100\nCN0200047BK8:100\nRN0200065BK8:50"
+        placeholder="Ejemplo:\nRN9401276NA8:100\nCN0200047BK8:100\nCN0200053NA8:10\nRN0200065BK8:50"
     )
     
     col_b1, col_b2 = st.columns([1, 1])
@@ -787,9 +787,6 @@ with tab1:
                                 estado = "✅ OK"
                                 if cantidad_cotizar < pedido['cantidad']:
                                     estado = f"⚠️ Stock insuficiente ({cantidad_cotizar}/{pedido['cantidad']})"
-                            elif not prod['tiene_precio'] and prod['tiene_stock']:
-                                cantidad_cotizar = 0
-                                estado = "⚠️ Stock disponible - SIN PRECIO (Error de SKU)"
                             elif not prod['tiene_precio']:
                                 cantidad_cotizar = 0
                                 estado = "❌ Sin precio"
@@ -814,24 +811,60 @@ with tab1:
                         
                         st.markdown(f"""
                         <div class="counter-summary">
-                            <div class="counter-item"><span>📋</span><span class="counter-label">Ingresados:</span><span class="counter-number">{total_ingresados}</span></div>
-                            <div class="counter-item" style="background:#4CAF50;color:white;"><span>✅</span><span class="counter-label" style="color:white;">Encontrados:</span><span class="counter-number" style="color:white;">{total_encontrados}</span></div>
-                            <div class="counter-item"><span>📦</span><span class="counter-label">Con stock:</span><span class="counter-number">{total_con_stock}</span></div>
-                            <div class="counter-item" style="background:#ffebee;"><span>❌</span><span class="counter-label">Sin precio:</span><span class="counter-number" style="color:#f44336;">{total_sin_precio}</span></div>
-                            <div class="counter-item" style="background:#ffebee;"><span>🚫</span><span class="counter-label">Sin stock:</span><span class="counter-number" style="color:#f44336;">{total_sin_stock}</span></div>
+                            <div class="counter-item">
+                                <span>📋</span>
+                                <span class="counter-label">Ingresados:</span>
+                                <span class="counter-number">{total_ingresados}</span>
+                            </div>
+                            <div class="counter-item" style="background: #4CAF50; color: white;">
+                                <span>✅</span>
+                                <span class="counter-label" style="color: white;">Encontrados:</span>
+                                <span class="counter-number" style="color: white;">{total_encontrados}</span>
+                            </div>
+                            <div class="counter-item">
+                                <span>📦</span>
+                                <span class="counter-label">Con stock:</span>
+                                <span class="counter-number">{total_con_stock}</span>
+                            </div>
+                            <div class="counter-item" style="background: #ffebee;">
+                                <span>❌</span>
+                                <span class="counter-label">Sin precio:</span>
+                                <span class="counter-number" style="color: #f44336;">{total_sin_precio}</span>
+                            </div>
+                            <div class="counter-item" style="background: #ffebee;">
+                                <span>🚫</span>
+                                <span class="counter-label">Sin stock:</span>
+                                <span class="counter-number" style="color: #f44336;">{total_sin_stock}</span>
+                            </div>
                         </div>
                         """, unsafe_allow_html=True)
                         
-                        error_sku = [p for p in resultados_procesados if p['tiene_stock'] and not p['tiene_precio']]
-                        if error_sku:
+                        # Reporte de productos no cotizables
+                        sin_precio = [p for p in resultados_procesados if not p['tiene_precio'] and p['tiene_stock']]
+                        sin_stock = [p for p in resultados_procesados if p['tiene_precio'] and not p['tiene_stock']]
+                        sin_ambos = [p for p in resultados_procesados if not p['tiene_precio'] and not p['tiene_stock']]
+                        
+                        if sin_precio or sin_stock or sin_ambos:
                             st.markdown("""
-                            <div style="background:#FFEBEE;border-radius:12px;padding:1rem;margin:1rem 0;border-left:4px solid #f44336;">
-                                <strong style="color:#c62828;">⚠️ ERRORES DE SKU DETECTADOS</strong>
-                                <span style="font-size:0.8rem;margin-left:8px;">Productos con stock pero sin precio</span>
+                            <div style="background: #fff3e0; border-radius: 12px; padding: 1rem; margin: 1rem 0; border-left: 4px solid #ff9800;">
+                                <strong style="color: #e65100;">⚠️ REPORTE DE PRODUCTOS NO COTIZABLES</strong>
                             </div>
                             """, unsafe_allow_html=True)
-                            df_error = pd.DataFrame([{'SKU': p['sku'], 'Descripción': p['descripcion'][:50], 'Stock': p['stock_total']} for p in error_sku])
-                            st.dataframe(df_error, use_container_width=True, hide_index=True)
+                            
+                            if sin_precio:
+                                st.markdown("<strong style='color:#f57c00;'>💰 Sin precio (existen en stock):</strong>", unsafe_allow_html=True)
+                                df_sp = pd.DataFrame([{'SKU': p['sku'], 'Descripción': p['descripcion'][:50], 'Stock': p['stock_total']} for p in sin_precio])
+                                st.dataframe(df_sp, use_container_width=True, hide_index=True)
+                            
+                            if sin_stock:
+                                st.markdown("<strong style='color:#c62828;'>📦 Sin stock (existen en catálogo):</strong>", unsafe_allow_html=True)
+                                df_ss = pd.DataFrame([{'SKU': p['sku'], 'Descripción': p['descripcion'][:50], 'Precio': f"S/ {p['precio']:.2f}"} for p in sin_stock])
+                                st.dataframe(df_ss, use_container_width=True, hide_index=True)
+                            
+                            if sin_ambos:
+                                st.markdown("<strong style='color:#b71c1c;'>❌ No encontrado (sin precio Y sin stock):</strong>", unsafe_allow_html=True)
+                                df_sa = pd.DataFrame([{'SKU': p['sku'], 'Descripción': p['descripcion'][:50]} for p in sin_ambos])
+                                st.dataframe(df_sa, use_container_width=True, hide_index=True)
                         
                         st.success(f"✅ Procesados {len(pedidos)} productos")
                         st.rerun()
@@ -860,6 +893,42 @@ with tab1:
                         agregados += 1
                 st.success(f"✅ Agregados {agregados} productos al carrito")
                 st.rerun()
+    
+    if hasattr(st.session_state, 'resultados_bulk') and st.session_state.resultados_bulk:
+        st.markdown("### 📊 Resultados del procesamiento")
+        
+        for prod in st.session_state.resultados_bulk:
+            badge_stock = construir_badge_stock(prod['stock_yessica'], prod['stock_apri004'], prod['stock_apri001'])
+            
+            estado_color = "🟢" if "OK" in prod['estado'] else "🟡" if "⚠️" in prod['estado'] else "🔴"
+            
+            st.markdown(f"""
+            <div class="result-card">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <strong>📦 {prod['sku']}</strong><br>
+                        <span style="font-size: 0.85rem;">{prod['descripcion']}</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 1.2rem;">{estado_color}</span>
+                    </div>
+                </div>
+                <div style="margin-top: 8px;">
+                    💰 Precio {st.session_state.precio_key}: <strong>S/ {prod['precio']:,.2f}</strong> | 
+                    📦 Stock total: <strong>{prod['stock_total']}</strong>
+                </div>
+                <div style="margin-top: 8px;">
+                    {badge_stock}
+                </div>
+                <div style="margin-top: 8px;">
+                    📋 Solicitado: {prod['cantidad_solicitada']} | ✅ A cotizar: <strong>{prod['cantidad_cotizar']}</strong>
+                </div>
+                <div style="margin-top: 8px;">
+                    <span class="badge-warning">{prod['estado']}</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
 
 # ========== TAB 2: BÚSQUEDA INTELIGENTE CON DIAGNÓSTICO ==========
 with tab2:
