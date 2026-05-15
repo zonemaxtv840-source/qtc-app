@@ -231,7 +231,7 @@ st.markdown("""
                     st.markdown(f"""
                     <div class="apple-card {border_class}" style="animation-delay: {delay}s;">
                         <div class="apple-card-header">
-                            <span class="apple-card-sku">🔖 {prod['sku']}</span>
+                            <span class="apple-card-sku">{prod['sku']}</span>
                             <span class="apple-status-badge {status_type}">{status_text}</span>
                         </div>
                         
