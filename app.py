@@ -1,7 +1,5 @@
-# app.py - QTC Smart Sales Pro v4.3
-# Con soporte para XIAOMI, UGREEN y OTRAS MARCAS
-# CORREGIDO: Lectura prioritaria de columna "Disponible"
-# CORREGIDO: Umbral de similitud al 90%
+# app.py - QTC Smart Sales Pro v4.2
+# Con soporte para XIAOMI, UGREEN y OTRAS marcas
 
 import streamlit as st
 import pandas as pd
@@ -27,7 +25,7 @@ st.set_page_config(
 )
 
 # ============================================
-# CSS COMPLETO (CON QTC NARANJA VIBRANTE)
+# CSS COMPLETO (TUS ESTILOS ORIGINALES)
 # ============================================
 
 st.markdown("""
@@ -45,28 +43,7 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* ========== LOGIN - QTC NARANJA VIBRANTE ========== */
-    .qtc-logo {
-        font-size: 3.5rem !important;
-        font-weight: 900 !important;
-        background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 50%, #FFB347 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        text-shadow: 3px 3px 6px rgba(0,0,0,0.2);
-        letter-spacing: 2px;
-        text-align: center;
-    }
-    
-    .qtc-subtitle {
-        font-size: 1.1rem;
-        color: #FF8C42;
-        text-align: center;
-        font-weight: 500;
-        letter-spacing: 1px;
-    }
-    
-    /* ========== SIDEBAR - DURAZNO INTENSO ========== */
+       /* ========== 4. SIDEBAR - DURAZNO INTENSO ========== */
     [data-testid="stSidebar"] {
         background: linear-gradient(180deg, #f8a35e 0%, #e87a2d 50%, #d45a1a 100%);
         border-right: 1px solid #ffcc80;
@@ -114,21 +91,7 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* ========== DESCRIPCIÓN 30% MÁS GRANDE ========== */
-    .descripcion-producto {
-        font-size: 1.3rem !important;  /* 30% más grande que el base (1rem) */
-        line-height: 1.5 !important;
-        color: #1a1a2e !important;
-        font-weight: 500 !important;
-        margin: 12px 0 !important;
-    }
-    
-    .descripcion-producto-small {
-        font-size: 1.1rem !important;
-        line-height: 1.4 !important;
-    }
-    
-    /* ========== MENSAJES DE STREAMLIT ========== */
+    /* ========== MENSAJES DE STREAMLIT (editables) ========== */
     div[data-testid="stAlert"][data-kind="success"] {
         background: #2e7d32 !important;
         border-left: 4px solid #1b5e20 !important;
@@ -185,8 +148,9 @@ st.markdown("""
         border-top: 1px solid rgba(255,255,255,0.2);
         margin-top: 2rem;
     }
+       /* ========== 14. TARJETAS DEL TAB 1 - FORZADO EXTREMO ========== */
     
-    /* ========== TARJETAS DEL TAB 1 - FORZADO EXTREMO ========== */
+    /* Forzar que TODO el texto dentro de cualquier tarjeta del Tab 1 sea oscuro */
     div[style*="border-radius:16px"] *,
     div[style*="background:#FFEBEE"] *,
     div[style*="background:#E3F2FD"] *,
@@ -198,35 +162,42 @@ st.markdown("""
         color: #1a1a2e !important;
     }
     
+    /* Forzar fondo blanco a las tarjetas principales */
     div[style*="border-radius:16px"][style*="margin-bottom:1rem"] {
         background: #ffffff !important;
     }
     
+    /* EXCEPCIÓN: Los badges deben mantener texto blanco */
     .badge-yessica, .badge-apri004, .badge-apri001, .badge-warning, .badge-ugreen,
     .badge-yessica *, .badge-apri004 *, .badge-apri001 *, .badge-warning *, .badge-ugreen * {
         color: white !important;
     }
     
+    /* EXCEPCIÓN: El texto dentro de la alerta de transferencia (fondo rosado) */
     div[style*="background:#FCE4EC"] * {
         color: #c62828 !important;
     }
     
+    /* Forzar específicamente los textos principales dentro de cada tarjeta */
     div[style*="border-radius:16px"] div[style*="margin-top"] *,
     div[style*="border-radius:16px"] div[style*="display:flex"] *,
     div[style*="border-radius:16px"] div[style*="justify-content"] * {
         color: #1a1a2e !important;
     }
     
+    /* Los códigos SKU y precios en negrita */
     div[style*="border-radius:16px"] strong,
     div[style*="border-radius:16px"] b,
     div[style*="border-radius:16px"] code {
         color: #1a1a2e !important;
     }
     
+    /* Los spans con clases específicas */
     div[style*="border-radius:16px"] span[style*="background"] {
-        color: white !important;
+        color: white !important;  /* Esto son los badges, mantener blanco */
     }
     
+    /* Cualquier otro span dentro de tarjetas */
     div[style*="border-radius:16px"] span:not([style*="background"]) {
         color: #1a1a2e !important;
     }
@@ -339,14 +310,12 @@ def cargar_stock(archivos, modo: str) -> List[Dict]:
             for hoja in xls.sheet_names:
                 hoja_upper = hoja.upper()
                 if modo == "XIAOMI":
-                    # Más flexible: acepta APRI, APRI.001, APRI001, APRI-001, YESSICA
-                    es_apri = any(h in hoja_upper for h in ['APRI', 'YESSICA'])
-                    if not es_apri:
+                    # Solo hojas APRI y YESSICA
+                    if not any(h in hoja_upper for h in ['APRI', 'YESSICA']):
                         continue
                 else:
-                    # Para UGREEN y OTROS, más flexible también
-                    es_apri001 = 'APRI' in hoja_upper and '001' in hoja_upper
-                    if not es_apri001:
+                    # Para UGREEN y OTROS, usar APRI.001 o todas las hojas según necesidad
+                    if 'APRI.001' not in hoja_upper:
                         continue
                 
                 df = pd.read_excel(archivo, sheet_name=hoja)
@@ -365,67 +334,8 @@ def cargar_stock(archivos, modo: str) -> List[Dict]:
     return stocks
 
 # ============================================
-# FUNCIÓN CORREGIDA: PRIORIZAR "DISPONIBLE"
+# NUEVA: FUNCIÓN PARA CARGAR UGREEN
 # ============================================
-
-def buscar_stock_para_sku(sku: str, stocks: List[Dict]) -> Dict:
-    """Busca stock priorizando la columna 'Disponible' en todas las hojas"""
-    sku_limpio = sku.strip().upper()
-    stock_yessica = 0
-    stock_apri004 = 0
-    stock_apri001 = 0
-    
-    for stock in stocks:
-        df = stock['df']
-        df_sku = df[stock['col_sku']].astype(str).str.strip().str.upper()
-        mask = df_sku == sku_limpio
-        if mask.any():
-            for _, row in df[mask].iterrows():
-                col_cant = None
-                hoja = stock['hoja'].upper()
-                
-                # 🔥 PRIORIDAD 1: Buscar columna exacta "Disponible" en TODAS las hojas
-                for col in df.columns:
-                    col_upper = str(col).upper().strip()
-                    if col_upper == 'DISPONIBLE':
-                        col_cant = col
-                        break
-                
-                # 🔥 PRIORIDAD 2: Si no encontró "Disponible", buscar variantes
-                if not col_cant:
-                    for col in df.columns:
-                        col_upper = str(col).upper()
-                        # Palabras clave en orden de prioridad
-                        if any(p in col_upper for p in ['DISP', 'AVAILABLE', 'NETO', 'SALDO']):
-                            col_cant = col
-                            break
-                
-                # 🔥 PRIORIDAD 3: Fallback a columnas genéricas de cantidad
-                if not col_cant:
-                    for col in df.columns:
-                        col_upper = str(col).upper()
-                        if any(p in col_upper for p in ['CANT', 'STOCK', 'UNIDADES']):
-                            col_cant = col
-                            break
-                
-                if col_cant:
-                    cantidad = int(corregir_numero(row[col_cant]))
-                    
-                    if 'YESSICA' in hoja:
-                        stock_yessica += cantidad
-                    elif 'APRI.004' in hoja or 'APRI004' in hoja or 'APRI-004' in hoja:
-                        stock_apri004 += cantidad
-                    elif 'APRI.001' in hoja or 'APRI001' in hoja or 'APRI-001' in hoja:
-                        stock_apri001 += cantidad
-                    elif 'APRI' in hoja and '001' in hoja:
-                        stock_apri001 += cantidad
-    
-    return {
-        'yessica': stock_yessica,
-        'apri004': stock_apri004,
-        'apri001': stock_apri001,
-        'total': stock_yessica + stock_apri004 + stock_apri001
-    }
 
 def cargar_ugreen_catalogo(archivo) -> Optional[Dict]:
     """Carga específica para archivo UGREEN con columnas Mayor/Caja/Vip"""
@@ -459,6 +369,7 @@ def cargar_ugreen_catalogo(archivo) -> Optional[Dict]:
         elif 'STOCK' in col_upper:
             col_stock = col
     
+    # Si no encontró por nombres exactos, buscar por patrones
     if not col_sku:
         for col in df.columns:
             if 'SKU' in str(col).upper():
@@ -492,7 +403,7 @@ def cargar_ugreen_catalogo(archivo) -> Optional[Dict]:
     }
 
 # ============================================
-# FUNCIONES DE SIMILITUD Y BÚSQUEDA (90% UMBRAL)
+# FUNCIONES DE SIMILITUD Y BÚSQUEDA (MODIFICADAS)
 # ============================================
 
 def calcular_similitud(texto1: str, texto2: str) -> float:
@@ -520,6 +431,46 @@ def calcular_similitud(texto1: str, texto2: str) -> float:
     similitud = (jaccard * 0.7 + sequence_match * 0.3) * 100
     return round(similitud, 1)
 
+def buscar_stock_para_sku(sku: str, stocks: List[Dict]) -> Dict:
+    sku_limpio = sku.strip().upper()
+    stock_yessica = 0
+    stock_apri004 = 0
+    stock_apri001 = 0
+    
+    for stock in stocks:
+        df = stock['df']
+        df_sku = df[stock['col_sku']].astype(str).str.strip().str.upper()
+        mask = df_sku == sku_limpio
+        if mask.any():
+            for _, row in df[mask].iterrows():
+                col_cant = None
+                for col in df.columns:
+                    col_upper = str(col).upper()
+                    if any(p in col_upper for p in ['CANT', 'STOCK', 'DISPONIBLE', 'UNIDADES']):
+                        col_cant = col
+                        break
+                
+                if col_cant:
+                    cantidad = int(corregir_numero(row[col_cant]))
+                    hoja = stock['hoja'].upper()
+                    if 'YESSICA' in hoja:
+                        stock_yessica += cantidad
+                    elif 'APRI.004' in hoja:
+                        stock_apri004 += cantidad
+                    elif 'APRI.001' in hoja:
+                        stock_apri001 += cantidad
+    
+    return {
+        'yessica': stock_yessica,
+        'apri004': stock_apri004,
+        'apri001': stock_apri001,
+        'total': stock_yessica + stock_apri004 + stock_apri001
+    }
+
+# ============================================
+# NUEVA: BÚSQUEDA PARA UGREEN
+# ============================================
+
 def buscar_ugreen_producto(busqueda: str, ugreen_catalogo: Dict) -> Optional[Dict]:
     """Busca producto en catálogo UGREEN por SKU o descripción"""
     if not ugreen_catalogo:
@@ -530,6 +481,7 @@ def buscar_ugreen_producto(busqueda: str, ugreen_catalogo: Dict) -> Optional[Dic
     col_desc = ugreen_catalogo['col_desc']
     col_stock = ugreen_catalogo.get('col_stock')
     
+    # Buscar por SKU o descripción
     mask_sku = df[col_sku].astype(str).str.contains(busqueda, case=False, na=False)
     mask_desc = pd.Series([False] * len(df))
     if col_desc:
@@ -547,11 +499,13 @@ def buscar_ugreen_producto(busqueda: str, ugreen_catalogo: Dict) -> Optional[Dic
         sku = str(row[col_sku]).strip().upper()
         descripcion = str(row[col_desc])[:200] if col_desc else f"SKU: {sku}"
         
+        # Precios
         precio_mayor = corregir_numero(row.get('Mayor', 0))
         precio_caja = corregir_numero(row.get('Caja', 0))
         precio_vip = corregir_numero(row.get('Vip', 0))
         precio_pvp = corregir_numero(row.get('PVP', 0))
         
+        # Stock
         stock = 0
         if col_stock:
             stock = int(corregir_numero(row[col_stock])) if pd.notna(row[col_stock]) else 0
@@ -574,11 +528,11 @@ def buscar_ugreen_producto(busqueda: str, ugreen_catalogo: Dict) -> Optional[Dic
     return resultados
 
 # ============================================
-# FUNCIÓN PRINCIPAL MODIFICADA (UMBRAL 90%)
+# FUNCIÓN PRINCIPAL MODIFICADA (XIAOMI)
 # ============================================
 
 def buscar_producto(sku: str, catalogos: List[Dict], stocks: List[Dict], precio_key: str) -> Dict:
-    """Busca producto por SKU para XIAOMI. Umbral de similitud al 90%"""
+    """Busca producto por SKU para XIAOMI. Si tiene stock pero no precio, busca SKU equivalente por descripción."""
     sku_limpio = sku.strip().upper()
     
     # PASO 1: BUSCAR STOCK
@@ -590,6 +544,7 @@ def buscar_producto(sku: str, catalogos: List[Dict], stocks: List[Dict], precio_
     sku_equivalente = None
     similitud_equivalente = 0
     
+    # 2a. Buscar en catálogos por SKU exacto
     for cat in catalogos:
         df = cat['df']
         df_sku = df[cat['col_sku']].astype(str).str.strip().str.upper()
@@ -603,6 +558,7 @@ def buscar_producto(sku: str, catalogos: List[Dict], stocks: List[Dict], precio_
                 descripcion = str(row[cat['col_desc']])[:200]
             break
     
+    # 2b. Si no encontró descripción en catálogos pero tiene stock, buscarla en STOCK
     if descripcion == f"SKU: {sku}" and stock_info['total'] > 0:
         for stock in stocks:
             df = stock['df']
@@ -619,10 +575,10 @@ def buscar_producto(sku: str, catalogos: List[Dict], stocks: List[Dict], precio_
                             break
                 break
     
-    # PASO 3: UMBRAL 90% PARA SKU EQUIVALENTE
+    # PASO 3: SI TIENE STOCK PERO NO PRECIO → BUSCAR SKU EQUIVALENTE POR DESCRIPCIÓN
     if precio == 0 and stock_info['total'] > 0 and descripcion and descripcion != f"SKU: {sku}":
         mejor_match = None
-        mejor_similitud = 90.0  # 🔥 CAMBIADO DE 70% A 90%
+        mejor_similitud = 70.0
         
         for cat in catalogos:
             df = cat['df']
@@ -656,11 +612,11 @@ def buscar_producto(sku: str, catalogos: List[Dict], stocks: List[Dict], precio_
             sku_equivalente = mejor_match['sku']
             similitud_equivalente = mejor_match['similitud']
     
-    # PASO 4: BUSCAR ALTERNATIVAS CON UMBRAL 90%
+    # PASO 4: BUSCAR ALTERNATIVAS ADICIONALES
     alternativas = []
     if precio == 0 and stock_info['total'] > 0 and descripcion and descripcion != f"SKU: {sku}":
         alternativas = encontrar_alternativas_mismo_producto(
-            sku, descripcion, catalogos, stocks, precio_key, umbral=90.0  # 🔥 CAMBIADO A 90%
+            sku, descripcion, catalogos, stocks, precio_key, umbral=70.0
         )
     
     return {
@@ -681,7 +637,7 @@ def buscar_producto(sku: str, catalogos: List[Dict], stocks: List[Dict], precio_
 
 def encontrar_alternativas_mismo_producto(sku_buscado: str, descripcion_buscada: str, 
                                            catalogos: List[Dict], stocks: List[Dict], 
-                                           precio_key: str, umbral: float = 90.0) -> List[Dict]:  # 🔥 CAMBIADO A 90%
+                                           precio_key: str, umbral: float = 70.0) -> List[Dict]:
     alternativas = []
     sku_buscado_limpio = sku_buscado.strip().upper()
     
@@ -748,16 +704,21 @@ def construir_badge_stock(stock_yessica, stock_apri004, stock_apri001):
 def generar_excel(items: List[Dict], cliente: str, ruc: str) -> bytes:
     output = io.BytesIO()
     
+    # Crear DataFrame con los datos
     df = pd.DataFrame(items)
     
+    # Crear Excel sin formatos complejos
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, sheet_name='Cotizacion', index=False, startrow=6)
         
+        # Acceder al workbook y worksheet
         workbook = writer.book
         ws = writer.sheets['Cotizacion']
         
+        # ========== ENCABEZADOS SIMPLES ==========
         from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
         
+        # Estilos básicos
         header_font = Font(bold=True, color="FFFFFF")
         header_fill = PatternFill(start_color="e67e22", end_color="e67e22", fill_type="solid")
         header_alignment = Alignment(horizontal="center", vertical="center")
@@ -769,6 +730,7 @@ def generar_excel(items: List[Dict], cliente: str, ruc: str) -> bytes:
             bottom=Side(style='thin')
         )
         
+        # Escribir encabezados de empresa
         ws['A1'] = 'QTC SMART SALES PRO'
         ws['A1'].font = Font(bold=True, size=14, color="e67e22")
         
@@ -779,6 +741,7 @@ def generar_excel(items: List[Dict], cliente: str, ruc: str) -> bytes:
         ws['A5'] = 'RUC:'
         ws['B5'] = ruc
         
+        # Encabezados de tabla
         headers = ['SKU', 'DESCRIPCIÓN', 'CANTIDAD', 'PRECIO UNIT.', 'TOTAL']
         for i, header in enumerate(headers, start=1):
             cell = ws.cell(row=7, column=i, value=header)
@@ -787,11 +750,13 @@ def generar_excel(items: List[Dict], cliente: str, ruc: str) -> bytes:
             cell.alignment = header_alignment
             cell.border = border
         
+        # Datos
         for row_idx, item in enumerate(items, start=8):
             ws.cell(row=row_idx, column=1, value=item['sku']).border = border
             ws.cell(row=row_idx, column=2, value=item['descripcion']).border = border
             ws.cell(row=row_idx, column=3, value=item['cantidad']).border = border
             
+            # Precio y total con formato moneda
             precio_cell = ws.cell(row=row_idx, column=4, value=item['precio'])
             precio_cell.number_format = '"S/." #,##0.00'
             precio_cell.alignment = money_alignment
@@ -802,6 +767,7 @@ def generar_excel(items: List[Dict], cliente: str, ruc: str) -> bytes:
             total_cell.alignment = money_alignment
             total_cell.border = border
         
+        # Total general
         total_row = len(items) + 8
         total_label = ws.cell(row=total_row, column=4, value='TOTAL S/.')
         total_label.font = Font(bold=True, color="FFFFFF")
@@ -814,12 +780,15 @@ def generar_excel(items: List[Dict], cliente: str, ruc: str) -> bytes:
         total_valor.alignment = money_alignment
         total_valor.border = border
         
-        ws.column_dimensions['A'].width = 22
-        ws.column_dimensions['B'].width = 110
-        ws.column_dimensions['C'].width = 12
-        ws.column_dimensions['D'].width = 18
-        ws.column_dimensions['E'].width = 18
+        # ========== AJUSTE DE COLUMNAS ==========
+        # Anchos fijos
+        ws.column_dimensions['A'].width = 22   # SKU
+        ws.column_dimensions['B'].width = 110  # DESCRIPCIÓN
+        ws.column_dimensions['C'].width = 12   # Cantidad
+        ws.column_dimensions['D'].width = 18   # Precio
+        ws.column_dimensions['E'].width = 18   # Total
         
+        # Congelar panel
         ws.freeze_panes = 'A8'
     
     return output.getvalue()
@@ -844,20 +813,13 @@ if 'ugreen_catalogo' not in st.session_state:
     st.session_state.ugreen_catalogo = None
 
 # ============================================
-# LOGIN CON QTC NARANJA VIBRANTE
+# LOGIN (TUS CREDENCIALES + ROLES)
 # ============================================
 
 if not st.session_state.auth:
     st.markdown("""
     <style>
         .stApp { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; }
-        .login-card {
-            background: rgba(255,255,255,0.95);
-            border-radius: 20px;
-            padding: 2rem;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            text-align: center;
-        }
     </style>
     """, unsafe_allow_html=True)
     
@@ -865,18 +827,13 @@ if not st.session_state.auth:
     with col2:
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
         
-        # 🔥 QTC NARANJA VIBRANTE
-        st.markdown('<div class="qtc-logo">QTC</div>', unsafe_allow_html=True)
-        st.markdown('<div class="qtc-subtitle">SMART SALES PRO</div>', unsafe_allow_html=True)
-        st.markdown('<br>', unsafe_allow_html=True)
-        
         try:
             st.image("logo.png", width=100)
         except:
-            pass
+            st.markdown("<h1 style='color:#e94560;'>QTC</h1>", unsafe_allow_html=True)
         
-        st.markdown("<h2 style='color:#1a1a2e; text-align:center;'>Bienvenido</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='color:#666; text-align:center;'>Sistema Profesional de Cotización</p>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color:#1a1a2e;'>QTC Smart Sales Pro</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#666;'>Sistema Profesional de Cotización</p>", unsafe_allow_html=True)
         
         user = st.text_input("👤 Usuario", placeholder="Ingresa tu usuario")
         pw = st.text_input("🔒 Contraseña", type="password", placeholder="Ingresa tu contraseña")
@@ -884,6 +841,7 @@ if not st.session_state.auth:
         col_btn1, col_btn2 = st.columns(2)
         with col_btn1:
             if st.button("🚀 Ingresar", use_container_width=True):
+                # Usuarios con roles
                 credenciales = {
                     "admin": {"password": "qtc2026", "role": "ADMIN", "name": "Administrador"},
                     "kimberly": {"password": "kam2026", "role": "KAM", "name": "Kimberly - Key Account Manager"},
@@ -896,6 +854,7 @@ if not st.session_state.auth:
                     st.rerun()
                 else:
                     st.error("❌ Credenciales incorrectas")
+                    st.info("💡 Usuarios: admin / kimberly / vendedor | Contraseña: usuario+2026")
         with col_btn2:
             if st.button("👤 Modo invitado", use_container_width=True):
                 st.session_state.auth = True
@@ -938,12 +897,13 @@ with col3:
 st.markdown("---")
 
 # ============================================
-# SIDEBAR (sin cambios, igual que original)
+# SIDEBAR CON SELECCIÓN DE MARCA
 # ============================================
 
 with st.sidebar:
     st.markdown("### 🎯 Configuración")
     
+    # NUEVO: Selector de marca
     marca_seleccionada = st.radio(
         "📌 Marca / Modo",
         ["XIAOMI", "UGREEN", "OTRAS MARCAS"],
@@ -965,6 +925,7 @@ with st.sidebar:
     
     st.markdown("### 📂 Archivos")
     
+    # Catálogos de precios (para XIAOMI y OTRAS)
     if marca_seleccionada != "UGREEN":
         st.markdown("**📚 Catálogos de precios (XIAOMI/OTROS)**")
         archivos_cat = st.file_uploader(
@@ -981,6 +942,7 @@ with st.sidebar:
                     st.session_state.catalogos.append(cat)
                     st.success(f"✅ {archivo.name[:30]}")
     
+    # Catálogo UGREEN
     if marca_seleccionada == "UGREEN":
         st.markdown("**📚 Catálogo UGREEN**")
         archivo_ugreen = st.file_uploader(
@@ -995,8 +957,9 @@ with st.sidebar:
                 st.session_state.ugreen_catalogo = ugreen_cat
                 st.success(f"✅ UGREEN: {archivo_ugreen.name[:30]}")
     
+    # Reportes de stock (para todas las marcas)
     st.markdown("**📦 Reportes de stock**")
-    st.caption("Prioridad: YESSICA → APRI.004 → APRI.001 | La columna 'Disponible' tiene prioridad")
+    st.caption("Prioridad: YESSICA → APRI.004 → APRI.001")
     archivos_stock = st.file_uploader(
         "Excel",
         type=['xlsx', 'xls'],
@@ -1019,12 +982,12 @@ with st.sidebar:
             st.rerun()
 
 # ============================================
-# TABS PRINCIPALES (MODIFICADOS - DESCRIPCIÓN 30% MÁS GRANDE)
+# TABS PRINCIPALES
 # ============================================
 
 tab1, tab2, tab3 = st.tabs(["📦 MODO MASIVO (Bulk)", "🔍 BÚSQUEDA INTELIGENTE", "🛒 CARRITO DE COTIZACIÓN"])
 
-# ========== TAB 1: MODO MASIVO ==========
+# ========== TAB 1: MODO MASIVO (CORREGIDO) ==========
 with tab1:
     st.markdown("### 📦 Ingresa productos en formato masivo")
     st.caption(f"🔍 Modo: **{st.session_state.modo}** | Formato: `SKU:CANTIDAD` (uno por línea)")
@@ -1039,6 +1002,7 @@ with tab1:
     with col_b1:
         if st.button("🚀 Procesar lista", type="primary", use_container_width=True):
             if texto_bulk and st.session_state.modo == "XIAOMI" and st.session_state.catalogos and st.session_state.stocks:
+                # Lógica XIAOMI
                 pedidos = []
                 for line in texto_bulk.strip().split('\n'):
                     line = line.strip()
@@ -1056,8 +1020,19 @@ with tab1:
                 if pedidos:
                     with st.spinner("Procesando XIAOMI..."):
                         resultados_procesados = []
+                        encontrados = 0
+                        con_precio = 0
+                        con_stock = 0
+                        
                         for pedido in pedidos:
                             prod = buscar_producto(pedido['sku'], st.session_state.catalogos, st.session_state.stocks, st.session_state.precio_key)
+                            
+                            if prod['tiene_precio']:
+                                encontrados += 1
+                                con_precio += 1
+                            
+                            if prod['tiene_stock']:
+                                con_stock += 1
                             
                             if prod['tiene_precio'] and prod['tiene_stock']:
                                 cantidad_cotizar = min(pedido['cantidad'], prod['stock_total'])
@@ -1082,11 +1057,29 @@ with tab1:
                             })
                         
                         st.session_state.resultados_bulk = resultados_procesados
+                        
+                        total_ingresados = len(pedidos)
+                        total_encontrados = encontrados
+                        total_con_stock = con_stock
+                        total_sin_precio = total_ingresados - total_encontrados
+                        total_sin_stock = total_ingresados - total_con_stock
+                        
+                        st.markdown(f"""
+                        <div class="counter-summary">
+                            <div class="counter-item"><span>📋</span><span class="counter-label">Ingresados:</span><span class="counter-number">{total_ingresados}</span></div>
+                            <div class="counter-item" style="background:#4CAF50;color:white;"><span>✅</span><span class="counter-label" style="color:white;">Encontrados:</span><span class="counter-number" style="color:white;">{total_encontrados}</span></div>
+                            <div class="counter-item"><span>📦</span><span class="counter-label">Con stock:</span><span class="counter-number">{total_con_stock}</span></div>
+                            <div class="counter-item" style="background:#ffebee;"><span>❌</span><span class="counter-label">Sin precio:</span><span class="counter-number" style="color:#f44336;">{total_sin_precio}</span></div>
+                            <div class="counter-item" style="background:#ffebee;"><span>🚫</span><span class="counter-label">Sin stock:</span><span class="counter-number" style="color:#f44336;">{total_sin_stock}</span></div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
                         st.success(f"✅ Procesados {len(pedidos)} productos en modo XIAOMI")
                 else:
                     st.warning("No se encontraron productos válidos")
                     
             elif texto_bulk and st.session_state.modo == "UGREEN" and st.session_state.ugreen_catalogo:
+                # Lógica UGREEN
                 pedidos = []
                 for line in texto_bulk.strip().split('\n'):
                     line = line.strip()
@@ -1146,6 +1139,19 @@ with tab1:
                                 })
                         
                         st.session_state.resultados_bulk = resultados_procesados
+                        
+                        total_ingresados = len(pedidos)
+                        total_encontrados = sum(1 for p in resultados_procesados if p['tiene_precio'])
+                        total_con_stock = sum(1 for p in resultados_procesados if p['tiene_stock'])
+                        
+                        st.markdown(f"""
+                        <div class="counter-summary">
+                            <div class="counter-item"><span>📋</span><span class="counter-label">Ingresados:</span><span class="counter-number">{total_ingresados}</span></div>
+                            <div class="counter-item" style="background:#4CAF50;color:white;"><span>✅</span><span class="counter-label" style="color:white;">Encontrados:</span><span class="counter-number" style="color:white;">{total_encontrados}</span></div>
+                            <div class="counter-item"><span>📦</span><span class="counter-label">Con stock:</span><span class="counter-number">{total_con_stock}</span></div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
                         st.success(f"✅ Procesados {len(pedidos)} productos en modo UGREEN")
             else:
                 if not st.session_state.catalogos and st.session_state.modo == "XIAOMI":
@@ -1181,13 +1187,14 @@ with tab1:
             else:
                 st.warning("Primero procesa una lista de productos")
     
-    # Mostrar resultados bulk CON DESCRIPCIÓN 30% MÁS GRANDE
+    # Mostrar resultados bulk (CORREGIDO con color en todas las tarjetas)
     if 'resultados_bulk' in st.session_state and st.session_state.resultados_bulk:
         st.markdown("---")
         st.markdown("### 📋 Productos procesados")
         
         for prod in st.session_state.resultados_bulk:
             if prod.get('tipo') == 'UGREEN':
+                # Badge para UGREEN
                 if prod['stock_total'] > 0:
                     badge_stock = f'<span class="badge-ugreen">📦 UGREEN: {prod["stock_total"]}</span>'
                 else:
@@ -1199,15 +1206,17 @@ with tab1:
                         <div><strong style="color:#1a1a2e;">📦 {prod['sku']}</strong> <span style="background:#00BCD4;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">UGREEN</span></div>
                         <div><span style="background:#2196F3;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">Solicitado: {prod['cantidad_solicitada']}</span></div>
                     </div>
-                    <div class="descripcion-producto" style="margin-top:8px;">{prod['descripcion'][:100]}</div>
+                    <div style="margin-top:8px;"><span style="font-size:0.85rem;color:#1a1a2e;">{prod['descripcion'][:100]}</span></div>
                     <div style="margin-top:8px;color:#1a1a2e;">💰 Precio: <strong style="color:#1a1a2e;">S/ {prod['precio']:,.2f}</strong> | 📦 Stock: <strong style="color:#1a1a2e;">{prod['stock_total']}</strong></div>
                     <div style="margin-top:8px;">{badge_stock}</div>
                     <div style="margin-top:8px;color:#1a1a2e;"><strong>📌 Estado:</strong> {prod['estado']}</div>
                 </div>
                 """, unsafe_allow_html=True)
             else:
+                # Lógica XIAOMI
                 badge_stock = construir_badge_stock(prod['stock_yessica'], prod['stock_apri004'], prod['stock_apri001'])
                 
+                # CASO 1: Stock sin precio (error de SKU)
                 if prod['tiene_stock'] and not prod['tiene_precio']:
                     st.markdown(f"""
                     <div style="background:#FFEBEE;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #f44336;color:#1a1a2e;">
@@ -1217,7 +1226,7 @@ with tab1:
                         </div>
                         <div style="margin-top:12px;color:#1a1a2e;">
                             <strong>📦 SKU BUSCADO:</strong> {prod['sku']}<br>
-                            <strong>📝 Descripción:</strong><div class="descripcion-producto-small" style="margin-top:4px;">{prod['descripcion']}</div>
+                            <strong>📝 Descripción:</strong> {prod['descripcion']}<br>
                             <strong>📦 Stock disponible:</strong> {prod['stock_total']} unidades<br>
                             <strong>⚠️ Estado:</strong> {prod['estado']}
                         </div>
@@ -1225,10 +1234,11 @@ with tab1:
                     </div>
                     """, unsafe_allow_html=True)
                     
+                    # SKU equivalente sugerido
                     if prod.get('sku_equivalente'):
                         st.markdown(f"""
                         <div style="background:#E8F5E9;border-radius:12px;padding:1rem;margin:0.5rem 0;border-left:4px solid #4CAF50;color:#1a1a2e;">
-                            <strong style="color:#2E7D32;">💡 SE ENCONTRÓ EL ARTÍCULO CON MISMA DESCRIPCIÓN PERO OTRO SKU (90%+ similitud)</strong>
+                            <strong style="color:#2E7D32;">💡 SE ENCONTRÓ EL ARTÍCULO CON MISMA DESCRIPCIÓN PERO OTRO SKU</strong>
                             <div style="margin-top:10px;color:#1a1a2e;">
                                 <strong>SKU equivalente:</strong> <code>{prod['sku_equivalente']}</code><br>
                                 <strong>Precio {st.session_state.precio_key}:</strong> S/ {prod.get('precio_equivalente', 0):,.2f}<br>
@@ -1237,18 +1247,19 @@ with tab1:
                         </div>
                         """, unsafe_allow_html=True)
                     elif prod.get('alternativas') and len(prod['alternativas']) > 0:
-                        st.markdown('<div style="background:#FFF8E1;border-radius:12px;padding:0.75rem;margin:0.5rem 0;color:#1a1a2e;"><strong>💡 PRODUCTOS SIMILARES ENCONTRADOS (90%+ similitud):</strong></div>', unsafe_allow_html=True)
+                        st.markdown('<div style="background:#FFF8E1;border-radius:12px;padding:0.75rem;margin:0.5rem 0;color:#1a1a2e;"><strong>💡 PRODUCTOS SIMILARES ENCONTRADOS:</strong></div>', unsafe_allow_html=True)
                         for alt in prod['alternativas'][:3]:
                             badge_alt = construir_badge_stock(alt['stock_yessica'], alt['stock_apri004'], alt['stock_apri001'])
                             st.markdown(f"""
                             <div class="alternativa-item">
                                 <div style="color:#1a1a2e;"><strong>📦 {alt['sku']}</strong> <span style="background:#FF9800;color:white;padding:2px 6px;border-radius:10px;font-size:0.6rem;">{alt['similitud']:.0f}% coincidencia</span></div>
-                                <div class="descripcion-producto-small" style="font-size:0.85rem;color:#1a1a2e;">{alt['descripcion'][:80]}</div>
+                                <div style="font-size:0.75rem;color:#1a1a2e;">{alt['descripcion'][:80]}</div>
                                 <div style="margin-top:6px;color:#1a1a2e;">💰 Precio: S/ {alt['precio']:,.2f} | 📦 Stock: {alt['stock_total']}</div>
                                 <div style="margin-top:6px;">{badge_alt}</div>
                             </div>
                             """, unsafe_allow_html=True)
                 
+                # CASO 2: Con stock y precio
                 elif prod['tiene_stock'] and prod['tiene_precio']:
                     cantidad_final = prod['cantidad_cotizar']
                     st.markdown(f"""
@@ -1257,28 +1268,30 @@ with tab1:
                             <div><strong style="color:#1a1a2e;">📦 {prod['sku']}</strong> <span style="background:#4CAF50;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">✅ CON STOCK Y PRECIO</span></div>
                             <div><span style="background:#2196F3;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">Cotizar: {cantidad_final}/{prod['cantidad_solicitada']}</span></div>
                         </div>
-                        <div class="descripcion-producto" style="margin-top:8px;">{prod['descripcion']}</div>
+                        <div style="margin-top:8px;"><span style="font-size:0.85rem;color:#1a1a2e;">{prod['descripcion']}</span></div>
                         <div style="margin-top:8px;color:#1a1a2e;">💰 Precio: <strong style="color:#1a1a2e;">S/ {prod['precio']:,.2f}</strong> | 📦 Stock: <strong style="color:#1a1a2e;">{prod['stock_total']}</strong></div>
                         <div style="margin-top:8px;">{badge_stock}</div>
                     </div>
                     """, unsafe_allow_html=True)
                 
+                # CASO 3: Solo precio, sin stock
                 elif not prod['tiene_stock'] and prod['tiene_precio']:
                     st.markdown(f"""
                     <div style="background:#E3F2FD;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #2196F3;color:#1a1a2e;">
                         <div><strong style="color:#1a1a2e;">📦 {prod['sku']}</strong> <span style="background:#2196F3;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">📋 SOLO PRECIO - SIN STOCK</span></div>
-                        <div class="descripcion-producto" style="margin-top:8px;">{prod['descripcion']}</div>
+                        <div style="margin-top:8px;"><span style="font-size:0.85rem;color:#1a1a2e;">{prod['descripcion']}</span></div>
                         <div style="margin-top:8px;color:#1a1a2e;">💰 Precio: <strong style="color:#1a1a2e;">S/ {prod['precio']:,.2f}</strong></div>
                         <div style="margin-top:8px;">{badge_stock}</div>
                         <div style="margin-top:8px;color:#1a1a2e;"><strong>⚠️ Estado:</strong> {prod['estado']}</div>
                     </div>
                     """, unsafe_allow_html=True)
                 
+                # CASO 4: No disponible
                 else:
                     st.markdown(f"""
                     <div style="background:#F5F5F5;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #9e9e9e;color:#1a1a2e;">
                         <div><strong style="color:#1a1a2e;">📦 {prod['sku']}</strong> <span style="background:#9e9e9e;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">❌ NO DISPONIBLE</span></div>
-                        <div class="descripcion-producto" style="margin-top:8px;">{prod['descripcion']}</div>
+                        <div style="margin-top:8px;"><span style="font-size:0.85rem;color:#1a1a2e;">{prod['descripcion']}</span></div>
                         <div style="margin-top:8px;">{badge_stock}</div>
                         <div style="margin-top:8px;color:#1a1a2e;"><strong>⚠️ Estado:</strong> {prod['estado']}</div>
                     </div>
@@ -1290,7 +1303,7 @@ with tab1:
             del st.session_state.resultados_bulk
             st.rerun()
 
-# ========== TAB 2: BÚSQUEDA INTELIGENTE (CON DESCRIPCIÓN MÁS GRANDE) ==========
+# ========== TAB 2: BÚSQUEDA INTELIGENTE (MODIFICADA) ==========
 with tab2:
     st.markdown("### 🔍 Buscar productos por SKU o descripción")
     st.caption(f"🔎 Modo: **{st.session_state.modo}** | Busca por SKU exacto o por cualquier palabra en la descripción")
@@ -1300,8 +1313,10 @@ with tab2:
     if busqueda and len(busqueda) >= 2:
         if st.session_state.modo == "XIAOMI" and st.session_state.catalogos and st.session_state.stocks:
             with st.spinner("🔍 Buscando en XIAOMI..."):
+                # Usar la lógica existente de tu código
                 productos_por_sku = {}
                 
+                # Buscar en catálogos
                 for cat in st.session_state.catalogos:
                     df = cat['df']
                     mask_sku = df[cat['col_sku']].astype(str).str.contains(busqueda, case=False, na=False)
@@ -1343,6 +1358,7 @@ with tab2:
                                 'usa_apri001': stock_info['apri001'] > 0 and stock_info['yessica'] == 0 and stock_info['apri004'] == 0
                             }
                 
+                # Buscar en stocks
                 for stock in st.session_state.stocks:
                     df = stock['df']
                     col_sku = stock['col_sku']
@@ -1361,25 +1377,17 @@ with tab2:
                     
                     for _, row in df[mask].iterrows():
                         sku = str(row[col_sku]).strip().upper()
-                        
-                        # Usar la nueva función mejorada que prioriza "Disponible"
                         cantidad = 0
                         for col in df.columns:
-                            col_upper = str(col).upper().strip()
-                            if col_upper == 'DISPONIBLE':
+                            col_upper = str(col).upper()
+                            if any(p in col_upper for p in ['CANT', 'STOCK', 'DISPONIBLE', 'UNIDADES']):
                                 cantidad = int(corregir_numero(row[col]))
                                 break
-                        if cantidad == 0:
-                            for col in df.columns:
-                                col_upper = str(col).upper()
-                                if any(p in col_upper for p in ['CANT', 'STOCK', 'UNIDADES']):
-                                    cantidad = int(corregir_numero(row[col]))
-                                    break
                         
                         hoja = stock['hoja'].upper()
                         stock_yessica = cantidad if 'YESSICA' in hoja else 0
-                        stock_apri004 = cantidad if 'APRI.004' in hoja or 'APRI004' in hoja else 0
-                        stock_apri001 = cantidad if 'APRI.001' in hoja or 'APRI001' in hoja else 0
+                        stock_apri004 = cantidad if 'APRI.004' in hoja else 0
+                        stock_apri001 = cantidad if 'APRI.001' in hoja else 0
                         
                         precio = 0.0
                         descripcion_stock = ""
@@ -1413,6 +1421,7 @@ with tab2:
                                 existente['tiene_precio'] = True
                             if len(descripcion_final) > len(existente['descripcion']):
                                 existente['descripcion'] = descripcion_final
+                            existente['usa_apri001'] = existente['stock_apri001'] > 0 and existente['stock_yessica'] == 0 and existente['stock_apri004'] == 0
                         else:
                             productos_por_sku[sku] = {
                                 'sku': sku,
@@ -1427,10 +1436,11 @@ with tab2:
                                 'usa_apri001': stock_apri001 > 0 and stock_yessica == 0 and stock_apri004 == 0
                             }
                 
+                # Detectar SKU con error (stock sin precio)
                 for sku, prod in productos_por_sku.items():
                     if prod['tiene_stock'] and not prod['tiene_precio']:
                         mejor_match = None
-                        mejor_similitud = 90.0  # 🔥 UMBRAL 90%
+                        mejor_similitud = 70.0
                         for cat in st.session_state.catalogos:
                             if not cat['col_desc']:
                                 continue
@@ -1460,7 +1470,7 @@ with tab2:
                         
                         alternativas = encontrar_alternativas_mismo_producto(
                             sku, prod['descripcion'], st.session_state.catalogos,
-                            st.session_state.stocks, st.session_state.precio_key, umbral=90.0
+                            st.session_state.stocks, st.session_state.precio_key, umbral=70.0
                         )
                         prod['alternativas'] = alternativas
                 
@@ -1509,8 +1519,7 @@ with tab2:
                         
                         st.markdown(f"""
                             </div>
-                            <div style="margin-top:12px;color:#333;"><strong>📝 Descripción:</strong></div>
-                            <div class="descripcion-producto" style="margin-top:4px;">{prod['descripcion']}</div>
+                            <div style="margin-top:12px;color:#333;"><strong>📝 Descripción:</strong> {prod['descripcion']}</div>
                             <div style="margin-top:8px;color:#333;"><strong>💰 Precio {st.session_state.precio_key}:</strong> <span style="font-weight:bold;">S/ {prod['precio']:,.2f}</span> <span style="margin-left:16px;"><strong>📦 Stock total:</strong> {prod['stock_total']}</span></div>
                             <div style="margin-top:8px;">{badges_html}</div>
                         """, unsafe_allow_html=True)
@@ -1522,7 +1531,7 @@ with tab2:
                             if prod.get('sku_equivalente'):
                                 st.markdown(f"""
                                 <div style="background:#E8F5E9;border-radius:12px;padding:1rem;margin:0.5rem 0;border-left:4px solid #4CAF50;color:#1a1a2e;">
-                                    <strong style="color:#2E7D32;">💡 SKU EQUIVALENTE SUGERIDO (90%+ coincidencia)</strong>
+                                    <strong style="color:#2E7D32;">💡 SKU EQUIVALENTE SUGERIDO</strong>
                                     <div style="margin-top:8px;">
                                         <strong>SKU:</strong> <code>{prod['sku_equivalente']}</code><br>
                                         <strong>Precio:</strong> S/ {prod.get('precio_equivalente', 0):,.2f}<br>
@@ -1593,8 +1602,7 @@ with tab2:
                             <div style="display:flex;justify-content:space-between;align-items:center;">
                                 <div><strong style="font-size:1rem;">📦 {prod['sku']}</strong> <span style="background:#00BCD4;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">UGREEN</span></div>
                             </div>
-                            <div style="margin-top:12px;"><strong>📝 Descripción:</strong></div>
-                            <div class="descripcion-producto" style="margin-top:4px;">{prod['descripcion']}</div>
+                            <div style="margin-top:12px;"><strong>📝 Descripción:</strong> {prod['descripcion']}</div>
                             <div style="margin-top:8px;">
                                 <strong>💰 Precios:</strong><br>
                                 • P. IR (Mayorista): S/ {prod['precios'].get('P. IR', 0):,.2f}<br>
@@ -1648,7 +1656,7 @@ with tab2:
     elif busqueda and len(busqueda) >= 2:
         st.info("Carga los archivos necesarios en el sidebar para realizar búsquedas.")
 
-# ========== TAB 3: CARRITO ==========
+# ========== TAB 3: CARRITO (SIN CAMBIOS) ==========
 with tab3:
     st.markdown("### 🛒 Cotización actual")
     
@@ -1727,4 +1735,4 @@ with tab3:
 # ============================================
 
 st.markdown("---")
-st.markdown(f'<div class="footer">⚡ QTC Smart Sales Pro v4.3 | Modo: {st.session_state.modo} | {datetime.now().strftime("%Y-%m-%d %H:%M")}</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="footer">⚡ QTC Smart Sales Pro v4.2 | Modo: {st.session_state.modo} | {datetime.now().strftime("%Y-%m-%d %H:%M")}</div>', unsafe_allow_html=True)
