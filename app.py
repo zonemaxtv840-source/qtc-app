@@ -311,7 +311,7 @@ def cargar_stock(archivos, modo: str) -> List[Dict]:
                 hoja_upper = hoja.upper()
                 if modo == "XIAOMI":
                     # Solo hojas APRI y YESSICA
-                    if not any(h in hoja_upper for h in ['APRI', 'YESSICA']):
+                    if not any(h in hoja_upper for h in ['APRI.004', 'YESSICA SEPARADO']):
                         continue
                 else:
                     # Para UGREEN y OTROS, usar APRI.001 o todas las hojas según necesidad
