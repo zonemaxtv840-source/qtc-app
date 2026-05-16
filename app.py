@@ -1,5 +1,6 @@
-# app.py - QTC Smart Sales Pro v4.2
+# app.py - QTC Smart Sales Pro v4.3
 # Con soporte para XIAOMI, UGREEN y OTRAS marcas
+# CORREGIDO: Lectura de stock con prioridad a columna "Disponible" para APRI.001
 
 import streamlit as st
 import pandas as pd
@@ -301,7 +302,18 @@ def cargar_catalogo(archivo) -> Optional[Dict]:
         'precios': detectar_columnas_precio(df)
     }
 
+# ============================================
+# FUNCIONES DE STOCK CORREGIDAS (VERSIÓN DEFINITIVA)
+# ============================================
+
 def cargar_stock(archivos, modo: str) -> List[Dict]:
+    """
+    Carga archivos de stock según el modo.
+    
+    Para XIAOMI: Carga YESSICA, APRI.004 y APRI.001 (las 3 hojas)
+    Para UGREEN: Solo APRI.001
+    Para OTRAS MARCAS: Todas las hojas
+    """
     stocks = []
     
     for archivo in archivos:
@@ -309,15 +321,42 @@ def cargar_stock(archivos, modo: str) -> List[Dict]:
             xls = pd.ExcelFile(archivo)
             for hoja in xls.sheet_names:
                 hoja_upper = hoja.upper()
+                
                 if modo == "XIAOMI":
-                    # Solo hojas APRI y YESSICA
-                    if not any(h in hoja_upper for h in ['APRI', 'YESSICA']):
-                        continue
-                else:
-                    # Para UGREEN y OTROS, usar APRI.001 o todas las hojas según necesidad
-                    if 'APRI.001' not in hoja_upper:
+                    # ==========================================
+                    # XIAOMI: Cargar YESSICA, APRI.004 y APRI.001
+                    # ==========================================
+                    es_valida = False
+                    
+                    # Aceptar YESSICA
+                    if 'YESSICA' in hoja_upper:
+                        es_valida = True
+                    
+                    # Aceptar APRI.004 (con punto o sin punto)
+                    if 'APRI.004' in hoja_upper or 'APRI004' in hoja_upper:
+                        es_valida = True
+                    
+                    # Aceptar APRI.001 (con punto o sin punto)
+                    if 'APRI.001' in hoja_upper or 'APRI001' in hoja_upper:
+                        es_valida = True
+                    
+                    if not es_valida:
                         continue
                 
+                elif modo == "UGREEN":
+                    # ==========================================
+                    # UGREEN: Solo APRI.001
+                    # ==========================================
+                    if 'APRI.001' not in hoja_upper and 'APRI001' not in hoja_upper:
+                        continue
+                
+                else:  # OTRAS MARCAS
+                    # ==========================================
+                    # OTRAS MARCAS: Todas las hojas
+                    # ==========================================
+                    pass
+                
+                # Cargar la hoja
                 df = pd.read_excel(archivo, sheet_name=hoja)
                 df = limpiar_cabeceras(df)
                 
@@ -325,16 +364,162 @@ def cargar_stock(archivos, modo: str) -> List[Dict]:
                     'nombre': f"{archivo.name} [{hoja}]",
                     'df': df,
                     'col_sku': detectar_columna_sku(df),
-                    'hoja': hoja
+                    'hoja': hoja  # Guarda el nombre original para identificar después
                 })
                 st.success(f"✅ {archivo.name} → {hoja}")
+                
         except Exception as e:
-            st.error(f"Error: {str(e)[:80]}")
+            st.error(f"Error en {archivo.name}: {str(e)[:80]}")
     
     return stocks
 
+
+def buscar_stock_para_sku(sku: str, stocks: List[Dict]) -> Dict:
+    """
+    Busca stock de un SKU en todos los archivos de stock.
+    
+    REGLAS POR TIPO DE HOJA:
+    - APRI.001: SOLO columna "Disponible" (exacta). Si no existe → stock = 0
+    - APRI.004: Prioriza "Cantidad"/"Stock", si no existe usa "Disponible"
+    - YESSICA: Prioriza "Cantidad"/"Stock", si no existe usa "Disponible"
+    """
+    sku_limpio = sku.strip().upper()
+    
+    stock_yessica = 0
+    stock_apri004 = 0
+    stock_apri001 = 0
+    
+    for stock in stocks:
+        df = stock['df']
+        hoja = stock['hoja'].upper()
+        
+        # Verificar si el SKU existe en esta hoja
+        df_sku = df[stock['col_sku']].astype(str).str.strip().str.upper()
+        mask = df_sku == sku_limpio
+        
+        if not mask.any():
+            continue
+        
+        # ==========================================
+        # CASO 1: YESSICA
+        # ==========================================
+        if 'YESSICA' in hoja:
+            col_cantidad = None
+            
+            # Prioridad 1: Buscar "Cantidad" o "Stock"
+            for col in df.columns:
+                col_upper = str(col).upper()
+                if any(p in col_upper for p in ['CANT', 'STOCK', 'UNIDADES']):
+                    col_cantidad = col
+                    break
+            
+            # Prioridad 2: Buscar "Disponible"
+            if not col_cantidad:
+                for col in df.columns:
+                    if str(col).upper().strip() == 'DISPONIBLE':
+                        col_cantidad = col
+                        break
+            
+            if col_cantidad:
+                for _, row in df[mask].iterrows():
+                    try:
+                        cantidad = int(corregir_numero(row[col_cantidad]))
+                        stock_yessica += cantidad
+                    except:
+                        pass
+        
+        # ==========================================
+        # CASO 2: APRI.004
+        # ==========================================
+        elif 'APRI.004' in hoja or 'APRI004' in hoja:
+            col_cantidad = None
+            
+            # Prioridad 1: Buscar "Cantidad" o "Stock"
+            for col in df.columns:
+                col_upper = str(col).upper()
+                if any(p in col_upper for p in ['CANT', 'STOCK', 'UNIDADES']):
+                    col_cantidad = col
+                    break
+            
+            # Prioridad 2: Buscar "Disponible"
+            if not col_cantidad:
+                for col in df.columns:
+                    if str(col).upper().strip() == 'DISPONIBLE':
+                        col_cantidad = col
+                        break
+            
+            if col_cantidad:
+                for _, row in df[mask].iterrows():
+                    try:
+                        cantidad = int(corregir_numero(row[col_cantidad]))
+                        stock_apri004 += cantidad
+                    except:
+                        pass
+        
+        # ==========================================
+        # CASO 3: APRI.001 (SOLO "Disponible")
+        # ==========================================
+        elif 'APRI.001' in hoja or 'APRI001' in hoja:
+            col_cantidad = None
+            
+            # SOLO buscar "Disponible" exacto
+            for col in df.columns:
+                if str(col).upper().strip() == 'DISPONIBLE':
+                    col_cantidad = col
+                    break
+            
+            # Si NO existe columna "Disponible", NO suma nada (stock_apri001 queda en 0)
+            if col_cantidad:
+                for _, row in df[mask].iterrows():
+                    try:
+                        cantidad = int(corregir_numero(row[col_cantidad]))
+                        stock_apri001 += cantidad
+                    except:
+                        pass
+        
+        # ==========================================
+        # CASO 4: Otras hojas APRI (sin número específico)
+        # ==========================================
+        elif 'APRI' in hoja:
+            # Por defecto, tratar como APRI.001 (solo Disponible)
+            col_cantidad = None
+            for col in df.columns:
+                if str(col).upper().strip() == 'DISPONIBLE':
+                    col_cantidad = col
+                    break
+            
+            if col_cantidad:
+                for _, row in df[mask].iterrows():
+                    try:
+                        cantidad = int(corregir_numero(row[col_cantidad]))
+                        stock_apri001 += cantidad
+                    except:
+                        pass
+    
+    return {
+        'yessica': stock_yessica,
+        'apri004': stock_apri004,
+        'apri001': stock_apri001,
+        'total': stock_yessica + stock_apri004 + stock_apri001
+    }
+
+
+def construir_badge_stock(stock_yessica, stock_apri004, stock_apri001):
+    """Construye los badges HTML para mostrar el stock por origen"""
+    badges = []
+    if stock_yessica > 0:
+        badges.append(f'<span class="badge-yessica">🟢 YESSICA: {stock_yessica}</span>')
+    if stock_apri004 > 0:
+        badges.append(f'<span class="badge-apri004">🟡 APRI.004: {stock_apri004}</span>')
+    if stock_apri001 > 0:
+        badges.append(f'<span class="badge-apri001">🔴 APRI.001: {stock_apri001} ⚠️</span>')
+    if not badges:
+        return '<span class="badge-warning">❌ Sin stock</span>'
+    return ' '.join(badges)
+
+
 # ============================================
-# NUEVA: FUNCIÓN PARA CARGAR UGREEN
+# FUNCIÓN PARA CARGAR UGREEN
 # ============================================
 
 def cargar_ugreen_catalogo(archivo) -> Optional[Dict]:
@@ -403,7 +588,7 @@ def cargar_ugreen_catalogo(archivo) -> Optional[Dict]:
     }
 
 # ============================================
-# FUNCIONES DE SIMILITUD Y BÚSQUEDA (MODIFICADAS)
+# FUNCIONES DE SIMILITUD Y BÚSQUEDA
 # ============================================
 
 def calcular_similitud(texto1: str, texto2: str) -> float:
@@ -431,45 +616,6 @@ def calcular_similitud(texto1: str, texto2: str) -> float:
     similitud = (jaccard * 0.7 + sequence_match * 0.3) * 100
     return round(similitud, 1)
 
-def buscar_stock_para_sku(sku: str, stocks: List[Dict]) -> Dict:
-    sku_limpio = sku.strip().upper()
-    stock_yessica = 0
-    stock_apri004 = 0
-    stock_apri001 = 0
-    
-    for stock in stocks:
-        df = stock['df']
-        df_sku = df[stock['col_sku']].astype(str).str.strip().str.upper()
-        mask = df_sku == sku_limpio
-        if mask.any():
-            for _, row in df[mask].iterrows():
-                col_cant = None
-                for col in df.columns:
-                    col_upper = str(col).upper()
-                    if any(p in col_upper for p in ['CANT', 'STOCK', 'DISPONIBLE', 'UNIDADES']):
-                        col_cant = col
-                        break
-                
-                if col_cant:
-                    cantidad = int(corregir_numero(row[col_cant]))
-                    hoja = stock['hoja'].upper()
-                    if 'YESSICA' in hoja:
-                        stock_yessica += cantidad
-                    elif 'APRI.004' in hoja:
-                        stock_apri004 += cantidad
-                    elif 'APRI.001' in hoja:
-                        stock_apri001 += cantidad
-    
-    return {
-        'yessica': stock_yessica,
-        'apri004': stock_apri004,
-        'apri001': stock_apri001,
-        'total': stock_yessica + stock_apri004 + stock_apri001
-    }
-
-# ============================================
-# NUEVA: BÚSQUEDA PARA UGREEN
-# ============================================
 
 def buscar_ugreen_producto(busqueda: str, ugreen_catalogo: Dict) -> Optional[Dict]:
     """Busca producto en catálogo UGREEN por SKU o descripción"""
@@ -689,17 +835,6 @@ def encontrar_alternativas_mismo_producto(sku_buscado: str, descripcion_buscada:
     alternativas_unicas.sort(key=lambda x: (-x['similitud'], -x['stock_total']))
     return alternativas_unicas[:5]
 
-def construir_badge_stock(stock_yessica, stock_apri004, stock_apri001):
-    badges = []
-    if stock_yessica > 0:
-        badges.append(f'<span class="badge-yessica">🟢 YESSICA: {stock_yessica}</span>')
-    if stock_apri004 > 0:
-        badges.append(f'<span class="badge-apri004">🟡 APRI.004: {stock_apri004}</span>')
-    if stock_apri001 > 0:
-        badges.append(f'<span class="badge-apri001">🔴 APRI.001: {stock_apri001} ⚠️</span>')
-    if not badges:
-        return '<span class="badge-warning">❌ Sin stock</span>'
-    return ' '.join(badges)
 
 def generar_excel(items: List[Dict], cliente: str, ruc: str) -> bytes:
     output = io.BytesIO()
@@ -820,6 +955,31 @@ if not st.session_state.auth:
     st.markdown("""
     <style>
         .stApp { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; }
+        .login-card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .qtc-logo {
+            font-size: 3.5rem !important;
+            font-weight: 900 !important;
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 50%, #FFB347 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.2);
+            letter-spacing: 2px;
+            text-align: center;
+        }
+        .qtc-subtitle {
+            font-size: 1.1rem;
+            color: #FF8C42;
+            text-align: center;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
     </style>
     """, unsafe_allow_html=True)
     
@@ -827,13 +987,18 @@ if not st.session_state.auth:
     with col2:
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
         
+        # QTC NARANJA VIBRANTE
+        st.markdown('<div class="qtc-logo">QTC</div>', unsafe_allow_html=True)
+        st.markdown('<div class="qtc-subtitle">SMART SALES PRO</div>', unsafe_allow_html=True)
+        st.markdown('<br>', unsafe_allow_html=True)
+        
         try:
             st.image("logo.png", width=100)
         except:
-            st.markdown("<h1 style='color:#e94560;'>QTC</h1>", unsafe_allow_html=True)
+            pass
         
-        st.markdown("<h2 style='color:#1a1a2e;'>QTC Smart Sales Pro</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='color:#666;'>Sistema Profesional de Cotización</p>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color:#1a1a2e; text-align:center;'>Bienvenido</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#666; text-align:center;'>Sistema Profesional de Cotización</p>", unsafe_allow_html=True)
         
         user = st.text_input("👤 Usuario", placeholder="Ingresa tu usuario")
         pw = st.text_input("🔒 Contraseña", type="password", placeholder="Ingresa tu contraseña")
@@ -959,7 +1124,7 @@ with st.sidebar:
     
     # Reportes de stock (para todas las marcas)
     st.markdown("**📦 Reportes de stock**")
-    st.caption("Prioridad: YESSICA → APRI.004 → APRI.001")
+    st.caption("Prioridad: YESSICA → APRI.004 → APRI.001 | La columna 'Disponible' tiene prioridad para APRI.001")
     archivos_stock = st.file_uploader(
         "Excel",
         type=['xlsx', 'xls'],
@@ -987,7 +1152,7 @@ with st.sidebar:
 
 tab1, tab2, tab3 = st.tabs(["📦 MODO MASIVO (Bulk)", "🔍 BÚSQUEDA INTELIGENTE", "🛒 CARRITO DE COTIZACIÓN"])
 
-# ========== TAB 1: MODO MASIVO (CORREGIDO) ==========
+# ========== TAB 1: MODO MASIVO ==========
 with tab1:
     st.markdown("### 📦 Ingresa productos en formato masivo")
     st.caption(f"🔍 Modo: **{st.session_state.modo}** | Formato: `SKU:CANTIDAD` (uno por línea)")
@@ -1187,14 +1352,13 @@ with tab1:
             else:
                 st.warning("Primero procesa una lista de productos")
     
-    # Mostrar resultados bulk (CORREGIDO con color en todas las tarjetas)
+    # Mostrar resultados bulk
     if 'resultados_bulk' in st.session_state and st.session_state.resultados_bulk:
         st.markdown("---")
         st.markdown("### 📋 Productos procesados")
         
         for prod in st.session_state.resultados_bulk:
             if prod.get('tipo') == 'UGREEN':
-                # Badge para UGREEN
                 if prod['stock_total'] > 0:
                     badge_stock = f'<span class="badge-ugreen">📦 UGREEN: {prod["stock_total"]}</span>'
                 else:
@@ -1213,10 +1377,8 @@ with tab1:
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                # Lógica XIAOMI
                 badge_stock = construir_badge_stock(prod['stock_yessica'], prod['stock_apri004'], prod['stock_apri001'])
                 
-                # CASO 1: Stock sin precio (error de SKU)
                 if prod['tiene_stock'] and not prod['tiene_precio']:
                     st.markdown(f"""
                     <div style="background:#FFEBEE;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #f44336;color:#1a1a2e;">
@@ -1234,7 +1396,6 @@ with tab1:
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # SKU equivalente sugerido
                     if prod.get('sku_equivalente'):
                         st.markdown(f"""
                         <div style="background:#E8F5E9;border-radius:12px;padding:1rem;margin:0.5rem 0;border-left:4px solid #4CAF50;color:#1a1a2e;">
@@ -1259,7 +1420,6 @@ with tab1:
                             </div>
                             """, unsafe_allow_html=True)
                 
-                # CASO 2: Con stock y precio
                 elif prod['tiene_stock'] and prod['tiene_precio']:
                     cantidad_final = prod['cantidad_cotizar']
                     st.markdown(f"""
@@ -1274,7 +1434,6 @@ with tab1:
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # CASO 3: Solo precio, sin stock
                 elif not prod['tiene_stock'] and prod['tiene_precio']:
                     st.markdown(f"""
                     <div style="background:#E3F2FD;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #2196F3;color:#1a1a2e;">
@@ -1286,7 +1445,6 @@ with tab1:
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # CASO 4: No disponible
                 else:
                     st.markdown(f"""
                     <div style="background:#F5F5F5;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #9e9e9e;color:#1a1a2e;">
@@ -1303,7 +1461,7 @@ with tab1:
             del st.session_state.resultados_bulk
             st.rerun()
 
-# ========== TAB 2: BÚSQUEDA INTELIGENTE (MODIFICADA) ==========
+# ========== TAB 2: BÚSQUEDA INTELIGENTE ==========
 with tab2:
     st.markdown("### 🔍 Buscar productos por SKU o descripción")
     st.caption(f"🔎 Modo: **{st.session_state.modo}** | Busca por SKU exacto o por cualquier palabra en la descripción")
@@ -1313,10 +1471,8 @@ with tab2:
     if busqueda and len(busqueda) >= 2:
         if st.session_state.modo == "XIAOMI" and st.session_state.catalogos and st.session_state.stocks:
             with st.spinner("🔍 Buscando en XIAOMI..."):
-                # Usar la lógica existente de tu código
                 productos_por_sku = {}
                 
-                # Buscar en catálogos
                 for cat in st.session_state.catalogos:
                     df = cat['df']
                     mask_sku = df[cat['col_sku']].astype(str).str.contains(busqueda, case=False, na=False)
@@ -1358,7 +1514,6 @@ with tab2:
                                 'usa_apri001': stock_info['apri001'] > 0 and stock_info['yessica'] == 0 and stock_info['apri004'] == 0
                             }
                 
-                # Buscar en stocks
                 for stock in st.session_state.stocks:
                     df = stock['df']
                     col_sku = stock['col_sku']
@@ -1378,16 +1533,31 @@ with tab2:
                     for _, row in df[mask].iterrows():
                         sku = str(row[col_sku]).strip().upper()
                         cantidad = 0
-                        for col in df.columns:
-                            col_upper = str(col).upper()
-                            if any(p in col_upper for p in ['CANT', 'STOCK', 'DISPONIBLE', 'UNIDADES']):
-                                cantidad = int(corregir_numero(row[col]))
-                                break
-                        
                         hoja = stock['hoja'].upper()
+                        
+                        # Usar la lógica correcta según el tipo de hoja
+                        if 'APRI.001' in hoja or 'APRI001' in hoja:
+                            # APRI.001: solo columna "Disponible"
+                            for col in df.columns:
+                                if str(col).upper().strip() == 'DISPONIBLE':
+                                    cantidad = int(corregir_numero(row[col]))
+                                    break
+                        else:
+                            # YESSICA y APRI.004: priorizar Cantidad/Stock
+                            for col in df.columns:
+                                col_upper = str(col).upper()
+                                if any(p in col_upper for p in ['CANT', 'STOCK', 'UNIDADES']):
+                                    cantidad = int(corregir_numero(row[col]))
+                                    break
+                            if cantidad == 0:
+                                for col in df.columns:
+                                    if str(col).upper().strip() == 'DISPONIBLE':
+                                        cantidad = int(corregir_numero(row[col]))
+                                        break
+                        
                         stock_yessica = cantidad if 'YESSICA' in hoja else 0
-                        stock_apri004 = cantidad if 'APRI.004' in hoja else 0
-                        stock_apri001 = cantidad if 'APRI.001' in hoja else 0
+                        stock_apri004 = cantidad if ('APRI.004' in hoja or 'APRI004' in hoja) else 0
+                        stock_apri001 = cantidad if ('APRI.001' in hoja or 'APRI001' in hoja) else 0
                         
                         precio = 0.0
                         descripcion_stock = ""
@@ -1436,7 +1606,6 @@ with tab2:
                                 'usa_apri001': stock_apri001 > 0 and stock_yessica == 0 and stock_apri004 == 0
                             }
                 
-                # Detectar SKU con error (stock sin precio)
                 for sku, prod in productos_por_sku.items():
                     if prod['tiene_stock'] and not prod['tiene_precio']:
                         mejor_match = None
@@ -1656,7 +1825,7 @@ with tab2:
     elif busqueda and len(busqueda) >= 2:
         st.info("Carga los archivos necesarios en el sidebar para realizar búsquedas.")
 
-# ========== TAB 3: CARRITO (SIN CAMBIOS) ==========
+# ========== TAB 3: CARRITO ==========
 with tab3:
     st.markdown("### 🛒 Cotización actual")
     
@@ -1735,4 +1904,4 @@ with tab3:
 # ============================================
 
 st.markdown("---")
-st.markdown(f'<div class="footer">⚡ QTC Smart Sales Pro v4.2 | Modo: {st.session_state.modo} | {datetime.now().strftime("%Y-%m-%d %H:%M")}</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="footer">⚡ QTC Smart Sales Pro v4.3 | Modo: {st.session_state.modo} | {datetime.now().strftime("%Y-%m-%d %H:%M")}</div>', unsafe_allow_html=True)
