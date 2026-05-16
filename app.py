@@ -234,20 +234,67 @@ def limpiar_cabeceras(df: pd.DataFrame) -> pd.DataFrame:
             return df.iloc[i+1:].reset_index(drop=True)
     return df
 
-def cargar_archivo(uploaded_file) -> Optional[pd.DataFrame]:
-    nombre = uploaded_file.name.lower()
-    try:
-        if nombre.endswith('.csv'):
-            try:
-                df = pd.read_csv(uploaded_file, encoding='utf-8')
-            except:
-                df = pd.read_csv(uploaded_file, encoding='latin-1')
-        else:
-            df = pd.read_excel(uploaded_file)
-        return limpiar_cabeceras(df)
-    except Exception as e:
-        st.error(f"Error: {str(e)[:80]}")
-        return None
+def cargar_stock(archivos, modo: str) -> List[Dict]:
+    """
+    Carga TODAS las hojas relevantes del mismo documento Excel.
+    
+    Para XIAOMI: Carga YESSICA, APRI.004 y APRI.001 (las 3)
+    Cada hoja se guarda con su nombre para identificarla después
+    """
+    stocks = []
+    
+    for archivo in archivos:
+        try:
+            xls = pd.ExcelFile(archivo)
+            for hoja in xls.sheet_names:
+                hoja_upper = hoja.upper()
+                
+                if modo == "XIAOMI":
+                    # ==========================================
+                    # XIAOMI: Cargar YESSICA, APRI.004 y APRI.001
+                    # ==========================================
+                    es_valida = False
+                    
+                    # Aceptar YESSICA
+                    if 'YESSICA' in hoja_upper:
+                        es_valida = True
+                    
+                    # Aceptar APRI.004
+                    if 'APRI.004' in hoja_upper or 'APRI004' in hoja_upper:
+                        es_valida = True
+                    
+                    # Aceptar APRI.001 (importante!)
+                    if 'APRI.001' in hoja_upper or 'APRI001' in hoja_upper:
+                        es_valida = True
+                    
+                    if not es_valida:
+                        continue  # Saltar cualquier otra hoja
+                
+                elif modo == "UGREEN":
+                    # UGREEN: Solo APRI.001
+                    if 'APRI.001' not in hoja_upper and 'APRI001' not in hoja_upper:
+                        continue
+                
+                else:  # OTRAS MARCAS
+                    # Cargar todas las hojas
+                    pass
+                
+                # Cargar la hoja
+                df = pd.read_excel(archivo, sheet_name=hoja)
+                df = limpiar_cabeceras(df)
+                
+                stocks.append({
+                    'nombre': f"{archivo.name} [{hoja}]",
+                    'df': df,
+                    'col_sku': detectar_columna_sku(df),
+                    'hoja': hoja  # ← CLAVE: guarda el nombre original
+                })
+                st.success(f"✅ {archivo.name} → {hoja}")
+                
+        except Exception as e:
+            st.error(f"Error en {archivo.name}: {str(e)[:80]}")
+    
+    return stocks
 
 def detectar_columna_sku(df: pd.DataFrame) -> str:
     posibles = ['SKU', 'COD', 'SAP', 'NUMERO', 'ARTICULO', 'CODIGO']
