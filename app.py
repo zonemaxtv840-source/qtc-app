@@ -432,39 +432,56 @@ def calcular_similitud(texto1: str, texto2: str) -> float:
     return round(similitud, 1)
 
 def buscar_stock_para_sku(sku: str, stocks: List[Dict]) -> Dict:
+    """Busca stock para un SKU específico.
+       Para XIAOMI: prioriza YESSICA > APRI.004 > APRI.001 (NO SUMA TODAS)"""
     sku_limpio = sku.strip().upper()
+    
     stock_yessica = 0
     stock_apri004 = 0
     stock_apri001 = 0
     
+    # Diccionario para rastrear qué SKU ya fue procesado por archivo
+    skus_procesados = set()
+    
     for stock in stocks:
+        # Crear clave única por archivo+sku para evitar duplicados
+        clave_unica = f"{stock.get('nombre_archivo', '')}_{sku_limpio}"
+        if clave_unica in skus_procesados:
+            continue
+            
         df = stock['df']
-        df_sku = df[stock['col_sku']].astype(str).str.strip().str.upper()
+        col_sku = stock['col_sku']
+        col_stock = stock.get('col_stock')
+        
+        if not col_stock:
+            continue
+            
+        df_sku = df[col_sku].astype(str).str.strip().str.upper()
         mask = df_sku == sku_limpio
+        
         if mask.any():
+            cantidad = 0
             for _, row in df[mask].iterrows():
-                col_cant = None
-                for col in df.columns:
-                    col_upper = str(col).upper()
-                    if any(p in col_upper for p in ['CANT', 'STOCK', 'DISPONIBLE', 'UNIDADES']):
-                        col_cant = col
-                        break
-                
-                if col_cant:
-                    cantidad = int(corregir_numero(row[col_cant]))
-                    hoja = stock['hoja'].upper()
-                    if 'YESSICA' in hoja:
-                        stock_yessica += cantidad
-                    elif 'APRI.004' in hoja:
-                        stock_apri004 += cantidad
-                    elif 'APRI.001' in hoja:
-                        stock_apri001 += cantidad
+                cantidad += int(corregir_numero(row[col_stock]))
+            
+            hoja = stock['hoja'].upper()
+            skus_procesados.add(clave_unica)
+            
+            if 'YESSICA' in hoja:
+                stock_yessica += cantidad
+            elif 'APRI.004' in hoja:
+                stock_apri004 += cantidad
+            elif 'APRI.001' in hoja:
+                stock_apri001 += cantidad
+    
+    total = stock_yessica + stock_apri004 + stock_apri001
     
     return {
         'yessica': stock_yessica,
         'apri004': stock_apri004,
         'apri001': stock_apri001,
-        'total': stock_yessica + stock_apri004 + stock_apri001
+        'total': total,
+        'solo_apri001': stock_apri001 > 0 and stock_yessica == 0 and stock_apri004 == 0
     }
 
 # ============================================
