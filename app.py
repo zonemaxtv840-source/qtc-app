@@ -1494,110 +1494,86 @@ with tab1:
             else:
                 st.warning("Primero procesa una lista de productos")
     
-    # Mostrar resultados bulk
-    if 'resultados_bulk' in st.session_state and st.session_state.resultados_bulk:
-        st.markdown("---")
-        st.markdown("### 📋 Productos procesados")
+    # Mostrar resultados bulk (VERSIÓN LIMPIA - SIN DUPLICACIÓN)
+if 'resultados_bulk' in st.session_state and st.session_state.resultados_bulk:
+    st.markdown("---")
+    st.markdown("### 📋 Productos procesados")
+    
+    for prod in st.session_state.resultados_bulk:
+        # Construir badges de stock (ya incluye toda la información)
+        badge_stock = construir_badge_stock(
+            prod.get('stock_yessica', 0),
+            prod.get('stock_apri004', 0),
+            prod.get('stock_apri001', 0),
+            prod.get('detalle_apri001', []),
+            prod.get('ubicaciones', [])
+        )
         
-        for prod in st.session_state.resultados_bulk:
-            if prod.get('tipo') == 'UGREEN':
-                if prod['stock_total'] > 0:
-                    stock_seguro = max(0, prod['stock_total'] - 2)
-                    badge_stock = f'<span class="badge-ugreen">📦 UGREEN: {prod["stock_total"]} (seguro: {stock_seguro})</span>'
-                else:
-                    badge_stock = '<span class="badge-warning">❌ Sin stock</span>'
-                
-                st.markdown(f"""
-                <div style="background:white;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #00BCD4;color:#1a1a2e;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <div><strong style="color:#1a1a2e;">📦 {prod['sku']}</strong> <span style="background:#00BCD4;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">UGREEN</span></div>
-                        <div><span style="background:#2196F3;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">Solicitado: {prod['cantidad_solicitada']}</span></div>
-                    </div>
-                    <div style="margin-top:8px;"><span style="font-size:0.85rem;color:#1a1a2e;">{prod['descripcion'][:100]}</span></div>
-                    <div style="margin-top:8px;color:#1a1a2e;">💰 Precio: <strong>S/ {prod['precio']:,.2f}</strong> | 📦 Stock: <strong>{prod['stock_total']}</strong> → Cotizable: {prod['cantidad_cotizar']}</div>
-                    <div style="margin-top:8px;">{badge_stock}</div>
-                    <div style="margin-top:8px;color:#1a1a2e;"><strong>📌 Estado:</strong> {prod['estado']}</div>
+        # Determinar color del borde según estado
+        if prod.get('tiene_precio') and prod.get('tiene_stock') and prod.get('cantidad_cotizar', 0) > 0:
+            border_color = "#10b981"
+            estado_icono = "✅"
+            fondo_badge = "#4CAF50"
+        elif prod.get('tiene_precio') and not prod.get('tiene_stock'):
+            border_color = "#f59e0b"
+            estado_icono = "⚠️"
+            fondo_badge = "#FF9800"
+        elif not prod.get('tiene_precio') and prod.get('tiene_stock'):
+            border_color = "#ef4444"
+            estado_icono = "❌"
+            fondo_badge = "#f44336"
+        else:
+            border_color = "#6b7280"
+            estado_icono = "📭"
+            fondo_badge = "#9e9e9e"
+        
+        # Card limpia (sin duplicación de información)
+        st.markdown(f"""
+        <div style="
+            background: white;
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 5px solid {border_color};
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        ">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <div>
+                    <span style="background: {fondo_badge}; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: bold;">{estado_icono} {prod['sku']}</span>
+                    <span style="background: #e2e8f0; color: #1e293b; padding: 2px 8px; border-radius: 12px; font-size: 0.65rem; margin-left: 0.5rem;">Solicitado: {prod['cantidad_solicitada']}</span>
                 </div>
-                """, unsafe_allow_html=True)
-            else:
-                badge_stock = construir_badge_stock(
-                    prod['stock_yessica'], 
-                    prod['stock_apri004'], 
-                    prod['stock_apri001'],
-                    prod.get('detalle_apri001', []),
-                    prod.get('ubicaciones', [])
-                )
-                
-                if prod['tiene_stock'] and not prod['tiene_precio']:
-                    st.markdown(f"""
-                    <div style="background:#FFEBEE;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #f44336;color:#1a1a2e;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <div><span style="background:#f44336;color:white;padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:bold;">⚠️ PROBLEMA DETECTADO - ERROR DE SKU</span></div>
-                            <div><span style="background:#ff9800;color:white;padding:2px 8px;border-radius:12px;font-size:0.6rem;">Solicitado: {prod['cantidad_solicitada']}</span></div>
-                        </div>
-                        <div style="margin-top:12px;color:#1a1a2e;">
-                            <strong>📦 SKU BUSCADO:</strong> {prod['sku']}<br>
-                            <strong>📝 Descripción:</strong> {prod['descripcion']}<br>
-                            <strong>📦 Stock disponible:</strong> {prod['stock_total']} unidades<br>
-                            <strong>⚠️ Estado:</strong> {prod['estado']}
-                        </div>
-                        <div style="margin-top:8px;">{badge_stock}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    if prod.get('sku_equivalente'):
-                        st.markdown(f"""
-                        <div style="background:#E8F5E9;border-radius:12px;padding:1rem;margin:0.5rem 0;border-left:4px solid #4CAF50;color:#1a1a2e;">
-                            <strong style="color:#2E7D32;">💡 SKU EQUIVALENTE SUGERIDO</strong>
-                            <div style="margin-top:8px;">
-                                <strong>SKU:</strong> <code>{prod['sku_equivalente']}</code><br>
-                                <strong>Precio:</strong> S/ {prod.get('precio_equivalente', 0):,.2f}<br>
-                                <strong>Coincidencia:</strong> {prod.get('similitud_equivalente', 0):.0f}%
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                
-                elif prod['tiene_stock'] and prod['tiene_precio']:
-                    cantidad_final = prod['cantidad_cotizar']
-                    st.markdown(f"""
-                    <div style="background:white;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #4CAF50;color:#1a1a2e;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <div><strong style="color:#1a1a2e;">📦 {prod['sku']}</strong> <span style="background:#4CAF50;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">✅ CON STOCK Y PRECIO</span></div>
-                            <div><span style="background:#2196F3;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">Cotizar: {cantidad_final}/{prod['cantidad_solicitada']}</span></div>
-                        </div>
-                        <div style="margin-top:8px;"><span style="font-size:0.85rem;color:#1a1a2e;">{prod['descripcion']}</span></div>
-                        <div style="margin-top:8px;color:#1a1a2e;">💰 Precio: <strong>S/ {prod['precio']:,.2f}</strong> | 📦 Stock: YESSICA:{prod['stock_yessica']} APRI.004:{prod['stock_apri004']} APRI.001:{prod['stock_apri001']}</div>
-                        <div style="margin-top:8px;">{badge_stock}</div>
-                        <div style="margin-top:8px;color:#1a1a2e;"><strong>📌 Estado:</strong> {prod['estado']}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                elif not prod['tiene_stock'] and prod['tiene_precio']:
-                    st.markdown(f"""
-                    <div style="background:#E3F2FD;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #2196F3;color:#1a1a2e;">
-                        <div><strong style="color:#1a1a2e;">📦 {prod['sku']}</strong> <span style="background:#2196F3;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">📋 SOLO PRECIO - SIN STOCK</span></div>
-                        <div style="margin-top:8px;"><span style="font-size:0.85rem;color:#1a1a2e;">{prod['descripcion']}</span></div>
-                        <div style="margin-top:8px;color:#1a1a2e;">💰 Precio: <strong>S/ {prod['precio']:,.2f}</strong></div>
-                        <div style="margin-top:8px;">{badge_stock}</div>
-                        <div style="margin-top:8px;color:#1a1a2e;"><strong>⚠️ Estado:</strong> {prod['estado']}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                else:
-                    st.markdown(f"""
-                    <div style="background:#F5F5F5;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #9e9e9e;color:#1a1a2e;">
-                        <div><strong style="color:#1a1a2e;">📦 {prod['sku']}</strong> <span style="background:#9e9e9e;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">❌ NO DISPONIBLE</span></div>
-                        <div style="margin-top:8px;"><span style="font-size:0.85rem;color:#1a1a2e;">{prod['descripcion']}</span></div>
-                        <div style="margin-top:8px;">{badge_stock}</div>
-                        <div style="margin-top:8px;color:#1a1a2e;"><strong>⚠️ Estado:</strong> {prod['estado']}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                <div style="font-size: 0.75rem; color: #64748b;">Cotizar: {prod.get('cantidad_cotizar', 0)} unid.</div>
+            </div>
             
-            st.divider()
+            <!-- Descripción -->
+            <div style="font-size: 0.8rem; color: #334155; margin-bottom: 0.75rem; padding: 0.25rem 0; border-bottom: 1px dashed #e2e8f0;">
+                📝 {prod['descripcion'][:100]}{'...' if len(prod['descripcion']) > 100 else ''}
+            </div>
+            
+            <!-- Precio -->
+            <div style="margin-bottom: 0.75rem;">
+                <span style="font-size: 0.7rem; color: #64748b;">💰 Precio</span>
+                <div style="font-size: 1.2rem; font-weight: 700; color: #0f172a;">S/ {prod.get('precio', 0):,.2f}</div>
+            </div>
+            
+            <!-- Badges de stock (información completa y única) -->
+            <div style="margin: 0.5rem 0; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                {badge_stock}
+            </div>
+            
+            <!-- Estado -->
+            <div style="margin-top: 0.5rem; font-size: 0.7rem; color: #475569; background: #f8fafc; padding: 0.5rem; border-radius: 12px;">
+                <strong>📌 Estado:</strong> {prod['estado']}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         
-        if st.button("🗑️ Limpiar resultados", key="clear_bulk_results", use_container_width=True):
-            del st.session_state.resultados_bulk
-            st.rerun()
+        st.divider()
+    
+    if st.button("🗑️ Limpiar resultados", key="clear_bulk_results", use_container_width=True):
+        del st.session_state.resultados_bulk
+        st.rerun()
 
 # ========== TAB 2: BÚSQUEDA INTELIGENTE (RESUMEN) ==========
 with tab2:
