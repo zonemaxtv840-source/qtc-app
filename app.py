@@ -1495,7 +1495,7 @@ with tab1:
                 st.warning("Primero procesa una lista de productos")
     
     # Mostrar resultados bulk
-if 'resultados_bulk' in st.session_state and st.session_state.resultados_bulk:
+    if 'resultados_bulk' in st.session_state and st.session_state.resultados_bulk:
     st.markdown("---")
     st.markdown("### 📋 Productos procesados")
     
