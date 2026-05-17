@@ -933,34 +933,184 @@ if 'ugreen_catalogo' not in st.session_state:
     st.session_state.ugreen_catalogo = None
 
 # ============================================
-# LOGIN
+# LOGIN PREMIUM
 # ============================================
 
 if not st.session_state.auth:
+    # CSS exclusivo para pantalla de login
     st.markdown("""
     <style>
-        .stApp { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; }
+        /* Fondo degradado premium */
+        .stApp {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+        }
+        
+        /* Ocultar elementos no deseados en login */
+        #MainMenu {visibility: hidden;}
+        header {visibility: hidden;}
+        footer {visibility: hidden;}
+        
+        /* Tarjeta de login glassmorphism */
+        .login-premium {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(12px);
+            border-radius: 32px;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            max-width: 420px;
+            margin: 0 auto;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: transform 0.3s ease;
+        }
+        
+        .login-premium:hover {
+            transform: translateY(-5px);
+        }
+        
+        .login-premium h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f0f9ff, #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+        
+        .login-premium .subtitle {
+            color: #94a3b8;
+            margin-bottom: 2rem;
+            font-size: 0.85rem;
+            font-weight: 400;
+        }
+        
+        /* Inputs elegantes */
+        .login-premium .stTextInput > div > div > input {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 16px;
+            padding: 0.75rem 1rem;
+            color: #f1f5f9;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .login-premium .stTextInput > div > div > input:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+            outline: none;
+        }
+        
+        .login-premium .stTextInput > div > div > input::placeholder {
+            color: #64748b;
+        }
+        
+        /* Botón principal */
+        .login-premium .stButton > button {
+            background: linear-gradient(90deg, #0ea5e9, #3b82f6);
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+            margin-top: 0.5rem;
+        }
+        
+        .login-premium .stButton > button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4);
+            background: linear-gradient(90deg, #0284c7, #2563eb);
+        }
+        
+        /* Botón secundario (invitado) */
+        .login-premium .stButton > button:has(+ button) {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .login-premium .stButton > button:has(+ button):hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.02);
+            box-shadow: none;
+        }
+        
+        /* Separador */
+        .login-premium .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 1.5rem 0;
+            color: #64748b;
+            font-size: 0.75rem;
+        }
+        
+        .login-premium .divider::before,
+        .login-premium .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .login-premium .divider::before {
+            margin-right: 0.75rem;
+        }
+        
+        .login-premium .divider::after {
+            margin-left: 0.75rem;
+        }
+        
+        /* Footer login */
+        .login-premium .login-footer {
+            margin-top: 1.5rem;
+            font-size: 0.7rem;
+            color: #475569;
+        }
+        
+        /* Logo placeholder */
+        .logo-circle {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem auto;
+            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.3);
+        }
+        
+        .logo-circle span {
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+        }
     </style>
     """, unsafe_allow_html=True)
     
+    # Centrar el login en la página
     col1, col2, col3 = st.columns([1, 2, 1])
+    
     with col2:
-        st.markdown('<div class="login-card">', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="login-premium">
+            <div class="logo-circle">
+                <span>QTC</span>
+            </div>
+            <h1>Smart Sales Pro</h1>
+            <div class="subtitle">Plataforma profesional de cotizaciones</div>
+        """, unsafe_allow_html=True)
         
-        try:
-            st.image("logo.png", width=100)
-        except:
-            st.markdown("<h1 style='color:#e94560;'>QTC</h1>", unsafe_allow_html=True)
+        # Inputs de login
+        user = st.text_input("", placeholder="📧 Usuario", key="login_user")
+        pw = st.text_input("", placeholder="🔒 Contraseña", type="password", key="login_pass")
         
-        st.markdown("<h2 style='color:#1a1a2e;'>QTC Smart Sales Pro</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='color:#666;'>Sistema Profesional de Cotización</p>", unsafe_allow_html=True)
-        
-        user = st.text_input("👤 Usuario", placeholder="Ingresa tu usuario")
-        pw = st.text_input("🔒 Contraseña", type="password", placeholder="Ingresa tu contraseña")
-        
+        # Botones
         col_btn1, col_btn2 = st.columns(2)
         with col_btn1:
-            if st.button("🚀 Ingresar", use_container_width=True):
+            if st.button("🚀 Ingresar", use_container_width=True, key="login_btn"):
                 credenciales = {
                     "admin": {"password": "qtc2026", "role": "ADMIN", "name": "Administrador"},
                     "kimberly": {"password": "kam2026", "role": "KAM", "name": "Kimberly - Key Account Manager"},
@@ -973,16 +1123,21 @@ if not st.session_state.auth:
                     st.rerun()
                 else:
                     st.error("❌ Credenciales incorrectas")
-                    st.info("💡 Usuarios: admin / kimberly / vendedor | Contraseña: usuario+2026")
+        
         with col_btn2:
-            if st.button("👤 Modo invitado", use_container_width=True):
+            if st.button("👤 Invitado", use_container_width=True, key="guest_btn"):
                 st.session_state.auth = True
                 st.session_state.user_role = "INVITADO"
                 st.session_state.user_name = "Invitado"
                 st.rerun()
         
-        st.markdown("<div class='footer'>⚡ QTC Smart Sales Pro</div>", unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("""
+            <div class="divider">Acceso autorizado</div>
+            <div class="login-footer">
+                QTC Smart Sales Pro © 2026
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     
     st.stop()
 
