@@ -295,11 +295,10 @@ def cargar_catalogo(archivo) -> Optional[Dict]:
 
 def buscar_stock_para_sku(sku: str, stocks: List[Dict]) -> Dict:
     """
-    Lee stock según reglas:
-    - YESSICA: columna "Disponible" o "Cantidad" (toma primera coincidencia por hoja)
-    - APRI.004: columna "Disponible" o "Cantidad"
-    - APRI.001: SOLO columna "Disponible"
-    - NO duplica: cada hoja aporta una sola vez
+    Lee stock según reglas ESPECÍFICAS por tipo de hoja:
+    - YESSICA: columna "Disponible" o "Cantidad"
+    - APRI.004: columna "Disponible" o "Cantidad"  
+    - APRI.001: SOLO columna "Disponible" (NO "En stock", NO "Cantidad")
     """
     sku_limpio = sku.strip().upper()
     
@@ -312,48 +311,72 @@ def buscar_stock_para_sku(sku: str, stocks: List[Dict]) -> Dict:
     for stock in stocks:
         df = stock['df']
         hoja_nombre = stock['hoja']
+        hoja_upper = hoja_nombre.upper()
+        
         df_sku = df[stock['col_sku']].astype(str).str.strip().str.upper()
         mask = df_sku == sku_limpio
         
-        if mask.any():
-            # Buscar columna de cantidad/disponible
+        if not mask.any():
+            continue
+        
+        # ========== LÓGICA SEGÚN TIPO DE HOJA ==========
+        
+        # YESSICA: solo 'Disponible' o 'Cantidad'
+        if 'YESSICA' in hoja_upper:
             col_cant = None
             for col in df.columns:
                 col_upper = str(col).upper()
-                if any(p in col_upper for p in ['DISPONIBLE', 'STOCK', 'CANT', 'UNIDADES']):
+                if 'DISPONIBLE' in col_upper or 'CANTIDAD' in col_upper:
+                    col_cant = col
+                    break
+            
+            if col_cant and stock_yessica == 0:
+                row = df[mask].iloc[0]
+                cantidad = int(corregir_numero(row[col_cant]))
+                stock_yessica = cantidad
+                ubicaciones.append({'hoja': hoja_nombre, 'columna': col_cant, 'cantidad': cantidad})
+        
+        # APRI.004: solo 'Disponible' o 'Cantidad'
+        elif 'APRI.004' in hoja_upper:
+            col_cant = None
+            for col in df.columns:
+                col_upper = str(col).upper()
+                if 'DISPONIBLE' in col_upper or 'CANTIDAD' in col_upper:
+                    col_cant = col
+                    break
+            
+            if col_cant and stock_apri004 == 0:
+                row = df[mask].iloc[0]
+                cantidad = int(corregir_numero(row[col_cant]))
+                stock_apri004 = cantidad
+                ubicaciones.append({'hoja': hoja_nombre, 'columna': col_cant, 'cantidad': cantidad})
+        
+        # APRI.001: SOLAMENTE columna 'DISPONIBLE' (NO 'STOCK', NO 'CANTIDAD')
+        elif 'APRI.001' in hoja_upper:
+            col_cant = None
+            for col in df.columns:
+                col_upper = str(col).upper()
+                if 'DISPONIBLE' in col_upper:
                     col_cant = col
                     break
             
             if col_cant:
-                # TOMAR SOLO LA PRIMERA FILA (evita duplicados)
-                row = df[mask].iloc[0]
-                cantidad = int(corregir_numero(row[col_cant]))
-                col_nombre = str(col_cant).upper()
-                hoja_upper = hoja_nombre.upper()
-                
-                ubicaciones.append({
-                    'hoja': hoja_nombre,
-                    'columna': col_cant,
-                    'cantidad': cantidad
-                })
-                
-                if 'YESSICA' in hoja_upper:
-                    stock_yessica = cantidad  # ASIGNAR, NO SUMAR
-                elif 'APRI.004' in hoja_upper:
-                    stock_apri004 = cantidad  # ASIGNAR, NO SUMAR
-                elif 'APRI.001' in hoja_upper:
-                    if 'DISPONIBLE' in col_nombre:
-                        stock_apri001 = cantidad
-                        detalle = {'cantidad': cantidad, 'hoja': hoja_nombre}
-                        for col in df.columns:
-                            col_upper = str(col).upper()
-                            if 'OBS' in col_upper or 'DETALLE' in col_upper or 'NOTA' in col_upper:
-                                detalle['observacion'] = str(row[col])[:150]
-                                break
-                        detalle_apri001.append(detalle)
-                    else:
-                        st.warning(f"⚠️ APRI.001 para SKU {sku} en hoja {hoja_nombre} no tiene columna 'Disponible'. Usando: {col_nombre}")
-                        stock_apri001 = cantidad
+                if stock_apri001 == 0:
+                    row = df[mask].iloc[0]
+                    cantidad = int(corregir_numero(row[col_cant]))
+                    stock_apri001 = cantidad
+                    
+                    detalle = {'cantidad': cantidad, 'hoja': hoja_nombre, 'columna_usada': col_cant}
+                    for col in df.columns:
+                        col_upper = str(col).upper()
+                        if 'OBS' in col_upper or 'DETALLE' in col_upper or 'NOTA' in col_upper:
+                            detalle['observacion'] = str(row[col])[:150]
+                            break
+                    detalle_apri001.append(detalle)
+                    ubicaciones.append({'hoja': hoja_nombre, 'columna': col_cant, 'cantidad': cantidad})
+            else:
+                # Solo warning si REALMENTE no existe columna Disponible
+                st.warning(f"⚠️ APRI.001 para SKU {sku} en hoja {hoja_nombre} no tiene columna 'Disponible'")
     
     return {
         'yessica': stock_yessica,
