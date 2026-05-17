@@ -1527,53 +1527,9 @@ if 'resultados_bulk' in st.session_state and st.session_state.resultados_bulk:
             estado_icono = "📭"
             fondo_badge = "#9e9e9e"
         
-        # Card limpia (sin duplicación de información)
-        st.markdown(f"""
-        <div style="
-            background: white;
-            border-radius: 16px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-left: 5px solid {border_color};
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        ">
-            <!-- Header -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                <div>
-                    <span style="background: {fondo_badge}; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: bold;">{estado_icono} {prod['sku']}</span>
-                    <span style="background: #e2e8f0; color: #1e293b; padding: 2px 8px; border-radius: 12px; font-size: 0.65rem; margin-left: 0.5rem;">Solicitado: {prod['cantidad_solicitada']}</span>
-                </div>
-                <div style="font-size: 0.75rem; color: #64748b;">Cotizar: {prod.get('cantidad_cotizar', 0)} unid.</div>
-            </div>
-            
-            <!-- Descripción -->
-            <div style="font-size: 0.8rem; color: #334155; margin-bottom: 0.75rem; padding: 0.25rem 0; border-bottom: 1px dashed #e2e8f0;">
-                📝 {prod['descripcion'][:100]}{'...' if len(prod['descripcion']) > 100 else ''}
-            </div>
-            
-            <!-- Precio -->
-            <div style="margin-bottom: 0.75rem;">
-                <span style="font-size: 0.7rem; color: #64748b;">💰 Precio</span>
-                <div style="font-size: 1.2rem; font-weight: 700; color: #0f172a;">S/ {prod.get('precio', 0):,.2f}</div>
-            </div>
-            
-            <!-- Badges de stock (información completa y única) -->
-            <div style="margin: 0.5rem 0; display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                {badge_stock}
-            </div>
-            
-            <!-- Estado -->
-            <div style="margin-top: 0.5rem; font-size: 0.7rem; color: #475569; background: #f8fafc; padding: 0.5rem; border-radius: 12px;">
-                <strong>📌 Estado:</strong> {prod['estado']}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.divider()
-    
-    if st.button("🗑️ Limpiar resultados", key="clear_bulk_results", use_container_width=True):
-        del st.session_state.resultados_bulk
-        st.rerun()
+        div[style*="border-radius:16px"] * {
+    color: #1a1a2e !important;
+}
 
 # ========== TAB 2: BÚSQUEDA INTELIGENTE (RESUMEN) ==========
 with tab2:
