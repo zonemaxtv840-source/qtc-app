@@ -320,7 +320,7 @@ def buscar_stock_para_sku(sku: str, stocks: List[Dict]) -> Dict:
             col_cant = None
             for col in df.columns:
                 col_upper = str(col).upper()
-                if any(p in col_upper for p in ['CANT', 'STOCK', 'DISPONIBLE', 'UNIDADES']):
+                if any(p in col_upper for p in ['DISPONIBLE', 'STOCK', 'CANT', 'UNIDADES']):
                     col_cant = col
                     break
             
