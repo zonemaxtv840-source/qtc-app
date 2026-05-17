@@ -1494,13 +1494,13 @@ with tab1:
             else:
                 st.warning("Primero procesa una lista de productos")
     
-    # Mostrar resultados bulk (VERSIÓN LIMPIA - SIN DUPLICACIÓN)
+    # Mostrar resultados bulk
 if 'resultados_bulk' in st.session_state and st.session_state.resultados_bulk:
     st.markdown("---")
     st.markdown("### 📋 Productos procesados")
     
     for prod in st.session_state.resultados_bulk:
-        # Construir badges de stock (ya incluye toda la información)
+        # Construir badges de stock usando TU función original
         badge_stock = construir_badge_stock(
             prod.get('stock_yessica', 0),
             prod.get('stock_apri004', 0),
@@ -1509,27 +1509,39 @@ if 'resultados_bulk' in st.session_state and st.session_state.resultados_bulk:
             prod.get('ubicaciones', [])
         )
         
-        # Determinar color del borde según estado
+        # Determinar estilo según estado
         if prod.get('tiene_precio') and prod.get('tiene_stock') and prod.get('cantidad_cotizar', 0) > 0:
-            border_color = "#10b981"
-            estado_icono = "✅"
-            fondo_badge = "#4CAF50"
+            border_color = "#4CAF50"
+            estado_texto = "✅ CON STOCK Y PRECIO"
         elif prod.get('tiene_precio') and not prod.get('tiene_stock'):
-            border_color = "#f59e0b"
-            estado_icono = "⚠️"
-            fondo_badge = "#FF9800"
+            border_color = "#2196F3"
+            estado_texto = "📋 SOLO PRECIO - SIN STOCK"
         elif not prod.get('tiene_precio') and prod.get('tiene_stock'):
-            border_color = "#ef4444"
-            estado_icono = "❌"
-            fondo_badge = "#f44336"
+            border_color = "#f44336"
+            estado_texto = "⚠️ STOCK DISPONIBLE - SIN PRECIO"
         else:
-            border_color = "#6b7280"
-            estado_icono = "📭"
-            fondo_badge = "#9e9e9e"
+            border_color = "#9e9e9e"
+            estado_texto = "❌ NO DISPONIBLE"
         
-        div[style*="border-radius:16px"] * {
-    color: #1a1a2e !important;
-}
+        # Mostrar card (usando el mismo estilo que ya tenías funcionando)
+        st.markdown(f"""
+        <div style="background:white;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid {border_color};color:#1a1a2e;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div><strong style="color:#1a1a2e;">📦 {prod['sku']}</strong> <span style="background:{border_color};color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">{estado_texto}</span></div>
+                <div><span style="background:#2196F3;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">Solicitado: {prod['cantidad_solicitada']}</span> <span style="background:#FF9800;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">Cotizar: {prod.get('cantidad_cotizar', 0)}</span></div>
+            </div>
+            <div style="margin-top:8px;"><span style="font-size:0.85rem;color:#1a1a2e;">{prod['descripcion'][:100]}</span></div>
+            <div style="margin-top:8px;color:#1a1a2e;">💰 Precio: <strong>S/ {prod.get('precio', 0):,.2f}</strong></div>
+            <div style="margin-top:8px;">{badge_stock}</div>
+            <div style="margin-top:8px;color:#1a1a2e;"><strong>📌 Estado:</strong> {prod['estado']}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.divider()
+    
+    if st.button("🗑️ Limpiar resultados", key="clear_bulk_results", use_container_width=True):
+        del st.session_state.resultados_bulk
+        st.rerun()
 
 # ========== TAB 2: BÚSQUEDA INTELIGENTE (RESUMEN) ==========
 with tab2:
