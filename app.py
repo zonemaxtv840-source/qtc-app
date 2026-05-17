@@ -1544,10 +1544,11 @@ with tab1:
     else:
         st.warning("Carga uno o más catálogos y stock en el sidebar para comenzar.")
 
-# ========== TAB 2: MODO MASIVO (SIMPLIFICADO) ==========
+# ========== TAB 2: MODO MASIVO ==========
 with tab2:
     st.markdown("### 📦 Ingresa productos en formato masivo")
     st.caption("Formato: `SKU:CANTIDAD` (uno por línea)")
+    st.caption("💡 Los resultados se muestran con el mismo formato que la búsqueda inteligente")
     
     texto_bulk = st.text_area("", height=200, placeholder="RN0200065BK8:50\nCN0200059BK8:30\nCN0601030BK0:100")
     
@@ -1574,6 +1575,7 @@ with tab2:
                     row_encontrado = None
                     desc_encontrada = None
                     precio = 0
+                    precios_dict = {'P. IR': 0, 'P. BOX': 0, 'P. VIP': 0}
                     
                     for catalogo in st.session_state.catalogos:
                         df = catalogo['df']
@@ -1583,45 +1585,63 @@ with tab2:
                             catalogo_encontrado = catalogo
                             row_encontrado = df[mask].iloc[0]
                             desc_encontrada = row_encontrado.get(catalogo['columnas'].get('descripcion', col_sku), pedido['sku'])
-                            if st.session_state.precio_key in catalogo['precios']:
-                                col_precio = catalogo['precios'][st.session_state.precio_key]
-                                precio = corregir_numero(row_encontrado[col_precio])
+                            
+                            # Obtener todos los precios
+                            for nivel, col_precio in catalogo['precios'].items():
+                                if col_precio in row_encontrado.index:
+                                    precios_dict[nivel] = corregir_numero(row_encontrado[col_precio])
+                            
+                            precio = precios_dict.get(st.session_state.precio_key, 0)
                             break
                     
                     stock_info = buscar_stock_para_sku(pedido['sku'], st.session_state.stocks)
                     
+                    # Determinar estado y cantidad cotizable
                     if catalogo_encontrado and precio > 0 and stock_info['total'] > 0:
                         solo_apri001 = stock_info['apri001'] > 0 and stock_info['yessica'] == 0 and stock_info['apri004'] == 0
                         if solo_apri001:
                             cant_final, msg, _ = calcular_cantidad_apri001_only(pedido['cantidad'], stock_info['apri001'])
                         else:
                             cant_final, msg, _ = calcular_cantidad_total_segura(pedido['cantidad'], stock_info)
+                        estado_tipo = "success" if cant_final > 0 else "warning"
+                    elif catalogo_encontrado and precio == 0 and stock_info['total'] > 0:
+                        cant_final = 0
+                        msg = "⚠️ Stock disponible - SIN PRECIO en catálogo"
+                        estado_tipo = "warning"
+                    elif catalogo_encontrado and precio > 0 and stock_info['total'] == 0:
+                        cant_final = 0
+                        msg = "❌ Sin stock disponible"
+                        estado_tipo = "danger"
+                    elif not catalogo_encontrado:
+                        cant_final = 0
+                        msg = "❌ SKU no encontrado en ningún catálogo"
+                        estado_tipo = "danger"
                     else:
                         cant_final = 0
-                        if not catalogo_encontrado:
-                            msg = "❌ SKU no encontrado en catálogos"
-                        elif precio == 0:
-                            msg = "⚠️ Sin precio en catálogo"
-                        else:
-                            msg = "❌ Sin stock"
+                        msg = "❌ Sin precio y sin stock"
+                        estado_tipo = "danger"
                     
                     resultados.append({
                         'sku': pedido['sku'],
-                        'desc': str(desc_encontrada)[:80] if desc_encontrada else 'No encontrado',
+                        'desc': str(desc_encontrada)[:150] if desc_encontrada else 'No encontrado',
                         'solicitado': pedido['cantidad'],
                         'cotizable': cant_final,
                         'precio': precio,
+                        'precios': precios_dict,
                         'estado': msg,
+                        'estado_tipo': estado_tipo,
                         'stock_info': stock_info,
-                        'catalogo': catalogo_encontrado['nombre'] if catalogo_encontrado else 'No encontrado'
+                        'catalogo': catalogo_encontrado['nombre'] if catalogo_encontrado else 'No encontrado',
+                        'match_score': 100 if catalogo_encontrado else 0
                     })
                 
+                # Mostrar resumen
                 st.success(f"✅ Procesados {len(pedidos)} productos")
-                
                 cotizables = sum(1 for r in resultados if r['cotizable'] > 0)
-                st.metric("Productos cotizables", cotizables)
+                st.metric("📦 Productos cotizables", cotizables)
                 
-                if st.button("📋 Agregar cotizables al carrito"):
+                # Botón para agregar al carrito
+                if st.button("📋 Agregar cotizables al carrito", type="primary"):
                     agregados = 0
                     for r in resultados:
                         if r['cotizable'] > 0 and r['precio'] > 0:
@@ -1640,33 +1660,113 @@ with tab2:
                             }
                             st.session_state.carrito.append(item)
                             agregados += 1
-                    st.success(f"✅ Agregados {agregados} productos")
+                    st.success(f"✅ Agregados {agregados} productos al carrito")
                     st.rerun()
                 
-                # Mostrar resultados
+                st.markdown("---")
+                st.markdown("### 📋 Resultados del procesamiento")
+                
+                # Mostrar resultados con el mismo formato que TAB1
                 for r in resultados:
-                    badge = construir_badge_stock(
+                    # Construir badge de stock
+                    badge_stock = construir_badge_stock(
                         r['stock_info'].get('yessica', 0),
                         r['stock_info'].get('apri004', 0),
                         r['stock_info'].get('apri001', 0),
                         r['stock_info'].get('detalle_apri001', []),
                         r['stock_info'].get('ubicaciones', [])
                     )
-                    color_borde = "#4CAF50" if r['cotizable'] > 0 else "#f44336"
+                    
+                    # Stock seguro
+                    stock_seguro_info = ""
+                    if r['stock_info'].get('total', 0) > 0:
+                        if r['stock_info'].get('apri001', 0) > 0 and r['stock_info'].get('yessica', 0) == 0 and r['stock_info'].get('apri004', 0) == 0:
+                            max_apri001 = min(int(r['stock_info']['apri001'] * 0.15), 100)
+                            stock_seguro_info = f"<span class='badge-warning'>⚠️ APRI.001: máx {max_apri001} und (15%)</span>"
+                        else:
+                            stock_seguro = max(0, r['stock_info']['total'] - 2)
+                            stock_seguro_info = f"<span class='badge-stock'>🔒 Stock seguro: {stock_seguro} und</span>"
+                    
+                    # Determinar clase de tarjeta
+                    if r['estado_tipo'] == "success":
+                        card_class = "bulk-result-card"
+                        border_color = "#4CAF50"
+                    elif r['estado_tipo'] == "warning":
+                        card_class = "bulk-result-card-warning"
+                        border_color = "#ff9800"
+                    else:
+                        card_class = "bulk-result-card-danger"
+                        border_color = "#f44336"
+                    
+                    # Mostrar tarjeta (mismo estilo que TAB1)
                     st.markdown(f"""
-                    <div style="background:white;border-radius:12px;padding:0.75rem;margin-bottom:0.5rem;border-left:4px solid {color_borde};">
-                        <strong>{r['sku']}</strong> - {r['desc']}<br>
-                        📦 Solicitado: {r['solicitado']} → <strong>Cotizable: {r['cotizable']}</strong><br>
-                        {badge}<br>
-                        <span style="font-size:0.8rem;">{r['estado']}</span>
-                        {f'<span style="font-size:0.7rem;color:#666;">📁 {r["catalogo"]}</span>' if r.get('catalogo') else ''}
+                    <div class="{card_class}" style="border-left: 5px solid {border_color};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                            <div>
+                                <span class="result-sku">📦 {r['sku']}</span>
+                                <span style="background: {border_color}; color:white; padding:2px 8px; border-radius:12px; font-size:0.65rem; margin-left:8px;">{r['match_score']:.0f}%</span>
+                                <span style="background:#607d8b; color:white; padding:2px 8px; border-radius:12px; font-size:0.65rem; margin-left:4px;">📁 {r['catalogo'][:20]}</span>
+                            </div>
+                            <div>
+                                <span style="background:#2196F3; color:white; padding:2px 8px; border-radius:12px; font-size:0.7rem;">
+                                    Solicitado: {r['solicitado']} → Cotizable: {r['cotizable']}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="result-desc">
+                            <strong>📝 Descripción:</strong> {r['desc']}
+                        </div>
+                        
+                        <div style="margin: 8px 0;">
+                            {badge_stock}
+                            {stock_seguro_info}
+                        </div>
+                        
+                        <div class="result-price">
+                            💰 Precio {st.session_state.precio_key}: <strong>S/ {r['precio']:,.2f}</strong>
+                        </div>
+                        
+                        <div style="margin-top: 6px; font-size:0.75rem; color:#666;">
+                            💰 IR: S/ {r['precios'].get('P. IR', 0):.2f} | BOX: S/ {r['precios'].get('P. BOX', 0):.2f} | VIP: S/ {r['precios'].get('P. VIP', 0):.2f}
+                        </div>
+                        
+                        <div style="margin-top: 8px; font-size:0.8rem; color: {border_color};">
+                            {r['estado']}
+                        </div>
                     </div>
                     """, unsafe_allow_html=True)
+                    
+                    # Botón de acción individual (solo si es cotizable)
+                    if r['cotizable'] > 0 and r['precio'] > 0:
+                        if st.button(f"➕ Agregar {r['sku']} al carrito", key=f"bulk_add_{r['sku']}"):
+                            item = {
+                                'sku': r['sku'],
+                                'descripcion': r['desc'],
+                                'cantidad': r['cotizable'],
+                                'precio': r['precio'],
+                                'total': r['precio'] * r['cotizable'],
+                                'stock_yessica': r['stock_info'].get('yessica', 0),
+                                'stock_apri004': r['stock_info'].get('apri004', 0),
+                                'stock_apri001': r['stock_info'].get('apri001', 0),
+                                'detalle_apri001': r['stock_info'].get('detalle_apri001', []),
+                                'ubicaciones': r['stock_info'].get('ubicaciones', []),
+                                'catalogo': r.get('catalogo', '')
+                            }
+                            st.session_state.carrito.append(item)
+                            st.success(f"✅ Agregado {r['cotizable']}x {r['sku']} al carrito")
+                            st.rerun()
+                    
+                    st.markdown("---")
             else:
-                st.warning("No se encontraron productos válidos")
+                st.warning("No se encontraron productos válidos en el formato SKU:CANTIDAD")
         else:
-            st.warning("Carga catálogos y stock primero")
-
+            missing = []
+            if not st.session_state.catalogos:
+                missing.append("catálogos")
+            if not st.session_state.stocks:
+                missing.append("stock")
+            st.warning(f"Carga {', '.join(missing)} en el sidebar primero")
 # ========== TAB 3: CARRITO ==========
 with tab3:
     st.markdown("### 🛒 Cotización actual")
