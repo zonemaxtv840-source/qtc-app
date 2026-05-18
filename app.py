@@ -1699,7 +1699,7 @@ with tab1:
                 
                 badge_stock = ' '.join(badges)
                 
-                # Mostrar resultados UGREEN con manejo seguro de valores nulos
+        # Mostrar resultados UGREEN con manejo seguro de valores nulos
 precio_str = f"S/ {prod['precio']:,.2f}" if prod.get('precio', 0) > 0 else "S/ 0.00"
 desc_corta = prod['descripcion'][:100] if prod.get('descripcion') else "Sin descripción"
 
