@@ -1281,7 +1281,7 @@ with st.sidebar:
 
 tab1, tab2, tab3 = st.tabs(["📦 MODO MASIVO (Bulk)", "🔍 BÚSQUEDA INTELIGENTE", "🛒 CARRITO DE COTIZACIÓN"])
 
-with tab1
+
 # ========== TAB 2: BÚSQUEDA INTELIGENTE (RESUMEN) ==========
 with tab2:
     st.markdown("### 🔍 Buscar productos por SKU o descripción")
