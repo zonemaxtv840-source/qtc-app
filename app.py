@@ -1416,34 +1416,57 @@ with tab1:
                 """, unsafe_allow_html=True)
             
             else:
-                # XIAOMI: mostrar resultados con badges estándar
-                badge_stock = construir_badge_stock(
-                    prod.get('stock_yessica', 0), 
-                    prod.get('stock_apri004', 0), 
-                    prod.get('stock_apri001', 0),
-                    prod.get('detalle_apri001', []),
-                    prod.get('ubicaciones', [])
-                )
-                
-                if prod.get('tiene_stock') and prod.get('tiene_precio'):
-                    st.markdown(f"""
-                    <div style="background:white;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #4CAF50;">
-                        <div><strong>📦 {prod['sku']}</strong> <span style="background:#4CAF50;color:white;padding:2px 8px;border-radius:12px;">✅ CON STOCK Y PRECIO</span></div>
-                        <div style="margin-top:8px;">{prod['descripcion'][:100]}</div>
-                        <div style="margin-top:8px;">💰 Precio: <strong>S/ {prod['precio']:,.2f}</strong> | Cotizar: {prod['cantidad_cotizar']}/{prod['cantidad_solicitada']}</div>
-                        <div style="margin-top:8px;">{badge_stock}</div>
-                        <div style="margin-top:8px;"><strong>📌 Estado:</strong> {prod['estado']}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""
-                    <div style="background:#F5F5F5;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #9e9e9e;">
-                        <div><strong>📦 {prod['sku']}</strong> <span style="background:#9e9e9e;color:white;padding:2px 8px;border-radius:12px;">❌ NO DISPONIBLE</span></div>
-                        <div style="margin-top:8px;">{prod['descripcion'][:100]}</div>
-                        <div style="margin-top:8px;">{badge_stock}</div>
-                        <div style="margin-top:8px;"><strong>⚠️ Estado:</strong> {prod['estado']}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                                        # XIAOMI: mostrar resultados con badges estándar
+                        badge_stock = construir_badge_stock(
+                            prod.get('stock_yessica', 0), 
+                            prod.get('stock_apri004', 0), 
+                            prod.get('stock_apri001', 0),
+                            prod.get('detalle_apri001', []),
+                            prod.get('ubicaciones', [])
+                        )
+                        
+                        if prod.get('tiene_stock') and prod.get('tiene_precio'):
+                            st.markdown(f"""
+                            <div style="background:#ffffff;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #4CAF50;color:#1a1a2e;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+                                    <div>
+                                        <strong style="color:#1a1a2e;font-size:1rem;">📦 {prod.get('sku_usado', prod['sku'])}</strong>
+                                        <span style="background:#4CAF50;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;margin-left:8px;">✅ CON STOCK Y PRECIO</span>
+                                    </div>
+                                    <div>
+                                        <span style="background:#2196F3;color:white;padding:4px 12px;border-radius:20px;font-size:0.8rem;">
+                                            Cotizar: {prod['cantidad_cotizar']}/{prod['cantidad_solicitada']}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div style="margin-top:12px;color:#333;font-size:0.85rem;">
+                                    📝 <strong>Producto:</strong> {prod.get('descripcion_usada', prod['descripcion'])[:100]}
+                                </div>
+                                <div style="margin-top:8px;color:#333;">
+                                    💰 <strong>Precio ({st.session_state.precio_key}):</strong> <span style="color:#e67e22;font-weight:bold;">S/ {prod.get('precio_usado', prod['precio']):,.2f}</span>
+                                </div>
+                                <div style="margin-top:8px;">
+                                    {badge_stock}
+                                </div>
+                                <div style="margin-top:8px;padding:8px;background:#f0f0f0;border-radius:8px;color:#1a1a2e;">
+                                    📌 <strong>Estado:</strong> {prod['estado']}
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"""
+                            <div style="background:#ffffff;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #9e9e9e;color:#1a1a2e;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                                <div style="display:flex;justify-content:space-between;align-items:center;">
+                                    <div>
+                                        <strong style="color:#1a1a2e;">📦 {prod['sku']}</strong>
+                                        <span style="background:#9e9e9e;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;">❌ NO DISPONIBLE</span>
+                                    </div>
+                                </div>
+                                <div style="margin-top:12px;color:#333;">{prod['descripcion'][:100]}</div>
+                                <div style="margin-top:8px;">{badge_stock}</div>
+                                <div style="margin-top:8px;padding:8px;background:#f0f0f0;border-radius:8px;"><strong>⚠️ Estado:</strong> {prod['estado']}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
             
             st.divider()
         
