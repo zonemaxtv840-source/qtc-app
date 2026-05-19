@@ -1402,35 +1402,54 @@ with tab1:
         
         for prod in st.session_state.resultados_bulk:
             if prod.get('tipo') == 'UGREEN':
-                # UGREEN: mostrar resultados con badges de stock
-                badges = []
-                if prod.get('stock_ugreen', 0) > 0:
-                    stock_ugreen_seguro = max(0, prod['stock_ugreen'] - 2)
-                    badges.append(f'📦 UGREEN: {prod["stock_ugreen"]} (seguro: {stock_ugreen_seguro})')
-                if prod.get('stock_apri001', 0) > 0:
-                    badges.append(f'🔴 APRI.001: {prod["stock_apri001"]}')
-                if not badges:
-                    badges.append('❌ Sin stock')
-                
-                badge_text = ' | '.join(badges)
-                precio_str = f"S/ {prod['precio']:,.2f}" if prod['precio'] > 0 else "S/ 0.00"
-                
-                fallback_html = ""
-                if prod.get('fallback_nota'):
-                    fallback_html = f'<div style="margin-top:8px;padding:8px;background:#FFF3E0;border-radius:8px;"><span style="color:#e65100;">⚠️ {prod["fallback_nota"]}</span></div>'
-                
-                st.markdown(f"""
-                <div style="background:white;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #00BCD4;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <div><strong>📦 {prod['sku']}</strong> <span style="background:#00BCD4;color:white;padding:2px 8px;border-radius:12px;">UGREEN</span></div>
-                        <div><span style="background:#2196F3;color:white;padding:2px 8px;border-radius:12px;">Cotizar: {prod['cantidad_cotizar']}/{prod['cantidad_solicitada']}</span></div>
-                    </div>
-                    <div style="margin-top:8px;">{prod['descripcion'][:100]}</div>
-                    <div style="margin-top:8px;">💰 Precio: <strong>{precio_str}</strong> | 📦 Stock: {badge_text}</div>
-                    <div style="margin-top:8px;"><strong>📌 Estado:</strong> {prod['estado']}</div>
-                    {fallback_html}
-                </div>
-                """, unsafe_allow_html=True)
+                                        # UGREEN: mostrar resultados con badges de stock
+                        badges = []
+                        if prod.get('stock_ugreen', 0) > 0:
+                            stock_ugreen_seguro = max(0, prod['stock_ugreen'] - 2)
+                            badges.append(f'📦 UGREEN: {prod["stock_ugreen"]} (seguro: {stock_ugreen_seguro})')
+                        if prod.get('stock_apri001', 0) > 0:
+                            badges.append(f'🔴 APRI.001: {prod["stock_apri001"]}')
+                        if not badges:
+                            badges.append('❌ Sin stock')
+                        
+                        badge_text = ' | '.join(badges)
+                        precio_valor = prod.get('precio', 0)
+                        precio_str = f"S/ {precio_valor:,.2f}" if precio_valor > 0 else "S/ 0.00"
+                        
+                        fallback_html = ""
+                        if prod.get('fallback_nota'):
+                            fallback_html = f'<div style="margin-top:8px;padding:8px;background:#FFF3E0;border-radius:8px;color:#e65100;"><span>⚠️ {prod["fallback_nota"]}</span></div>'
+                        
+                        # ==== VERSIÓN CORREGIDA: fondo blanco, texto oscuro ====
+                        st.markdown(f"""
+                        <div style="background:#ffffff;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #00BCD4;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
+                                <div>
+                                    <strong style="color:#1a1a2e;font-size:1rem;">📦 {prod.get('sku_usado', prod['sku'])}</strong>
+                                    <span style="background:#00BCD4;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;margin-left:8px;">UGREEN</span>
+                                    {f'<span style="background:#ff9800;color:white;padding:2px 8px;border-radius:12px;font-size:0.7rem;margin-left:4px;">Original: {prod["sku_original"]}</span>' if prod.get('sku_original') and prod['sku_original'] != prod.get('sku_usado', prod['sku']) else ''}
+                                </div>
+                                <div>
+                                    <span style="background:#2196F3;color:white;padding:4px 12px;border-radius:20px;font-size:0.8rem;">
+                                        Cotizar: {prod.get('cantidad_cotizar', 0)}/{prod.get('cantidad_solicitada', 0)}
+                                    </span>
+                                </div>
+                            </div>
+                            <div style="margin-top:12px;color:#333;font-size:0.85rem;">
+                                📝 <strong>Producto:</strong> {prod.get('descripcion', 'Sin descripción')[:100]}
+                            </div>
+                            <div style="margin-top:8px;color:#333;">
+                                💰 <strong>Precio ({st.session_state.precio_key}):</strong> <span style="color:#e67e22;font-weight:bold;">{precio_str}</span>
+                            </div>
+                            <div style="margin-top:8px;color:#333;">
+                                📦 <strong>Stock:</strong> {badge_text}
+                            </div>
+                            <div style="margin-top:8px;padding:8px;background:#f0f0f0;border-radius:8px;color:#1a1a2e;">
+                                📌 <strong>Estado:</strong> {prod.get('estado', 'Sin estado')}
+                            </div>
+                            {fallback_html}
+                        </div>
+                        """, unsafe_allow_html=True)
             
             else:
                                         # XIAOMI: mostrar resultados con badges estándar
