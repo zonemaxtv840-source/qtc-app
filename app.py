@@ -341,7 +341,7 @@ def buscar_stock_para_sku(sku: str, stocks: List[Dict]) -> Dict:
                 
                 if 'YESSICA' in hoja_upper:
                     stock_yessica = cantidad
-                                        elif 'APRI.001' in hoja_upper:
+                elif 'APRI.001' in hoja_upper:
                             # Para APRI.001, buscar específicamente columna "DISPONIBLE"
                             col_correcta = None
                             for col in df.columns:
