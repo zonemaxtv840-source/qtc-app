@@ -341,21 +341,38 @@ def buscar_stock_para_sku(sku: str, stocks: List[Dict]) -> Dict:
                 
                 if 'YESSICA' in hoja_upper:
                     stock_yessica = cantidad
-                elif 'APRI.004' in hoja_upper:
-                    stock_apri004 = cantidad
-                elif 'APRI.001' in hoja_upper:
-                    if 'DISPONIBLE' in col_nombre:
-                        stock_apri001 = cantidad
-                        detalle = {'cantidad': cantidad, 'hoja': hoja_nombre}
-                        for col in df.columns:
-                            col_upper = str(col).upper()
-                            if 'OBS' in col_upper or 'DETALLE' in col_upper or 'NOTA' in col_upper:
-                                detalle['observacion'] = str(row[col])[:150]
-                                break
-                        detalle_apri001.append(detalle)
-                    else:
-                        st.warning(f"⚠️ APRI.001 para SKU {sku} en hoja {hoja_nombre} no tiene columna 'Disponible'. Usando: {col_nombre}")
-                        stock_apri001 = cantidad
+                                        elif 'APRI.001' in hoja_upper:
+                            # Para APRI.001, buscar específicamente columna "DISPONIBLE"
+                            col_correcta = None
+                            for col in df.columns:
+                                col_upper = str(col).upper()
+                                if 'DISPONIBLE' in col_upper:
+                                    col_correcta = col
+                                    break
+                            
+                            if col_correcta:
+                                cantidad = int(corregir_numero(row[col_correcta]))
+                                stock_apri001 = cantidad
+                                detalle = {'cantidad': cantidad, 'hoja': hoja_nombre}
+                                for col in df.columns:
+                                    col_upper = str(col).upper()
+                                    if 'OBS' in col_upper or 'DETALLE' in col_upper or 'NOTA' in col_upper:
+                                        detalle['observacion'] = str(row[col])[:150]
+                                        break
+                                detalle_apri001.append(detalle)
+                            else:
+                                # Fallback: usar cualquier columna de stock
+                                col_cant = None
+                                for col in df.columns:
+                                    col_upper = str(col).upper()
+                                    if any(p in col_upper for p in ['CANT', 'STOCK', 'DISPONIBLE', 'UNIDADES']):
+                                        col_cant = col
+                                        break
+                                if col_cant:
+                                    cantidad = int(corregir_numero(row[col_cant]))
+                                    stock_apri001 = cantidad
+                                    st.warning(f"⚠️ APRI.001 para SKU {sku} en hoja {hoja_nombre} no tiene columna 'Disponible'. Usando: {col_cant}")
+                
     
     return {
         'yessica': stock_yessica,
