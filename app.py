@@ -315,8 +315,8 @@ def calcular_similitud(texto1: str, texto2: str) -> float:
 
 def buscar_stock_para_sku(sku: str, stocks: List[Dict]) -> Dict:
     """
-    Busca stock - CADA ALMACÉN POR SEPARADO (NO SUMA)
-    ASIGNA el valor de cada hoja, no acumula
+    Busca stock - SOLO usa la columna "Disponible" o "Cantidad"
+    CADA ALMACÉN POR SEPARADO (NO SUMA)
     """
     sku_limpio = sku.strip().upper()
     stock_yessica = 0
@@ -332,10 +332,11 @@ def buscar_stock_para_sku(sku: str, stocks: List[Dict]) -> Dict:
             col_cant = stock.get('col_cant')
             
             if col_cant:
+                # Leer SOLO el valor de la columna Disponible/Cantidad
                 cantidad = int(corregir_numero(row[col_cant]))
                 hoja = stock['hoja'].upper()
                 
-                # ASIGNAR, NO SUMAR - cada hoja tiene su propio valor
+                # ASIGNAR, NO SUMAR
                 if 'YESSICA' in hoja:
                     stock_yessica = cantidad
                 elif 'APRI.004' in hoja:
