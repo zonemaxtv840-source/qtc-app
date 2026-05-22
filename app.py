@@ -217,7 +217,8 @@ def cargar_catalogo(archivo) -> Optional[Dict]:
 
 def cargar_stock(archivos, modo: str) -> List[Dict]:
     """
-    Carga stock - APRI.001 SOLO usa columna "Disponible"
+    Carga stock - SOLO usa la columna "Disponible" (o "Cantidad" como fallback)
+    IGNORA: En stock, Comprometido, Solicitado
     """
     stocks = []
     
@@ -239,18 +240,23 @@ def cargar_stock(archivos, modo: str) -> List[Dict]:
                 col_sku = detectar_columna_sku(df)
                 col_cant = None
                 
-                # Para APRI.001, forzar columna "Disponible"
-                if 'APRI.001' in hoja_upper:
+                # 1. Buscar columna "Disponible" (PRIORIDAD MÁXIMA)
+                for col in df.columns:
+                    if 'DISPONIBLE' in str(col).upper():
+                        col_cant = col
+                        break
+                
+                # 2. Si no hay "Disponible", buscar "Cantidad" (FALLBACK)
+                if not col_cant:
                     for col in df.columns:
-                        if 'DISPONIBLE' in str(col).upper():
+                        if 'CANTIDAD' in str(col).upper() or 'CANT' in str(col).upper():
                             col_cant = col
                             break
-                else:
-                    for col in df.columns:
-                        col_upper = str(col).upper()
-                        if any(p in col_upper for p in ['CANT', 'STOCK', 'DISPONIBLE']):
-                            col_cant = col
-                            break
+                
+                # 3. Si no hay ninguna, error
+                if not col_cant:
+                    st.error(f"❌ Hoja {hoja}: No se encontró columna 'Disponible' ni 'Cantidad'")
+                    continue
                 
                 stocks.append({
                     'nombre': f"{archivo.name} [{hoja}]",
@@ -259,9 +265,10 @@ def cargar_stock(archivos, modo: str) -> List[Dict]:
                     'col_cant': col_cant,
                     'hoja': hoja
                 })
-                st.success(f"✅ {archivo.name} → {hoja} (columna: {col_cant})")
+                st.success(f"✅ {archivo.name} → {hoja} (usando: {col_cant})")
+                
         except Exception as e:
-            st.error(f"Error: {str(e)[:80]}")
+            st.error(f"Error en {archivo.name}: {str(e)[:80]}")
     
     return stocks
 
