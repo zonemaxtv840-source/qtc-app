@@ -2,6 +2,7 @@
 # Con soporte para XIAOMI, UGREEN y OTRAS marcas
 # CORREGIDO: Stock SIN SUMAR - muestra cada almacén por separado
 # CORREGIDO: Cards con texto negro
+# CORREGIDO: UGREEN ahora lee stock REAL desde APRI.001 (columna "Disponible")
 
 import streamlit as st
 import pandas as pd
@@ -555,7 +556,7 @@ def generar_excel(items: List[Dict], cliente: str, ruc: str) -> bytes:
     return output.getvalue()
 
 # ============================================
-# CARGAR UGREEN
+# CARGAR UGREEN (MODIFICADO: SIN STOCK DEL CATÁLOGO)
 # ============================================
 
 def cargar_ugreen_catalogo(archivo) -> Optional[Dict]:
@@ -568,7 +569,6 @@ def cargar_ugreen_catalogo(archivo) -> Optional[Dict]:
     col_mayor = None
     col_caja = None
     col_vip = None
-    col_stock = None
     
     for col in df.columns:
         col_upper = str(col).upper()
@@ -582,8 +582,6 @@ def cargar_ugreen_catalogo(archivo) -> Optional[Dict]:
             col_caja = col
         elif col_upper == 'VIP':
             col_vip = col
-        elif 'STOCK' in col_upper:
-            col_stock = col
     
     if not col_sku:
         col_sku = df.columns[0]
@@ -601,19 +599,52 @@ def cargar_ugreen_catalogo(archivo) -> Optional[Dict]:
         'df': df,
         'col_sku': col_sku,
         'col_desc': col_desc,
-        'col_stock': col_stock,
         'precios': precios,
         'tipo': 'UGREEN'
     }
 
-def buscar_ugreen_producto(busqueda: str, ugreen_catalogo: Dict) -> Optional[List[Dict]]:
+
+def buscar_stock_ugreen(sku: str, stocks: List[Dict]) -> int:
+    """
+    Busca stock REAL de UGREEN en APRI.001, columna "Disponible"
+    """
+    sku_limpio = sku.strip().upper()
+    
+    if not stocks:
+        return 0
+    
+    for stock in stocks:
+        hoja = stock.get('hoja', '').upper()
+        nombre = stock.get('nombre', '').upper()
+        
+        if 'APRI.001' not in hoja and 'APRI.001' not in nombre:
+            continue
+        
+        df = stock['df']
+        col_sku = stock.get('col_sku')
+        if not col_sku:
+            col_sku = detectar_columna_sku(df)
+        
+        df_sku = df[col_sku].astype(str).str.strip().str.upper()
+        mask = df_sku == sku_limpio
+        
+        if mask.any():
+            row = df[mask].iloc[0]
+            for col in df.columns:
+                if 'DISPONIBLE' in str(col).upper():
+                    return int(corregir_numero(row[col]))
+            return 0
+    
+    return 0
+
+
+def buscar_ugreen_producto(busqueda: str, ugreen_catalogo: Dict, stocks: List[Dict] = None) -> Optional[List[Dict]]:
     if not ugreen_catalogo:
         return None
     
     df = ugreen_catalogo['df']
     col_sku = ugreen_catalogo['col_sku']
     col_desc = ugreen_catalogo['col_desc']
-    col_stock = ugreen_catalogo.get('col_stock')
     
     mask_sku = df[col_sku].astype(str).str.contains(busqueda, case=False, na=False)
     mask_desc = pd.Series([False] * len(df))
@@ -636,8 +667,8 @@ def buscar_ugreen_producto(busqueda: str, ugreen_catalogo: Dict) -> Optional[Lis
         precio_vip = corregir_numero(row.get('Vip', 0))
         
         stock = 0
-        if col_stock:
-            stock = int(corregir_numero(row[col_stock])) if pd.notna(row[col_stock]) else 0
+        if stocks:
+            stock = buscar_stock_ugreen(sku, stocks)
         
         resultados.append({
             'sku': sku,
@@ -952,7 +983,8 @@ with tab1:
                         with st.spinner("Procesando UGREEN..."):
                             resultados_procesados = []
                             for pedido in pedidos:
-                                resultados_ugreen = buscar_ugreen_producto(pedido['sku'], st.session_state.ugreen_catalogo)
+                                # MODIFICADO: pasar stocks a la función
+                                resultados_ugreen = buscar_ugreen_producto(pedido['sku'], st.session_state.ugreen_catalogo, st.session_state.stocks)
                                 if resultados_ugreen and len(resultados_ugreen) > 0:
                                     prod = resultados_ugreen[0]
                                     precio = prod['precios'].get(st.session_state.precio_key, 0)
@@ -1226,7 +1258,8 @@ with tab2:
         
         elif st.session_state.modo == "UGREEN" and st.session_state.ugreen_catalogo:
             with st.spinner("🔍 Buscando en UGREEN..."):
-                resultados_ugreen = buscar_ugreen_producto(busqueda, st.session_state.ugreen_catalogo)
+                # MODIFICADO: pasar stocks a la función
+                resultados_ugreen = buscar_ugreen_producto(busqueda, st.session_state.ugreen_catalogo, st.session_state.stocks)
                 if resultados_ugreen:
                     st.success(f"✅ {len(resultados_ugreen)} productos encontrados")
                     for prod in resultados_ugreen:
