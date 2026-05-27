@@ -3,6 +3,8 @@
 # CORREGIDO: Stock SIN SUMAR - muestra cada almacén por separado
 # CORREGIDO: Cards con texto negro
 # CORREGIDO: UGREEN ahora lee stock REAL desde APRI.001 (columna "Disponible")
+# CORREGIDO: Búsqueda inteligente UGREEN busca en stock si no encuentra en catálogo
+# CORREGIDO: Badge "Sin stock" con texto en color negro
 
 import streamlit as st
 import pandas as pd
@@ -70,8 +72,8 @@ st.markdown("""
     }
     
     /* EXCEPCIÓN: Badges mantienen texto blanco */
-    .badge-yessica, .badge-apri004, .badge-apri001, .badge-ugreen,
-    .badge-yessica *, .badge-apri004 *, .badge-apri001 *, .badge-ugreen * {
+    .badge-yessica, .badge-apri004, .badge-apri001, .badge-ugreen, .badge-warning,
+    .badge-yessica *, .badge-apri004 *, .badge-apri001 *, .badge-ugreen *, .badge-warning * {
         color: white !important;
     }
     
@@ -86,6 +88,7 @@ st.markdown("""
     .badge-apri004 { background: #FF9800; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; display: inline-block; margin: 2px; }
     .badge-apri001 { background: #f44336; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; display: inline-block; margin: 2px; }
     .badge-ugreen { background: #00BCD4; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; display: inline-block; margin: 2px; }
+    .badge-warning { background: #f44336; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; display: inline-block; margin: 2px; }
     
     /* CONTADORES */
     .counter-summary {
@@ -639,52 +642,109 @@ def buscar_stock_ugreen(sku: str, stocks: List[Dict]) -> int:
 
 
 def buscar_ugreen_producto(busqueda: str, ugreen_catalogo: Dict, stocks: List[Dict] = None) -> Optional[List[Dict]]:
-    if not ugreen_catalogo:
-        return None
-    
-    df = ugreen_catalogo['df']
-    col_sku = ugreen_catalogo['col_sku']
-    col_desc = ugreen_catalogo['col_desc']
-    
-    mask_sku = df[col_sku].astype(str).str.contains(busqueda, case=False, na=False)
-    mask_desc = pd.Series([False] * len(df))
-    if col_desc:
-        mask_desc = df[col_desc].astype(str).str.contains(busqueda, case=False, na=False)
-    
-    mask = mask_sku | mask_desc
-    coincidencias = df[mask]
-    
-    if coincidencias.empty:
-        return None
-    
+    """
+    Busca producto UGREEN:
+    1. Primero en catálogo (por SKU o descripción)
+    2. Si no encuentra, busca SOLO en stocks (APRI.001) por SKU exacto
+    """
     resultados = []
-    for _, row in coincidencias.iterrows():
-        sku = str(row[col_sku]).strip().upper()
-        descripcion = str(row[col_desc])[:200] if col_desc else f"SKU: {sku}"
-        
-        precio_mayor = corregir_numero(row.get('Mayor', 0))
-        precio_caja = corregir_numero(row.get('Caja', 0))
-        precio_vip = corregir_numero(row.get('Vip', 0))
-        
-        stock = 0
-        if stocks:
-            stock = buscar_stock_ugreen(sku, stocks)
-        
-        resultados.append({
-            'sku': sku,
-            'descripcion': descripcion,
-            'precios': {
-                'P. IR': precio_mayor,
-                'P. BOX': precio_caja,
-                'P. VIP': precio_vip,
-            },
-            'stock': stock,
-            'tiene_stock': stock > 0,
-            'tiene_precio': precio_vip > 0 or precio_caja > 0 or precio_mayor > 0,
-            'tipo': 'UGREEN'
-        })
+    skus_encontrados = set()
     
-    return resultados
+    # ========== PASO 1: BUSCAR EN CATÁLOGO ==========
+    if ugreen_catalogo:
+        df = ugreen_catalogo['df']
+        col_sku = ugreen_catalogo['col_sku']
+        col_desc = ugreen_catalogo['col_desc']
+        
+        mask_sku = df[col_sku].astype(str).str.contains(busqueda, case=False, na=False)
+        mask_desc = pd.Series([False] * len(df))
+        if col_desc:
+            mask_desc = df[col_desc].astype(str).str.contains(busqueda, case=False, na=False)
+        
+        mask = mask_sku | mask_desc
+        coincidencias = df[mask]
+        
+        for _, row in coincidencias.iterrows():
+            sku = str(row[col_sku]).strip().upper()
+            skus_encontrados.add(sku)
+            descripcion = str(row[col_desc])[:200] if col_desc else f"SKU: {sku}"
+            
+            precio_mayor = corregir_numero(row.get('Mayor', 0))
+            precio_caja = corregir_numero(row.get('Caja', 0))
+            precio_vip = corregir_numero(row.get('Vip', 0))
+            
+            stock = 0
+            if stocks:
+                stock = buscar_stock_ugreen(sku, stocks)
+            
+            resultados.append({
+                'sku': sku,
+                'descripcion': descripcion,
+                'precios': {
+                    'P. IR': precio_mayor,
+                    'P. BOX': precio_caja,
+                    'P. VIP': precio_vip,
+                },
+                'stock': stock,
+                'tiene_stock': stock > 0,
+                'tiene_precio': precio_vip > 0 or precio_caja > 0 or precio_mayor > 0,
+                'tipo': 'UGREEN',
+                'desde': 'catalogo'
+            })
+    
+    # ========== PASO 2: BUSCAR SOLO EN STOCK SI NO ENCONTRÓ EN CATÁLOGO ==========
+    if not resultados and stocks:
+        # Buscar SKU exacto en stocks (APRI.001)
+        sku_limpio = busqueda.strip().upper()
+        
+        for stock in stocks:
+            hoja = stock.get('hoja', '').upper()
+            nombre = stock.get('nombre', '').upper()
+            
+            if 'APRI.001' not in hoja and 'APRI.001' not in nombre:
+                continue
+            
+            df = stock['df']
+            col_sku = stock.get('col_sku')
+            if not col_sku:
+                col_sku = detectar_columna_sku(df)
+            
+            df_sku = df[col_sku].astype(str).str.strip().str.upper()
+            mask = df_sku == sku_limpio
+            
+            if mask.any():
+                row = df[mask].iloc[0]
+                
+                # Obtener descripción desde stock
+                descripcion = f"SKU: {sku_limpio}"
+                for col in df.columns:
+                    col_upper = str(col).upper()
+                    if any(p in col_upper for p in ['DESC', 'DESCRIPCION', 'PRODUCTO', 'NOMBRE']):
+                        desc_stock = str(row[col])[:200]
+                        if desc_stock and desc_stock != 'nan':
+                            descripcion = desc_stock
+                            break
+                
+                # Obtener stock
+                stock_cantidad = 0
+                for col in df.columns:
+                    if 'DISPONIBLE' in str(col).upper():
+                        stock_cantidad = int(corregir_numero(row[col]))
+                        break
+                
+                resultados.append({
+                    'sku': sku_limpio,
+                    'descripcion': descripcion,
+                    'precios': {'P. IR': 0, 'P. BOX': 0, 'P. VIP': 0},
+                    'stock': stock_cantidad,
+                    'tiene_stock': stock_cantidad > 0,
+                    'tiene_precio': False,
+                    'tipo': 'UGREEN',
+                    'desde': 'stock_solo'
+                })
+                break  # Solo tomar el primer encuentro
+    
+    return resultados if resultados else None
 
 # ============================================
 # INICIALIZACIÓN DE SESIÓN
@@ -983,7 +1043,6 @@ with tab1:
                         with st.spinner("Procesando UGREEN..."):
                             resultados_procesados = []
                             for pedido in pedidos:
-                                # MODIFICADO: pasar stocks a la función
                                 resultados_ugreen = buscar_ugreen_producto(pedido['sku'], st.session_state.ugreen_catalogo, st.session_state.stocks)
                                 if resultados_ugreen and len(resultados_ugreen) > 0:
                                     prod = resultados_ugreen[0]
@@ -1058,7 +1117,7 @@ with tab1:
         
         for prod in st.session_state.resultados_bulk:
             if prod.get('tipo') == 'UGREEN':
-                badge_stock = f'<span class="badge-ugreen">📦 UGREEN: {prod["stock_total"]}</span>' if prod['stock_total'] > 0 else '<span class="badge-warning">❌ Sin stock</span>'
+                badge_stock = f'<span class="badge-ugreen">📦 STOCK REAL: {prod["stock_total"]}</span>' if prod['stock_total'] > 0 else '<span class="badge-warning">❌ Sin stock</span>'
                 
                 st.markdown(f"""
                 <div style="background:white;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #00BCD4;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
@@ -1258,27 +1317,39 @@ with tab2:
         
         elif st.session_state.modo == "UGREEN" and st.session_state.ugreen_catalogo:
             with st.spinner("🔍 Buscando en UGREEN..."):
-                # MODIFICADO: pasar stocks a la función
                 resultados_ugreen = buscar_ugreen_producto(busqueda, st.session_state.ugreen_catalogo, st.session_state.stocks)
                 if resultados_ugreen:
                     st.success(f"✅ {len(resultados_ugreen)} productos encontrados")
                     for prod in resultados_ugreen:
                         precio = prod['precios'].get(st.session_state.precio_key, 0)
-                        badge_stock = '<span class="badge-ugreen">📦 UGREEN: ' + str(prod['stock']) + '</span>' if prod['stock'] > 0 else '<span class="badge-warning">❌ Sin stock</span>'
+                        
+                        # Diferente badge según si tiene precio o no
+                        if prod.get('desde') == 'stock_solo':
+                            # Producto encontrado SOLO en stock (sin precio en catálogo)
+                            badge_stock = f'<span class="badge-ugreen">📦 STOCK REAL: {prod["stock"]}</span>' if prod['stock'] > 0 else '<span class="badge-warning">❌ Sin stock</span>'
+                            estado_badge = '<span style="background:#FF9800;color:white;padding:2px 8px;border-radius:12px;">⚠️ SOLO STOCK (sin precio)</span>'
+                        else:
+                            # Producto normal con precio
+                            badge_stock = f'<span class="badge-ugreen">📦 STOCK REAL: {prod["stock"]}</span>' if prod['stock'] > 0 else '<span class="badge-warning">❌ Sin stock</span>'
+                            estado_badge = ''
                         
                         st.markdown(f"""
                         <div style="background:white;border-radius:16px;padding:1rem;margin-bottom:1rem;border-left:5px solid #00BCD4;">
-                            <div><strong style="color:#1a1a2e;">📦 SKU: {prod['sku']}</strong> <span style="background:#00BCD4;color:white;padding:2px 8px;border-radius:12px;">UGREEN</span></div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                                <div><strong style="color:#1a1a2e;">📦 SKU: {prod['sku']}</strong> <span style="background:#00BCD4;color:white;padding:2px 8px;border-radius:12px;">UGREEN</span> {estado_badge}</div>
+                            </div>
                             <div style="margin-top:8px;color:#1a1a2e;"><strong>📝 Descripción:</strong> {prod['descripcion']}</div>
                             <div style="margin-top:8px;color:#1a1a2e;">💰 Precio: <strong style="color:#e67e22;">S/ {precio:,.2f}</strong></div>
                             <div style="margin-top:8px;">{badge_stock}</div>
                         </div>
                         """, unsafe_allow_html=True)
                         
-                        if prod['tiene_stock'] and precio > 0:
+                        if prod['tiene_stock']:
+                            # Permitir agregar aunque no tenga precio (con precio 0)
                             col_cant, col_btn = st.columns([1, 2])
                             with col_cant:
-                                cantidad = st.number_input("Cantidad", min_value=1, max_value=prod['stock'], value=1, step=1, key=f"ugreen_{prod['sku']}")
+                                max_stock = prod['stock']
+                                cantidad = st.number_input("Cantidad", min_value=1, max_value=max_stock, value=1, step=1, key=f"ugreen_{prod['sku']}")
                             with col_btn:
                                 if st.button(f"➕ Agregar a cotización", key=f"add_ugreen_{prod['sku']}"):
                                     item = {
