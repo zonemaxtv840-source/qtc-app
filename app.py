@@ -1874,6 +1874,13 @@ if st.session_state.resultados_inteligentes:
                 <span style="color:#999;font-size:0.8rem;"> ({st.session_state.precio_key})</span>
             </div>
             """
+        elif prod['precio_equivalente'] > 0:
+            html_card += f"""
+            <div style="color:#333;margin-bottom:8px;">
+                💰 <strong style="color:#e67e22;font-size:1.1rem;">S/ {prod['precio_equivalente']:,.2f}</strong>
+                <span style="color:#999;font-size:0.8rem;"> ({st.session_state.precio_key}) SKU sugerido</span>
+            </div>
+            """
 
         html_card += badge
 
@@ -2129,8 +2136,9 @@ with st.expander("🔍 Búsqueda Individual (por SKU o descripción)"):
                         <strong style="color:#1a1a2e;">📦 {prod['sku']}</strong>
                         <span style="background:{color_borde};color:white;padding:2px 8px;border-radius:12px;font-size:0.75rem;">{estado}</span>
                     </div>
-                    <div style="color:#333;margin:4px 0;">{prod['descripcion']}</div>
-                    <div style="color:#333;">💰 <strong style="color:#e67e22;">S/ {prod['precio']:,.2f}</strong></div>
+                    <div style="color:#333;margin:4px 0;"><strong>📝</strong> {prod['descripcion']}</div>
+                    <div style="color:#333;">💰 <strong style="color:#e67e22;font-size:1.1rem;">S/ {prod['precio']:,.2f}</strong>
+                        <span style="color:#999;font-size:0.8rem;"> ({st.session_state.precio_key})</span></div>
                     <div>{badge}</div>
                 </div>
                 """, unsafe_allow_html=True)
