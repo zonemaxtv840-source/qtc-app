@@ -1445,8 +1445,6 @@ with tab3:
 # NUEVA PESTAÑA #4: BÚSQUEDA INTELIGENTE POR CÓDIGO (MODEL MARK / NO. / SKU)
 # ============================================
 
-tab4 = st.tabs(["📦 MODO MASIVO (Bulk)", "🔍 BÚSQUEDA INTELIGENTE", "🛒 CARRITO DE COTIZACIÓN", "🔎 SMART CODE SEARCH"])[3]
-
 with tab4:
     st.markdown("""
     <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius:12px; padding:1rem; margin-bottom:1.5rem;">
