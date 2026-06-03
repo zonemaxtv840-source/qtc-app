@@ -15,3 +15,6 @@ streamlit-option-menu
 streamlit-extras
 Pillow
 matplotlib
+xlrd
+office365-rest-python-client
+python-dateutil
